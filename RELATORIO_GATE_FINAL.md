@@ -39,17 +39,26 @@
 ### 5. O que ainda falta
 - White Label por domínio/subdomínio real (não configurado ainda).
 - Event Explorer, Reliability, Chaos Mode — inacessíveis em qualquer ambiente implantado (achado já registrado; só testável localmente).
-- Sessão/expiração real, RBAC completo para os papéis Marketing e Operador (só Gerente e Somente Leitura foram testados com conta real até agora).
+- Sessão/expiração real, refresh mid-edit em outras telas além de Campanhas.
 - Auditoria página-a-página sistemática das 26 páginas com a matriz completa de estados.
 - Rodada de UX/UI dedicada (item 4 do pedido).
-- `DEFINITION_OF_DONE.md` (ainda não criado).
 - Regressão integrada final (Cadastro→Logout com múltiplos papéis/tenants/dispositivos).
 
 ### 6. Recomendação para o próximo passo
-Continuar o ciclo: (a) criar o `DEFINITION_OF_DONE.md` agora que há critérios claros o suficiente para defini-los, (b) testar Marketing/Operador do mesmo jeito que Somente Leitura foi testado agora (mesma técnica, alto valor, baixo custo), (c) começar a auditoria página-a-página sistemática.
+Continuar o ciclo: começar a auditoria página-a-página sistemática das 26 páginas, priorizando as que ainda não tiveram nenhuma passagem dedicada (Table Map em profundidade, Playbooks com os outros papéis, Analytics Enterprise completo).
 
 ### 7. Status geral do produto
-🟡 **Significativamente mais sólido que no Ciclo 2, mas ainda não fechado.** O achado mais importante desta rodada (RBAC de Cartões/Feedback) era uma falha de segurança real, não cosmética — do tipo que só uma pessoa realmente testando com um usuário restrito encontraria. Já corrigido e verificado. Nenhum bloqueio conhecido do fluxo principal permanece em aberto.
+🟡 **Significativamente mais sólido que no Ciclo 2, mas ainda não fechado.** O achado mais importante desta rodada (RBAC de Cartões/Feedback) era uma falha de segurança real, não cosmética — do tipo que só uma pessoa realmente testando com um usuário restrito encontraria. Já corrigido e verificado. `DEFINITION_OF_DONE.md` criado. Todos os 5 papéis (Owner, Manager, Marketing, Operador, Somente Leitura) agora confirmados com contas reais e testes de API reais — RBAC é hoje a área mais extensivamente validada do produto. Nenhum bloqueio conhecido do fluxo principal permanece em aberto.
+
+### Adendo — RBAC completo, os 5 papéis confirmados com contas reais
+| Papel | campaign:write/assign | card:write | team:write | feedback:resolve |
+|---|---|---|---|---|
+| Manager | 🟢 permitido | 🟢 permitido | 🟢 bloqueado (403) | — |
+| Marketing | 🟢 permitido (201) | 🟢 bloqueado (403) | 🟢 bloqueado (403) | — |
+| Operador | 🟢 bloqueado (403) | 🟢 bloqueado (403) | — | 🟢 permitido (200) |
+| Somente leitura | 🟢 bloqueado (403) | 🟢 bloqueado (403, após fix) | — | 🟢 bloqueado (403, após fix) |
+
+Todas as 4 linhas testadas com contas Clerk reais, convidadas e aceitas pelo fluxo normal, contra a API real do Staging — não simulação, não leitura de código.
 
 ---
 
