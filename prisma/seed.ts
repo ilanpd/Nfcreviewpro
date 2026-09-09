@@ -34,7 +34,13 @@ async function main() {
       whatsapp: "5511999999999",
       googleReviewUrl: "https://g.page/r/bella-vista/review",
       primaryColor: "#0F172A",
-      plan: "PRO",
+      // Business, não Pro — esta seed cria 50+ cartões (Table Map com VIP/
+      // Varanda/Interno) para dar volume real ao Analytics/Playbooks/Heatmap.
+      // Um negócio desse tamanho jamais caberia no limite de 10 cartões do
+      // Pro; deixar em Pro fazia a própria empresa-vitrine do produto
+      // aparecer "acima do limite do próprio plano" — achado real do Gate
+      // Final.
+      plan: "BUSINESS",
       timezone: "America/Sao_Paulo",
     },
   });
