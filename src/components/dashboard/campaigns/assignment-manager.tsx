@@ -36,6 +36,12 @@ interface AssignmentManagerProps {
   canManageStructure: boolean;
   onZoneCreated: (zone: ZoneListItem) => void;
   onBranchCreated: (branch: BranchListItem) => void;
+  /** Lets the campaign list/tab-count outside this drawer stay in sync —
+   * this component owns its own `assignments` list for rendering, but
+   * nothing else observes it otherwise (see the bug this closed: creating
+   * or removing an assignment left the list's "Atribuições" column and the
+   * tab label stuck at the count from when the drawer first opened). */
+  onAssignmentsChange?: (assignments: CampaignAssignmentItem[]) => void;
 }
 
 export function AssignmentManager({
@@ -49,6 +55,7 @@ export function AssignmentManager({
   canManageStructure,
   onZoneCreated,
   onBranchCreated,
+  onAssignmentsChange,
 }: AssignmentManagerProps) {
   const [assignments, setAssignments] = useState(initialAssignments);
   const [scope, setScope] = useState<TargetScope>("COMPANY");
@@ -80,7 +87,11 @@ export function AssignmentManager({
         throw new Error(data.error ?? "Não foi possível criar a atribuição");
       }
       const { assignment } = await res.json();
-      setAssignments((prev) => [...prev, assignment]);
+      setAssignments((prev) => {
+        const next = [...prev, assignment];
+        onAssignmentsChange?.(next);
+        return next;
+      });
       setTargetId("");
       toast.success("Atribuição criada");
     } catch (error) {
@@ -94,7 +105,11 @@ export function AssignmentManager({
     try {
       const res = await fetch(`/api/campaigns/${campaignId}/assignments/${assignmentId}`, { method: "DELETE" });
       if (!res.ok) throw new Error();
-      setAssignments((prev) => prev.filter((a) => a.id !== assignmentId));
+      setAssignments((prev) => {
+        const next = prev.filter((a) => a.id !== assignmentId);
+        onAssignmentsChange?.(next);
+        return next;
+      });
       toast.success("Atribuição removida");
     } catch {
       toast.error("Não foi possível remover a atribuição");

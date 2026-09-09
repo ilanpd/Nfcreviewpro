@@ -455,6 +455,10 @@ export function CampaignBuilderSheet({
                   canManageStructure={canManageStructure}
                   onZoneCreated={onZoneCreated}
                   onBranchCreated={onBranchCreated}
+                  onAssignmentsChange={(next) => {
+                    setAssignments(next);
+                    onSaved({ ...campaign!, _count: { ...campaign!._count, assignments: next.length } });
+                  }}
                 />
               )
             ) : null}
@@ -465,7 +469,12 @@ export function CampaignBuilderSheet({
               loadingRules ? (
                 <p className="text-sm text-muted-foreground">Carregando…</p>
               ) : (
-                <RuleManager campaignId={campaign!.id} initialRules={rules} canManage={canManage} />
+                <RuleManager
+                  campaignId={campaign!.id}
+                  initialRules={rules}
+                  canManage={canManage}
+                  onRulesChange={setRules}
+                />
               )
             ) : null}
           </TabsContent>
@@ -481,6 +490,7 @@ export function CampaignBuilderSheet({
                   campaignName={form.name}
                   initialVariants={variants}
                   canManage={canManage}
+                  onVariantsChange={setVariants}
                 />
               )
             ) : null}

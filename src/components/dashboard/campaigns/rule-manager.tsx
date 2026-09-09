@@ -48,9 +48,12 @@ interface RuleManagerProps {
   campaignId: string;
   initialRules: RuleItem[];
   canManage: boolean;
+  /** Keeps the tab label's count in sync — see the same fix on
+   * AssignmentManager's onAssignmentsChange for the bug this closes. */
+  onRulesChange?: (rules: RuleItem[]) => void;
 }
 
-export function RuleManager({ campaignId, initialRules, canManage }: RuleManagerProps) {
+export function RuleManager({ campaignId, initialRules, canManage, onRulesChange }: RuleManagerProps) {
   const [rules, setRules] = useState(initialRules);
   const [type, setType] = useState<RuleType>("DAY_OF_WEEK");
   const [days, setDays] = useState<number[]>([]);
@@ -89,7 +92,11 @@ export function RuleManager({ campaignId, initialRules, canManage }: RuleManager
         throw new Error(data.error ?? "Não foi possível criar a regra");
       }
       const { rule } = await res.json();
-      setRules((prev) => [...prev, rule]);
+      setRules((prev) => {
+        const next = [...prev, rule];
+        onRulesChange?.(next);
+        return next;
+      });
       toast.success("Regra adicionada");
       setDays([]);
       setDevices([]);
@@ -104,7 +111,11 @@ export function RuleManager({ campaignId, initialRules, canManage }: RuleManager
     try {
       const res = await fetch(`/api/campaigns/${campaignId}/rules/${ruleId}`, { method: "DELETE" });
       if (!res.ok) throw new Error();
-      setRules((prev) => prev.filter((r) => r.id !== ruleId));
+      setRules((prev) => {
+        const next = prev.filter((r) => r.id !== ruleId);
+        onRulesChange?.(next);
+        return next;
+      });
       toast.success("Regra removida");
     } catch {
       toast.error("Não foi possível remover a regra");

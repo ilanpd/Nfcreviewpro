@@ -22,9 +22,19 @@ interface VariantManagerProps {
   campaignName: string;
   initialVariants: VariantItem[];
   canManage: boolean;
+  /** Keeps the tab label's count in sync — see the same fix on
+   * AssignmentManager's onAssignmentsChange for the bug this closes. */
+  onVariantsChange?: (variants: VariantItem[]) => void;
 }
 
-export function VariantManager({ campaignId, campaignType, campaignName, initialVariants, canManage }: VariantManagerProps) {
+export function VariantManager({
+  campaignId,
+  campaignType,
+  campaignName,
+  initialVariants,
+  canManage,
+  onVariantsChange,
+}: VariantManagerProps) {
   const [variants, setVariants] = useState(initialVariants);
   const [name, setName] = useState("");
   const [weight, setWeight] = useState(50);
@@ -50,7 +60,11 @@ export function VariantManager({ campaignId, campaignType, campaignName, initial
         throw new Error(data.error ?? "Não foi possível criar a variante");
       }
       const { variant } = await res.json();
-      setVariants((prev) => [...prev, variant]);
+      setVariants((prev) => {
+        const next = [...prev, variant];
+        onVariantsChange?.(next);
+        return next;
+      });
       toast.success("Variante criada");
       setName("");
       setConfig({});
@@ -65,7 +79,11 @@ export function VariantManager({ campaignId, campaignType, campaignName, initial
     try {
       const res = await fetch(`/api/campaigns/${campaignId}/variants/${variantId}`, { method: "DELETE" });
       if (!res.ok) throw new Error();
-      setVariants((prev) => prev.filter((v) => v.id !== variantId));
+      setVariants((prev) => {
+        const next = prev.filter((v) => v.id !== variantId);
+        onVariantsChange?.(next);
+        return next;
+      });
       toast.success("Variante removida");
     } catch {
       toast.error("Não foi possível remover a variante");
