@@ -1,0 +1,306 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-geist-mono);
+  --font-heading: var(--font-sans);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+
+  /* NFC OS Design Language — tokens da Fase 4.5. Cor/radius/sombra vivem
+     aqui (fonte da verdade em CSS); ver packages/design-tokens/src/index.ts
+     para os equivalentes que só existem em JS (motion do Framer, z-index). */
+  --color-brand: var(--brand);
+  --color-brand-foreground: var(--brand-foreground);
+  --color-brand-subtle: var(--brand-subtle);
+
+  --shadow-subtle: 0 1px 2px oklch(0 0 0 / 0.04);
+  --shadow-elevated: 0 1px 2px oklch(0 0 0 / 0.04), 0 4px 16px oklch(0 0 0 / 0.06);
+  --shadow-premium: 0 2px 4px oklch(0 0 0 / 0.04), 0 16px 40px oklch(0 0 0 / 0.10);
+  --shadow-glow: 0 0 0 1px var(--brand), 0 8px 28px color-mix(in oklch, var(--brand) 38%, transparent);
+
+  --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-enter: cubic-bezier(0, 0, 0.2, 1);
+  --ease-exit: cubic-bezier(0.4, 0, 1, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  --animate-fade-in: fade-in 0.2s var(--ease-enter);
+  --animate-scale-in: scale-in 0.16s var(--ease-spring);
+  --animate-shimmer: shimmer 1.8s ease-in-out infinite;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes scale-in {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
+}
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+:root {
+  /* NFC OS — cor de marca: um violeta-índigo refinado, a única mudança que
+     por si só dá identidade visual a cada botão/link/foco/badge existente,
+     já que todos já apontavam para --primary/--ring. Ver ADR-023. */
+  --brand: oklch(0.549 0.214 279);
+  --brand-foreground: oklch(0.98 0.005 279);
+  --brand-subtle: oklch(0.965 0.02 279);
+
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: var(--brand);
+  --primary-foreground: var(--brand-foreground);
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --accent: var(--brand-subtle);
+  --accent-foreground: oklch(0.35 0.14 279);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.649 0.19 279);
+  --chart-1: var(--brand);
+  --chart-2: oklch(0.7 0.16 200);
+  --chart-3: oklch(0.75 0.18 145);
+  --chart-4: oklch(0.78 0.17 80);
+  --chart-5: oklch(0.65 0.22 20);
+  --radius: 0.625rem;
+  --sidebar: oklch(0.99 0.002 279);
+  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar-primary: var(--brand);
+  --sidebar-primary-foreground: var(--brand-foreground);
+  --sidebar-accent: var(--brand-subtle);
+  --sidebar-accent-foreground: oklch(0.35 0.14 279);
+  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-ring: var(--ring);
+}
+
+.dark {
+  --brand: oklch(0.685 0.19 279);
+  --brand-foreground: oklch(0.145 0.02 279);
+  --brand-subtle: oklch(0.28 0.06 279);
+
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.205 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: var(--brand);
+  --primary-foreground: var(--brand-foreground);
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: var(--brand-subtle);
+  --accent-foreground: oklch(0.9 0.04 279);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: var(--brand);
+  --chart-1: var(--brand);
+  --chart-2: oklch(0.7 0.16 200);
+  --chart-3: oklch(0.75 0.18 145);
+  --chart-4: oklch(0.78 0.17 80);
+  --chart-5: oklch(0.65 0.22 20);
+  --sidebar: oklch(0.19 0.006 279);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: var(--brand);
+  --sidebar-primary-foreground: var(--brand-foreground);
+  --sidebar-accent: var(--brand-subtle);
+  --sidebar-accent-foreground: oklch(0.9 0.04 279);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: var(--brand);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
+  }
+}
+
+@layer utilities {
+  /* Glassmorphism com moderação (ver MANIFESTO_DO_DESIGN.md) — só para
+     superfícies de chrome flutuante (sidebar, popovers, Command Palette),
+     nunca para conteúdo de leitura, onde prejudicaria contraste/legibilidade. */
+  .glass {
+    background-color: color-mix(in oklch, var(--popover) 72%, transparent);
+    backdrop-filter: blur(16px) saturate(1.4);
+    -webkit-backdrop-filter: blur(16px) saturate(1.4);
+  }
+
+  /* Base para o shimmer de Skeleton States — cor 100% via token, nunca
+     hardcoded, para funcionar em claro e escuro sem variante extra. */
+  .skeleton-shimmer {
+    background-image: linear-gradient(
+      100deg,
+      transparent 30%,
+      color-mix(in oklch, var(--foreground) 6%, transparent) 50%,
+      transparent 70%
+    );
+    background-size: 200% 100%;
+    animation: var(--animate-shimmer);
+  }
+
+  /* Um hover "vivo" e consistente para qualquer superfície interativa
+     premium — leve elevação + sombra, nunca movimento brusco. */
+  .hover-lift {
+    transition:
+      transform 0.2s var(--ease-standard),
+      box-shadow 0.2s var(--ease-standard);
+  }
+  .hover-lift:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-elevated);
+  }
+
+  /* Brand Motion System (Fase 10, bônus) — toda empresa ganha uma
+     assinatura visual derivada automaticamente da própria cor de marca,
+     sem nenhuma configuração manual: `var(--brand-primary, var(--brand))`
+     usa a cor da empresa quando dentro de um <BrandProvider> (dashboard,
+     login), e cai de volta na cor de marca padrão do produto fora dele —
+     nunca uma cor hardcoded, nunca uma segunda fórmula por componente. */
+  .brand-glow {
+    transition: box-shadow 0.25s var(--ease-standard);
+  }
+  .brand-glow:hover {
+    box-shadow: 0 0 0 4px color-mix(in oklch, var(--brand-primary, var(--brand)) 16%, transparent);
+  }
+
+  .brand-hover {
+    transition: background-color 0.15s var(--ease-standard);
+  }
+  .brand-hover:hover {
+    background-color: color-mix(in oklch, var(--brand-primary, var(--brand)) 8%, transparent);
+  }
+
+  /* Ripple de marca — ver `components/white-label/brand-ripple.tsx`, que
+     desenha o círculo no ponto do clique via uma variável CSS própria
+     (--ripple-x/--ripple-y), nunca recalculando a cor aqui. */
+  .brand-ripple {
+    position: relative;
+    overflow: hidden;
+  }
+  .brand-ripple::after {
+    content: "";
+    position: absolute;
+    left: var(--ripple-x, 50%);
+    top: var(--ripple-y, 50%);
+    width: 10px;
+    height: 10px;
+    border-radius: 9999px;
+    background: color-mix(in oklch, var(--brand-primary, var(--brand)) 35%, transparent);
+    transform: translate(-50%, -50%) scale(0);
+    opacity: 0;
+    pointer-events: none;
+  }
+  .brand-ripple.is-rippling::after {
+    animation: brand-ripple-pulse 0.6s var(--ease-standard);
+  }
+
+  @keyframes brand-ripple-pulse {
+    0% {
+      transform: translate(-50%, -50%) scale(0);
+      opacity: 0.6;
+    }
+    100% {
+      transform: translate(-50%, -50%) scale(18);
+      opacity: 0;
+    }
+  }
+
+  /* Heatmap Preditivo (Fase 11) — uma mesa "aquecendo" pulsa suavemente,
+     como se o salão respirasse; leve e contínua, nunca chamativa a ponto de
+     distrair de decidir o que fazer com a recomendação. Ver
+     components/dashboard/table-map/table-node.tsx. */
+  .heatmap-breathe {
+    animation: heatmap-breathe-pulse 2.4s ease-in-out infinite;
+  }
+  @keyframes heatmap-breathe-pulse {
+    0%,
+    100% {
+      transform: scale(1);
+      filter: brightness(1);
+    }
+    50% {
+      transform: scale(1.035);
+      filter: brightness(1.08);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .skeleton-shimmer {
+      animation: none;
+      background-image: none;
+      background-color: color-mix(in oklch, var(--foreground) 6%, transparent);
+    }
+    .hover-lift:hover {
+      transform: none;
+    }
+    .brand-ripple.is-rippling::after {
+      animation: none;
+      opacity: 0;
+    }
+    * {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}

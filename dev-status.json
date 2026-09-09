@@ -1,0 +1,424 @@
+{
+  "generatedAt": "2026-09-09",
+  "overallPercent": 85,
+  "phases": [
+    {
+      "id": 0,
+      "name": "Processo e visibilidade",
+      "status": "done",
+      "summary": "ROADMAP.md, PROXIMAS_TAREFAS.md, página /dev"
+    },
+    {
+      "id": 1,
+      "name": "Campaign Resolution Engine",
+      "status": "done",
+      "summary": "Modelos Campaign/CampaignAssignment/RedirectLog, resolvedor desacoplado + cache, /r/[code] ciente de campanhas e 100% retrocompatível"
+    },
+    {
+      "id": 2,
+      "name": "Campaign Manager V2",
+      "status": "done",
+      "summary": "Dashboard de campanhas enterprise, Builder premium com preview ao vivo + UTM, atribuições em 4 níveis (empresa/branch/zona/cartão), camadas de Domínio/Repositório/Serviço, /dev/ceo"
+    },
+    {
+      "id": 3,
+      "name": "Motor de Regras + testes A/B",
+      "status": "done",
+      "summary": "Avaliação de regras em tempo real ciente de fuso horário (dia/hora/data/dispositivo), variantes A/B com peso configurável, RuleExecutionLog, zero custo extra de cache"
+    },
+    {
+      "id": 4,
+      "name": "Multi-unidade + RBAC v2",
+      "status": "done",
+      "summary": "Organization como wrapper opcional acima de Company, RBAC em matriz de 6 papéis, restrição opt-in de acesso por branch/zona, escopo de campanha ORGANIZATION, log de auditoria"
+    },
+    {
+      "id": 5,
+      "name": "Mapa de Mesas",
+      "status": "done",
+      "summary": "Editor de planta baixa estilo Figma para restaurantes — arrastar/zoom/pan/snap/múltipla seleção, atribuição de campanha por arrastar-e-soltar com preview de cor ao vivo (Ghost Mode), indicadores de status e conflito por mesa"
+    },
+    {
+      "id": 4.5,
+      "name": "NFC OS Design Language & Integração de MCPs",
+      "status": "done",
+      "summary": "Tokens de design (cor de marca, tipografia, sombra, motion), pacotes packages/{ui,design-tokens,icons,animations}, 12 componentes premium, Command Palette, dark mode revisado, glassmorphism moderado, /dev e /dev/ceo redesenhados como painel executivo"
+    },
+    {
+      "id": 6,
+      "name": "Live Mode + Heatmap",
+      "status": "done",
+      "summary": "Live Mode via SSE com reconexão/heartbeat, Heatmap Inteligente de 6 camadas, Live Presence, Ghost Mode Evolution (Preview Inteligente + Desfazer), Time Machine + Playback, Command Center em /dev/ceo"
+    },
+    {
+      "id": 7,
+      "name": "Analytics Enterprise",
+      "status": "done",
+      "summary": "5 motores desacoplados, Funil Inteligente, Insights Automáticos, Rankings, Comparativos, Timeline Executiva, Forecast, ROI Mode, exportação CSV/Excel/PDF, Command Center Evolution"
+    },
+    {
+      "id": 8,
+      "name": "Event sourcing + filas + observabilidade",
+      "status": "done",
+      "summary": "Event Bus interno (10 eventos, EventLog durável), Queue Engine BullMQ/Redis (6 filas, dead-letter, idempotência), Worker Engine com drenagem por Cron, Observability Engine (OpenTelemetry + Sentry preparados), Painel de Saúde + Mission Control, Chaos Mode, Event Replay"
+    },
+    {
+      "id": 9,
+      "name": "API pública v1 + SDK + webhooks",
+      "status": "done",
+      "summary": "REST API v1 (ApiKey/escopos, cursor pagination, idempotência com replay), SDK @nfc-os/sdk (não publicado no npm), Webhooks Enterprise (WebhookEndpoint/WebhookDelivery), Dashboard de Desenvolvedor, Playground público /developers"
+    },
+    {
+      "id": 9.5,
+      "name": "Marketplace & Integrações",
+      "status": "planned",
+      "summary": "Registrada como fase futura (não projetada): WhatsApp/Instagram/TikTok/Google Business/Meta Ads/Zapier/Make/n8n/HubSpot/Pipedrive, templates de automação, OAuth, App Directory, SDK de plugins"
+    },
+    {
+      "id": 10,
+      "name": "White Label Enterprise",
+      "status": "done",
+      "summary": "Identidade completa por empresa (logo/favicon/cores/domínio/subdomínio/login), DomainResolver cacheável, BrandProvider central, Theme Studio com preview ao vivo, favicon/OG/manifest dinâmicos, QR/impressão com marca, Brand Motion System, CSP (report-only)/HSTS"
+    },
+    {
+      "id": 11,
+      "name": "Smart Campaign Playbooks",
+      "status": "done",
+      "summary": "Recommendation Center (/dashboard/playbooks) com 7 playbooks declarativos reais, Confidence Engine + Explainability Panel, One-Tap Execution (Ghost Mode + Preview + Desfazer), Scheduler Inteligente, AutoPilot Seguro (4 níveis, confiança >=75% + teto diário), Executive Copilot no Command Center, Heatmap Preditivo"
+    },
+    {
+      "id": 12,
+      "name": "Developer Command Center v2 + Demo OS",
+      "status": "done",
+      "summary": "Dev Runtime permanente (elimina o harness descartável), Demo OS público em /demo (narrativa de 9 momentos, Scenario Engine com 7 cenários, Demo Timeline, White Label Live Switch, Investor Mode), Dev Command Center v2 com Event Explorer/State Inspector/Network Inspector/Visual Event Flow"
+    },
+    {
+      "id": 13,
+      "name": "AI Copilot & Marketplace OS",
+      "status": "planned",
+      "summary": "Registrada como fase futura (não projetada): AI Campaign Copilot, Marketplace, Plugins, Integrações, agentes especializados, automações inteligentes"
+    }
+  ],
+  "modules": [
+    {
+      "name": "Frontend",
+      "status": "done"
+    },
+    {
+      "name": "Backend",
+      "status": "done"
+    },
+    {
+      "name": "Banco (schema)",
+      "status": "in_progress"
+    },
+    {
+      "name": "Prisma",
+      "status": "done"
+    },
+    {
+      "name": "APIs",
+      "status": "done"
+    },
+    {
+      "name": "Dashboard",
+      "status": "done"
+    },
+    {
+      "name": "Campanhas",
+      "status": "done"
+    },
+    {
+      "name": "NFC Engine",
+      "status": "done"
+    },
+    {
+      "name": "Rule Engine",
+      "status": "done"
+    },
+    {
+      "name": "Mapa de Mesas",
+      "status": "done"
+    },
+    {
+      "name": "Design System",
+      "status": "done"
+    },
+    {
+      "name": "Live Mode + Heatmap",
+      "status": "done"
+    },
+    {
+      "name": "Analytics Enterprise",
+      "status": "done"
+    },
+    {
+      "name": "Event Sourcing + Filas + Observabilidade",
+      "status": "done"
+    },
+    {
+      "name": "API Pública v1 + SDK + Webhooks",
+      "status": "done"
+    },
+    {
+      "name": "White Label Enterprise",
+      "status": "done"
+    },
+    {
+      "name": "Smart Campaign Playbooks",
+      "status": "done"
+    },
+    {
+      "name": "Demo OS & Dev Command Center v2",
+      "status": "done"
+    }
+  ],
+  "architecture": [
+    {
+      "name": "Campaign Resolution Engine",
+      "description": "Pipeline desacoplado NFC Asset → Resolver → Campanha → Destino, cache em 3+1 camadas independentes, latência como requisito de design desde a Fase 1"
+    },
+    {
+      "name": "RBAC v2",
+      "description": "Matriz de permissões (não hierarquia) sobre 6 papéis, com restrição opt-in por unidade/zona e log de auditoria nas mutações de alto valor"
+    },
+    {
+      "name": "Mapa de Mesas",
+      "description": "Editor visual com canvas próprio (pan/zoom/seleção/drag), reaproveitando a ordenação do motor de resolução para o preview de status, sem duplicar o motor"
+    },
+    {
+      "name": "NFC OS Design Language",
+      "description": "Tokens centralizados + 12 componentes premium sobre shadcn/ui, organizados como pacotes com alias de import (packages/{ui,design-tokens,icons,animations}), não um monorepo real — ver ADR-022"
+    },
+    {
+      "name": "Live Mode + Heatmap",
+      "description": "SSE com polling de banco (não WebSocket — ver ADR-025), Heatmap Engine desacoplado do motor de resolução, Time Machine honesto sobre RedirectLog (ver ADR-026), Command Center reaproveitando toda a arquitetura numa única tela (ver ADR-027)"
+    },
+    {
+      "name": "Analytics Enterprise",
+      "description": "5 motores desacoplados (Analytics/Insights/Forecast/Ranking/Export Engine) sobre RedirectLog/RatingEvent/Visit/AuditLog; Insights Automáticos são um motor de regras determinístico, não um LLM; campanha nunca é comparada por avaliação, só por uso (ver ADR-030); ROI Mode nunca estima com dado parcial (ver ADR-029)"
+    },
+    {
+      "name": "Event Sourcing + Filas + Observabilidade",
+      "description": "Event Bus (EventLog durável, sem FK — ver ADR-032) + Queue Engine (BullMQ/Redis, drenagem por Cron em serverless — ver ADR-033) + Observability Engine (OpenTelemetry/Sentry honestos sobre o que está de fato conectado — ver ADR-034) + Chaos Engine (custo zero em produção — ver ADR-035), nenhum conhecendo os detalhes internos dos outros, só seus contratos"
+    },
+    {
+      "name": "API Pública v1",
+      "description": "src/app/api/v1/** isolado das rotas internas, autenticação por ApiKey/escopos (nunca sessão), paginação por cursor, idempotência com replay de resposta, envelope de erro único — tudo centralizado em lib/api-v1/handler.ts (ver ADR-036); Webhooks Enterprise com nomes de evento público desacoplados dos internos (ver ADR-037); SDK real e completo, não publicado no npm (ver ADR-038)"
+    },
+    {
+      "name": "White Label Enterprise",
+      "description": "DomainResolver cacheável por Host (raiz/subdomínio/domínio verificado — ver ADR-042, rodando nas páginas de login, nunca no middleware/Edge Runtime) + BrandProvider central em runtime (ver ADR-040) + Assets Inteligentes dinâmicos (favicon/OG/manifest — ver ADR-043) + QR/Impressão com contraste seguro e sem canvas (ver ADR-044), nenhum reescrevendo componentes já estáveis"
+    },
+    {
+      "name": "Smart Campaign Playbooks",
+      "description": "Catálogo declarativo global (Playbook: 7 gatilhos x 4 ações, ver ADR-048) + Confidence Engine determinístico + 4 motores desacoplados (playbook/recommendation/execution/automation-engine) reaproveitando Event Bus/Queue Engine/Analytics/Heatmap/Ghost Mode existentes; loop de automação fechado estruturalmente via limite de assinatura de fila (ver ADR-050); AutoPilot com confiança minima + teto diário (ver ADR-049)"
+    },
+    {
+      "name": "Demo OS & Self-Healing Development",
+      "description": "Dev Runtime (DEV_RUNTIME=1) elimina o bypass manual de Clerk (ver ADR-052); Scenario Engine gera dados reais via os mesmos motores do produto, nunca um estado fabricado (ver ADR-053); Dev Command Center v2 compõe o Reliability Engine da Fase 8 em vez de recalculá-lo (ver ADR-055); nenhum banco embarcado foi construído, decisão de escopo deliberada (ver ADR-054)"
+    }
+  ],
+  "qualityGates": [
+    {
+      "name": "tsc --noEmit",
+      "passing": true
+    },
+    {
+      "name": "eslint",
+      "passing": true
+    },
+    {
+      "name": "prisma validate",
+      "passing": true
+    },
+    {
+      "name": "npm run build",
+      "passing": true
+    }
+  ],
+  "changelog": [
+    {
+      "date": "2026-09-07",
+      "phase": null,
+      "text": "MVP: estrutura SaaS multi-tenant — Next.js 15, Prisma 7 (driver adapters), Clerk, Upstash, fluxo completo de avaliação por estrelas, dashboard, landing page"
+    },
+    {
+      "date": "2026-09-08",
+      "phase": 0,
+      "text": "Adicionados ROADMAP.md, TASKS.md e o dashboard de status /dev"
+    },
+    {
+      "date": "2026-09-08",
+      "phase": 1,
+      "text": "Adicionado o Campaign Resolution Engine: modelos Campaign/CampaignAssignment/RedirectLog, resolvedor desacoplado e cacheável, /r/[code] agora resolve via o motor sem nenhuma mudança de comportamento para empresas sem campanhas"
+    },
+    {
+      "date": "2026-09-08",
+      "phase": 2,
+      "text": "Adicionado o Campaign Manager V2: dashboard enterprise, Builder premium (seletor visual de destino, preview ao vivo ciente de UTM, captura de recorrência), atribuições em 4 níveis (empresa/branch/zona/cartão) sobre um novo modelo mínimo de Branch/Zone, camadas de Domínio/Repositório/Serviço, visão executiva /dev/ceo, seed de demo Bella Vista"
+    },
+    {
+      "date": "2026-09-08",
+      "phase": 3,
+      "text": "Adicionado o Motor de Regras em tempo real: avaliação de dia/hora/data/dispositivo (Intl nativa, sem biblioteca de datas), a recorrência da Fase 2 agora de fato aplicada pelo mesmo caminho de regras, variantes A/B com peso configurável, RuleExecutionLog, entrada oficial no ROADMAP para uma futura Fase 4.5 de design system"
+    },
+    {
+      "date": "2026-09-08",
+      "phase": null,
+      "text": "Institucionalizado o Architect Review como regra permanente (ROADMAP.md) e criado ARCHITECTURE_DECISIONS.md (ADR-001 a ADR-012 escritas retroativamente) antes de iniciar a Fase 4"
+    },
+    {
+      "date": "2026-09-08",
+      "phase": 4,
+      "text": "Adicionado Multi-unidade + RBAC v2: Organization como wrapper opcional acima de Company, RBAC em matriz de 6 papéis substituindo Owner/Admin/Staff, restrição opt-in de branch/zona via UserAccessScope, escopo de campanha ORGANIZATION com camada de cache própria, AuditLog para mutações de alto valor. O Architect Review encontrou e corrigiu 3 gaps reais antes da entrega: verificações requireRole desatualizadas restantes do sistema de papéis antigo em toda rota de campanha/equipe/branch/zona/empresa, falta de verificação de escopo de acesso em atribuição de campanha CARD/COMPANY/ORGANIZATION, e o escopo ORGANIZATION herdando a race condition de unicidade por colunas NULL da Fase 2"
+    },
+    {
+      "date": "2026-09-08",
+      "phase": null,
+      "text": "Roadmap reprioritizado: o Mapa de Mesas (Fase 5) passa a rodar antes do Design System (Fase 4.5), para que o design se construa sobre componentes reais em vez de adivinhá-los. Também institucionalizado o Product Review como regra permanente ao lado do Architect Review"
+    },
+    {
+      "date": "2026-09-08",
+      "phase": 5,
+      "text": "Adicionado o Mapa de Mesas: um editor de planta baixa estilo Figma para restaurantes com arrastar/zoom/pan/snap em grade/múltipla seleção/renomear inline/duplicar, atribuição de campanha por arrastar-e-soltar (mesa única, seleção em lote, ou zona/empresa inteira) com preview de cor ao vivo Ghost Mode antes da soltura, indicadores de status e conflito por mesa, e um pulso de confirmação de soltura. O Architect Review encontrou e corrigiu 2 gaps reais: seleção de mesa incorretamente travada atrás de card:write em vez de também alcançável por campaign:assign (bloqueando usuários Marketing do fluxo de atribuição em lote que deveriam ter), e a verificação de unicidade de atribuição de campanha — presumida completa após a Fase 4 — na verdade deixava os escopos CARD/ZONE/BRANCH expostos ao mesmo gap de colunas NULL do Postgres que COMPANY/ORGANIZATION, um bug latente desde a Fase 2, agora fechado para todo escopo"
+    },
+    {
+      "date": "2026-09-08",
+      "phase": null,
+      "text": "Regra Permanente nº 1 institucionalizada: português brasileiro como idioma oficial de toda a documentação do projeto a partir de agora — ROADMAP.md, DECISOES_DE_ARQUITETURA.md (renomeado de ARCHITECTURE_DECISIONS.md), PROXIMAS_TAREFAS.md (renomeado de TASKS.md), RELATORIO_FASE_1.md a RELATORIO_FASE_5.md (renomeados, conteúdo histórico mantido em inglês com nota explicativa), e todo relatório a partir da Fase 4.5"
+    },
+    {
+      "date": "2026-09-08",
+      "phase": 4.5,
+      "text": "Adicionado o NFC OS Design Language: cor de marca própria (violeta-índigo) e tokens de tipografia/sombra/motion/z-index centralizados; packages/{ui,design-tokens,icons,animations} como pastas com alias de import (não um monorepo — ver ADR-022); 12 componentes premium (Cards KPI/Analytics/Campanha/Zona/Mesa/Organização, Modal/Drawer/Popover Premium, Command Palette, Empty States, Skeleton States, Timeline, Activity Feed, Heatmap Card, Badge Inteligente, Avatar Stack, Permission Matrix); glassmorphism moderado em superfícies de chrome; motion system com respeito automático a prefers-reduced-motion; /dev e /dev/ceo redesenhados como painel executivo com arquitetura, contagem de ADRs ao vivo, quality gates e timeline animada. Nenhum MCP de design (Shadcn UI MCP, Magic UI MCP, Design MCP, Shadcn Space) estava conectado neste ambiente — tudo construído à mão, com instruções de instalação documentadas em ROADMAP.md para quando o usuário quiser conectar um depois"
+    },
+    {
+      "date": "2026-09-08",
+      "phase": null,
+      "text": "Instituída a Demo First como terceira regra de processo permanente (ao lado do Architect Review e do Product Review), com 5 perguntas obrigatórias em todo relatório de fase a partir de agora — ver ROADMAP.md"
+    },
+    {
+      "date": "2026-09-08",
+      "phase": 6,
+      "text": "Adicionado Live Mode + Heatmap: Live Mode via SSE com reconexão exponencial/heartbeat/indicador de conexão (ver ADR-025 para por que SSE, não WebSocket real, neste alvo de deploy serverless); Heatmap Inteligente de 6 camadas desacoplado do motor de resolução; Live Presence reaproveitando o pulso de confirmação já existente da Fase 5; Ghost Mode Evolution com Preview Inteligente (contagem, mesas afetadas, estimativa de impacto real) e Desfazer (ver ADR-028); Time Machine reconstruindo o passado honestamente a partir de RedirectLog, sem fingir um histórico de atribuições que o schema não tem (ver ADR-026); Playback Mode opcional reaproveitando o mesmo pipeline de eventos; Command Center em /dev/ceo compondo toda a arquitetura já existente numa única tela, com um pequeno par de rotas somente-leitura escopadas à empresa de demonstração como única exceção arquitetural (ver ADR-027); seed da Bella Vista passou a gerar atividade sintética para essas telas não abrirem vazias"
+    },
+    {
+      "date": "2026-09-08",
+      "phase": null,
+      "text": "Instituída a Revenue Review como quarta regra de processo permanente (ao lado de Architect/Product/Demo First), com 5 perguntas obrigatórias em todo relatório de fase a partir de agora — ver ROADMAP.md"
+    },
+    {
+      "date": "2026-09-08",
+      "phase": 7,
+      "text": "Adicionado Analytics Enterprise: 5 motores desacoplados (Analytics/Insights/Forecast/Ranking/Export Engine); KPIs executivos com receita estimada (ROI Mode); Funil Inteligente escopado ao fluxo de avaliação; Insights Automáticos via motor de regras determinístico (não LLM); Ranking Inteligente de campanha/zona/mesa/funcionário/horário/dia; comparativos hoje/semana/mês automáticos; Timeline Executiva integrada ao Time Machine da Fase 6; Forecast linear de meta de avaliações; ROI Mode com fórmula exposta na UI; exportação CSV/Excel (exceljs)/PDF (@react-pdf/renderer, sem headless browser); Command Center Evolution com funil/ranking/timeline/forecast vivos. Um limite estrutural real foi descoberto e corrigido durante o próprio desenho: campanhas nunca passam pelo fluxo de estrelas neste modelo de dados, então nenhuma comparação de campanha usa avaliações, só toques (ver ADR-030)"
+    },
+    {
+      "date": "2026-09-08",
+      "phase": null,
+      "text": "Instituída a Reliability Review como quinta regra de processo permanente (ao lado de Architect/Product/Demo First/Revenue), com 6 perguntas obrigatórias em todo relatório de fase a partir de agora — ver ROADMAP.md"
+    },
+    {
+      "date": "2026-09-08",
+      "phase": 8,
+      "text": "Adicionado Event sourcing + filas + observabilidade: Event Bus interno com 10 eventos de domínio tipados (EventLog durável, sem foreign key — ver ADR-032), publicados nos pontos reais de mutação (campanhas/zonas/cartões/organização na camada de rota, toques/avaliações/feedback dentro do Resolution Engine e dos serviços públicos via after()); Queue Engine com 6 filas BullMQ/Redis (retry exponencial, dead-letter, idempotência) rodando em serverless via drenagem por tempo limitado acionada por Vercel Cron (ver ADR-033); Worker Engine com Circuit Breaker no webhook (HMAC-SHA256) e stubs honestos de WhatsApp/e-mail; Observability Engine com OpenTelemetry e Sentry reais, ambos honestos sobre não terem coletor/projeto configurado neste ambiente (ver ADR-034); Painel de Saúde e Mission Control em /dev/ceo mostrando o estado real desses módulos; Chaos Mode com 5 flags e custo zero em produção (ver ADR-035); Event Replay que reenfileira sem duplicar a trilha de auditoria; rate limit por organização protegendo o Queue Engine compartilhado. Achado e corrigido antes da entrega: duas rotas de diagnóstico (/api/dev/load-simulator, /api/dev/replay) não tratavam erro na camada de rota, retornando 500 com corpo vazio em vez de um JSON tratável — corrigido para usar handleApiError, confirmado via verificação interativa contra um Postgres genuinamente inalcançável"
+    },
+    {
+      "date": "2026-09-09",
+      "phase": null,
+      "text": "Instituídas a Platform First Review como sexta regra de processo permanente (ao lado de Architect/Product/Demo First/Revenue/Reliability), e duas regras permanentes de engenharia: WOW Factor Review e Zero Dívida Silenciosa — ver ROADMAP.md"
+    },
+    {
+      "date": "2026-09-09",
+      "phase": 9,
+      "text": "Adicionada a API Pública v1: REST API (/api/v1/**) com autenticação por ApiKey/escopos granulares, paginação por cursor, idempotência com replay de resposta e proteção contra corrida concorrente, envelope de erro único — tudo centralizado num único wrapper (ver ADR-036); 10 recursos públicos (cards, campaigns+assignments, zones, branches, organizations, analytics, events, feedback, webhooks+deliveries), todos reaproveitando os serviços internos já existentes; nova permissão RBAC developers:manage; Webhooks Enterprise substituindo o par único Company.webhookUrl/webhookSecret da Fase 8 por N WebhookEndpoint por empresa com nomes de evento público desacoplados dos internos (ver ADR-037); SDK oficial @nfc-os/sdk completo mas não publicado no npm (ver ADR-038); Dashboard de Desenvolvedor (/dashboard/developers) e Playground público (/developers) com Explorador de API ao vivo contra a Bella Vista. Achado e corrigido antes da entrega: Branch/Zone nunca tiveram capacidade de rename, nem no dashboard interno — adicionado a ambas as superfícies. Preparação (não implementação) registrada para a Fase 10 White Label: Company.faviconUrl adicionado, Company.domain (já existente e sem nenhum uso) documentado (ver ADR-039). Fase 9.5 (Marketplace & Integrações) registrada em ROADMAP.md como fase futura, a pedido explícito, sem projeto nem implementação"
+    },
+    {
+      "date": "2026-09-09",
+      "phase": null,
+      "text": "Instituídas a Enterprise Brand Review e a Franchise First Review como sétima/oitava regras de processo permanente (ao lado de Architect/Product/Demo First/Revenue/Reliability/Platform First), e uma terceira regra permanente de engenharia: Luxury UX — ver ROADMAP.md"
+    },
+    {
+      "date": "2026-09-09",
+      "phase": 10,
+      "text": "Adicionado White Label Enterprise: identidade completa por empresa (Company ganhou secondaryColor/domainVerifiedAt/domainVerificationToken/loginHeadline/loginBackgroundUrl, além de faviconUrl/domain já preparados na Fase 9); DomainResolver cacheável resolvendo Host→marca (raiz/subdomínio via slug/domínio customizado só quando verificado via DNS-over-HTTPS real — ver ADR-042); BrandProvider como único ponto de verdade de branding em runtime, sem reescrever componentes estáveis como AppSidebar (ver ADR-040); login com marca própria via appearance do Clerk, autenticação nunca duplicada (ver ADR-041); favicon/OG/manifest dinâmicos via next/og, favicon.ico estático removido (ver ADR-043); QR Code sempre com contraste seguro checado (ensureScannableDark); Impressão Profissional em 5 formatos físicos reais via @react-pdf/renderer, sem canvas/sharp (ver ADR-044); Theme Studio (/dashboard/branding) com preview ao vivo (dashboard/login/QR/6 mockups físicos 2D) sem salvar primeiro; Brand Motion System (glow/ripple derivados automaticamente da cor da marca); primeiro CSP do produto (report-only, via Clerk) e HSTS real (ver ADR-045); preparação registrada (não implementada) para as Fases 11/12/13 (ver ADR-046), incluindo o registro da nova Fase 13 (AI Copilot & Marketplace OS). Achado e corrigido antes da entrega, um erro real de build: a primeira versão do DomainResolver importava o Prisma dentro de middleware.ts, que roda só em Edge Runtime (sem suporte a node:crypto/fs) — corrigido movendo a resolução para as páginas de login/cadastro (Server Components, runtime Node)"
+    },
+    {
+      "date": "2026-09-09",
+      "phase": null,
+      "text": "Instituída a Autonomy Review como nono processo de revisão obrigatório (ao lado de Architect/Product/Demo First/Revenue/Reliability/Platform First/Enterprise Brand/Franchise First), e duas novas regras permanentes de engenharia: Explainability First e One-Tap Execution — ver ROADMAP.md"
+    },
+    {
+      "date": "2026-09-09",
+      "phase": 11,
+      "text": "Adicionado Smart Campaign Playbooks: catálogo declarativo global de 7 playbooks reais (Happy Hour Boost, Google Review Recovery, Instagram Momentum, VIP Table Recovery, Silent Zone Rescue, Lunch Rush Optimization, Weekend Accelerator) sobre um vocabulário fixo de 7 PlaybookTriggerType/4 PlaybookActionType (ver ADR-048); Confidence Engine determinístico (amostra + efeito + atualidade, sempre auditável); Recommendation Center (/dashboard/playbooks) com cartões premium (impacto/confiança/tempo/evidência) e Explainability Panel; One-Tap Execution reaproveitando o Ghost Mode do Mapa de Mesas (preview de impacto, nunca execução silenciosa, Desfazer sempre disponível); Scheduler Inteligente (agora/depois/repetir/pausar) via delay/Job Scheduler nativos do BullMQ, sem infraestrutura nova; AutoPilot Seguro em 4 níveis, com confiança minima de 75% e teto diário de execuções protegendo qualquer nível que aja sozinho (ver ADR-049); Executive Copilot (coluna Próximas melhores ações no Command Center) através da única rota de escrita que /dev/ceo já teve, uma exceção estreita e documentada a ADR-027 (ver ADR-051); Heatmap Preditivo (tendência aquecendo/esfriando por mesa, reaproveitando a mesma rota /api/heatmap). Achado e fechado antes da entrega, sob Architect Review: risco de loop infinito de automação (aplicar um playbook publica eventos que poderiam reavaliar gatilhos) — fechado estruturalmente, a fila de avaliação nunca escuta eventos que a própria execução de playbook produz (ver ADR-050)."
+    },
+    {
+      "date": "2026-09-09",
+      "phase": null,
+      "text": "Instituída a Demo OS Review como nono processo de revisão obrigatório (ao lado de Architect/Product/Demo First/Revenue/Reliability/Platform First/Enterprise Brand/Franchise First/Autonomy), e duas novas regras permanentes de engenharia: Self-Healing Development e Zero Fake Demo — ver ROADMAP.md"
+    },
+    {
+      "date": "2026-09-09",
+      "phase": 12,
+      "text": "Adicionado Developer Command Center v2 + Demo OS: Dev Runtime permanente (DEV_RUNTIME=1) elimina de vez a necessidade de editar middleware.ts/layout.tsx para testar — getAuthContext() resolve para um usuário real semeado sem chamar o Clerk quando ativo (ver ADR-052); Scenario Engine com 7 cenários reais que criam dados genuínos e chamam os motores existentes, nunca um estado fabricado (ver ADR-053); Demo OS público em /demo (narrativa de 9 momentos: hero, mapa vivo, eventos, KPIs, heatmap respirando, playbooks, AutoPilot, ROI, White Label), com Demo Timeline (usePlayback estendido com velocidade e salto para momentos importantes), White Label Live Switch (Bella Vista/Sushi House/Nova Steakhouse, nomes fictícios) e Investor Mode (/demo/investor, avanço automático); Dev Command Center v2 (/dev/command-center) compondo o Reliability Engine da Fase 8 com webhooks/playbooks/AutoPilot/cenário atual (ver ADR-055), Event Explorer dedicado (payload/correlação/duração/replay), State Inspector e Network Inspector como painéis, Visual Event Flow com partículas reais. Nenhum banco embarcado/em memória foi construído — decisão de escopo deliberada, o gargalo real era sempre autenticação, não persistência (ver ADR-054). Achado e corrigido durante a própria construção: /demo tentava pré-renderizar estaticamente no build de produção — corrigido com force-dynamic."
+    }
+  ],
+  "nextTask": "Aguardando aprovação para iniciar a Fase 13 — AI Copilot & Marketplace OS",
+  "knownRisks": [
+    "Nenhum histórico em prisma/migrations/ ainda existe — o banco Supabase real precisa ser baseado antes do primeiro `prisma migrate dev` (ver RELATORIO_FASE_1.md). A renomeação do enum Role na Fase 4 é outra mudança que quebra compatibilidade e que esse baseline precisa considerar, assim como a renomeação active->status da Fase 2",
+    "Latência de resolução sub-100ms é uma meta de design, não medida — sem Postgres/Redis reais neste sandbox de desenvolvimento",
+    "Escritas de RedirectLog/RuleExecutionLog via after() são best-effort, não duráveis — aceitável para uma trilha de auditoria leve, não um substituto para event sourcing de verdade (Fase 8)",
+    "Ainda não há seletor de fuso horário em Configurações — Company.timezone tem padrão America/Sao_Paulo para toda empresa, usado por toda avaliação de Regra",
+    "Regras se combinam só com AND — sem OR/grupos de regra ainda",
+    "AuditLog só captura mutações feitas através de uma rota autenticada do dashboard — um futuro script/worker de fila chamando uma função de serviço diretamente não seria registrado (ver ADR-017)",
+    "Ainda não há UI para adicionar uma empresa adicional a uma Organization já existente — a Fase 4 lança a criação de uma nova organização a partir de uma empresa que não tem nenhuma",
+    "A atribuição de campanha por arrastar-e-soltar do Mapa de Mesas usa HTML5 Drag and Drop nativo, sem equivalente touch — não funciona em tablet, um dispositivo realista para um gerente de restaurante no salão (ver não-objetivos do ROADMAP.md)",
+    "O preview de status do Mapa de Mesas mostra o que está configurado, não uma visão em tempo real do cliente — não avalia condições de dia/hora/data/dispositivo de Rule (ver ADR-020)",
+    "Ainda não há UI para redimensionar/rotacionar mesas no mapa — o schema/API já suportam, nada no canvas expõe isso interativamente",
+    "packages/{ui,design-tokens,icons,animations} são pastas com alias de import, não pacotes npm publicáveis/versionáveis de verdade — conversão real para workspaces só se justifica com um segundo consumidor de verdade (ver ADR-022)",
+    "Nenhum MCP de design estava conectado neste ambiente durante a Fase 4.5 — instruções de instalação manual em ROADMAP.md ('Integração de MCPs')",
+    "Este projeto não tem suíte de testes automatizados — 'qualidade' hoje significa os 4 quality gates (tsc/eslint/prisma validate/build) mais verificação interativa manual via harness temporário, não cobertura de testes numérica",
+    "Live Mode é SSE com polling de banco a cada 2s, não WebSocket real — latência mínima de até 2s para um evento aparecer, aceitável hoje mas revisitar se o volume de empresas/conexões um dia justificar infraestrutura dedicada (ver ADR-025)",
+    "Time Machine reconstrói o passado a partir de RedirectLog (a última campanha que cada mesa realmente serviu), não um histórico exato de atribuições — o schema não tem versionamento de CampaignAssignment. A consulta também é limitada a 3000 linhas mais recentes por empresa; uma mesa raramente tocada numa operação muito grande pode não aparecer no snapshot (ver ADR-026)",
+    "O Command Center em /dev/ceo precisou de um pequeno par de rotas somente-leitura (/api/dev/demo/*) escopadas fixas à empresa de demonstração, já que essa tela nunca teve sessão real por trás — a única duplicação de rota desta fase, nunca de lógica de serviço (ver ADR-027), e desligada em produção",
+    "Nenhuma campanha aparece em ranking/insight por avaliações geradas — o modelo de dados não permite essa atribuição honesta (campanhas nunca passam pelo fluxo de estrelas). Rankings/insights de campanha usam toques (uso), não conversão (ver ADR-030)",
+    "ROI Mode, custo por avaliação e ROI da campanha são estimativas configuradas pelo próprio empresário — não há integração de gasto de anúncio nem confirmação de receita real (ver ADR-029)",
+    "Forecast Inteligente é uma projeção linear simples (taxa diária recente), não um modelo estatístico com sazonalidade — sempre rotulado como estimativa",
+    "Exportação em PDF usa @react-pdf/renderer (sem headless browser) — suficiente para um relatório executivo de texto/tabelas, não para embutir os gráficos interativos do dashboard como imagens vetoriais complexas (ver ADR-031)",
+    "Command Center Evolution atualiza funil/ranking/timeline/forecast por polling a cada 30s, não por push instantâneo como os eventos do Live Mode",
+    "Nenhum coletor real de OpenTelemetry nem projeto Sentry real está configurado neste ambiente — ambos os SDKs rodam de verdade, exportando para console/no-op até uma conta real existir (ver ADR-034)",
+    "Um Worker do BullMQ não fica sempre ativo em produção serverless — processa em ciclos de ~45s acionados por Vercel Cron a cada minuto; um job pode esperar até ~1 minuto antes de ser pego (ver ADR-033)",
+    "Chaos Mode simula falha só nos módulos que a Fase 8 construiu (Redis/fila/worker/webhook) — não simula o próprio Postgres fora do ar nem outra infraestrutura fora do escopo desta fase",
+    "'Traces ativos' não existe como métrica honesta sem um coletor real — o Mission Control mostra 'spans registrados nos últimos ~2 minutos' (já finalizados), nunca requisições em andamento (ver ADR-034)",
+    "/dev/ceo/mission-control e /dev/ceo/command-center exigem a empresa de demonstração num Postgres alcançável — sem banco real conectado, a página inteira falha (mesma limitação já aceita desde a Fase 6 para o Command Center, não uma regressão desta fase)",
+    "Rate limit por organização (queueRouting) protege só o roteamento de eventos para filas, não o redirecionamento público em si nem nenhuma outra rota",
+    "@nfc-os/sdk não está publicado no npm — código real e completo, sem conta/pipeline de publicação configurados neste ambiente; usável hoje só de dentro deste monorepo ou copiando packages/sdk/src (ver ADR-038)",
+    "Nem todo evento do Event Bus tem um nome público de webhook — ZonaAtualizada/MesaAtualizada continuam internos, não assináveis por um WebhookEndpoint (ver ADR-037)",
+    "A API pública v1 não tem um limite de taxa por organização mais amplo que o de cada ApiKey individual — várias chaves de uma mesma organização somam capacidade em vez de compartilhar um teto",
+    "O Playground em /developers só executa chamadas de leitura (chave de demonstração sem escopo de escrita) — por design, não uma limitação técnica",
+    "Este produto não tem o conceito de chave de API 'de teste' separada de 'live' (ao contrário da Stripe) — toda ApiKey criada age imediatamente sobre dados reais da empresa, dentro do escopo escolhido",
+    "/dashboard/developers não é verificável interativamente neste sandbox (exige Clerk + Postgres reais) — mesma limitação de todo /dashboard/* desde a Fase 1, não uma regressão da Fase 9",
+    "Branding é por Company, não por Organization — uma franquia com várias empresas não tem hoje um jeito de compartilhar UMA marca entre todas pela UI (ver ADR-042)",
+    "Verificação de domínio confirma posse via DNS TXT, mas apontamento de CNAME e emissão de SSL continuam manuais, do lado da hospedagem — nenhum dos dois é algo que código sozinho resolve sem uma conta de produção real (ver ADR-042)",
+    "Mockups físicos no Theme Studio (mesa/balcão/vitrine/porta/quarto/cartão) são ilustrações 2D em CSS, nunca renders 3D fotorrealistas (ver ADR-044)",
+    "QR/impressão não compõem um logo DENTRO do QR code (sem sharp/canvas instalado) — o logo aparece ao lado, nunca sobreposto",
+    "O primeiro CSP deste produto está em modo report-only — reporta violações, não bloqueia nada ainda (ver ADR-045)",
+    "HSTS está ligado sem o flag preload — preload exige submissão manual a hstspreload.org contra o domínio real de produção",
+    "Nenhuma linha de código de IA existe neste produto — a preparação da Fase 10 para Fases 11/13 foi reconhecer que a API v1/SDK da Fase 9 já servem de interface para um futuro agente, não escrever chamadas a um modelo de linguagem (ver ADR-046)",
+    "/dashboard/branding não é verificável interativamente neste sandbox pela mesma razão de todo /dashboard/* (exige Clerk + Postgres reais) — verificado via build limpo e revisão de código",
+    "Tema escuro (\"claro e escuro\" da identidade de marca) não foi entregue: o produto nunca teve dark mode de verdade ligado (forcedTheme=\"light\" já era assim antes desta fase) — o cálculo de cor do BrandProvider é agnóstico a tema, mas nenhuma tela escura foi construída/verificada (ver ADR-047)",
+    "Playbook não tem tela própria de autoria/edição — o catálogo é semeado (prisma/seed.ts), editável só via banco; um playbook novo dentro do vocabulário existente é uma linha de seed, não uma tela.",
+    "PlaybookActionType.ASSIGN_CAMPAIGN_TO_SCOPE está implementado mas nenhum dos 7 playbooks semeados o usa hoje — um ponto de extensão pronto, não exercitado ainda.",
+    "O Scheduler Inteligente (repetir) só permite ações idempotentes (atribuir/criar) — BOOST_CAMPAIGN_PRIORITY/PAUSE_CAMPAIGN nunca podem repetir, para nunca compor um aumento de prioridade sem limite (ver ADR-050).",
+    "/api/playbooks/evaluate varre TODAS as empresas em sequência a cada execução de Cron — simples e honesto para a escala real de hoje, não otimizado para milhares de empresas ainda.",
+    "AutoPilot é uma configuração por empresa, não por playbook individual — todo playbook safeForAutomation=true segue o mesmo nível escolhido pela empresa.",
+    "/dashboard/playbooks e a coluna Executive Copilot do Command Center não são verificáveis interativamente de ponta a ponta neste sandbox (exigem Clerk + Postgres reais) — mesma limitação de todo /dashboard/* e /dev/ceo/* desde fases anteriores, não uma regressão desta fase.",
+    "Dos 7 playbooks semeados, só Happy Hour Boost e VIP Table Recovery têm dados sintéticos deliberadamente enviesados para disparar de forma determinística na demo — os outros 5 dependem do padrão aleatório dos dados sintéticos gerados a cada seed, honestamente.",
+    "Nenhum banco de dados embarcado/em memória foi construído para o Dev Runtime — sem um Postgres real configurado, páginas que dependem de dados continuam falhando no mesmo ponto de sempre (ver ADR-052/ADR-054).",
+    "O Scenario Engine deixa dados sintéticos permanentes na empresa de demonstração a cada execução — sem limpeza/expiração automática.",
+    "O Visual Event Flow mostra até onde um TIPO de evento normalmente chega num mapa fixo — não rastreia o caminho real de UM evento específico através das filas (exigiria tracing distribuído que este produto não tem).",
+    "AutoPilot no cenário \"AutoPilot trabalhando\" muda o nível da empresa de demonstração para AUTOMATIC permanentemente até ser mudado de volta manualmente — um efeito colateral do cenário, documentado, não escondido.",
+    "/demo, /demo/investor e /dev/command-center não são verificáveis interativamente de ponta a ponta neste sandbox (exigem um Postgres real) — mesma limitação de todo /dashboard/*//dev/ceo/* desde fases anteriores, não uma regressão desta fase."
+  ]
+}

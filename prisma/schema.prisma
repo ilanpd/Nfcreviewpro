@@ -1,0 +1,975 @@
+// NFC Review Pro — Prisma schema
+// Multi-tenant model: every row that belongs to a company carries a
+// `companyId`, including tables nested two levels deep (Visit, RatingEvent,
+// PrivateFeedback). This denormalization is deliberate: it lets every
+// analytics/list query filter directly on companyId instead of joining
+// through NFCCard, which keeps tenant isolation a one-line `where` clause
+// everywhere instead of something that can be forgotten in a nested join.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+// Connection URLs live in prisma7.config.ts (CLI/migrations) and in the
+// PrismaPg adapter passed to `new PrismaClient()` (app runtime) — Prisma 7
+// no longer reads `url` from the schema file.
+datasource db {
+  provider = "postgresql"
+}
+
+// RBAC v2 (Phase 4). Replaces OWNER/ADMIN/STAFF — existing STAFF rows map to
+// OPERATOR on migration (closest semantic match: front-line, not managing).
+// See PHASE_4_REPORT.md for the full permission matrix and ARCHITECTURE_DECISIONS.md
+// ADR-014 for why this is a role list, not a full custom-permission-per-user
+// system (that's a bigger investment than this phase's actual need).
+enum Role {
+  OWNER
+  ADMIN
+  MARKETING
+  MANAGER
+  OPERATOR
+  READ_ONLY
+}
+
+enum PlanType {
+  STARTER
+  PRO
+  BUSINESS
+}
+
+enum TeamMemberStatus {
+  PENDING
+  ACTIVE
+}
+
+// CampaignType.REVIEW_FLOW is a reserved value: no Campaign row is ever
+// created with this type. The legacy star-rating flow stays a pure code
+// fallback (see resolution-engine/resolve.ts) for a company with zero
+// campaigns. Several of these types (GOOGLE_REVIEWS/INSTAGRAM/TIKTOK/
+// DIGITAL_MENU/LANDING_PAGE/URL_REDIRECT) share the exact same "redirect to
+// a URL" rendering (see lib/campaign-destination.ts) — the enum stays this
+// granular anyway because it carries real meaning for the merchant (icon,
+// label, analytics grouping in a later phase), not because rendering needs it.
+enum CampaignType {
+  REVIEW_FLOW
+  URL_REDIRECT
+  GOOGLE_REVIEWS
+  INSTAGRAM
+  TIKTOK
+  DIGITAL_MENU
+  LANDING_PAGE
+  WHATSAPP
+  COUPON
+  AI_MENU
+}
+
+// Ordered by specificity, most to least: CARD > ZONE > BRANCH > COMPANY >
+// ORGANIZATION — see resolution-engine/resolve.ts's
+// compareBySpecificityThenPriorityThenRecency. ORGANIZATION (Phase 4) is the
+// one scope whose CampaignAssignment.organizationId reaches across company
+// boundaries within an Organization — every other scope stays inside the
+// assignment's own companyId. See ADR-013.
+enum TargetScope {
+  ORGANIZATION
+  COMPANY
+  BRANCH
+  ZONE
+  CARD
+}
+
+// The stored source of truth for engine eligibility (only ACTIVE is ever
+// resolved, alongside the startsAt/endsAt window check). SCHEDULED and
+// COMPLETED are deliberately NOT stored states — they're pure UI labels
+// computed from ACTIVE + dates (see domain/campaign/status.ts) so flipping
+// them never needs a cron/scheduler (that's later-phase infra).
+enum CampaignStatus {
+  DRAFT
+  ACTIVE
+  PAUSED
+  ARCHIVED
+}
+
+// Captured by the Campaign Builder (Phase 2) and enforced by the Rule Engine
+// (Phase 3, resolution-engine/rules.ts) via a synthesized DAY_OF_WEEK +
+// TIME_WINDOW check built from recurrenceConfig — see that file for why this
+// is translated into the same Rule evaluation path rather than special-cased.
+enum RecurrenceType {
+  NONE
+  DAILY
+  WEEKLY
+}
+
+// Deliberately does NOT include table/zone/unit/campaign-state dimensions —
+// those are already expressed by CampaignAssignment.scope (Phase 1/2) and a
+// resolver's own priority/window ordering respectively. Rule only adds
+// *temporal* and *contextual* conditions that layer on top of any
+// assignment regardless of its scope. See PHASE_3_REPORT.md for the full
+// reasoning behind not duplicating scope-matching here.
+enum RuleType {
+  DAY_OF_WEEK
+  TIME_WINDOW
+  DATE_RANGE
+  DEVICE_TYPE
+}
+
+enum RedirectOutcome {
+  REVIEW_FLOW_FALLBACK
+  CAMPAIGN
+}
+
+// Deliberately covers high-value mutations only (campaigns, team, access
+// scopes, company/organization settings) — not every CRUD in the app. A
+// full audit trail of everything is Phase 8's event-sourcing job; this is a
+// lightweight "who/when" log for the actions an Owner actually asks about.
+enum AuditAction {
+  CAMPAIGN_CREATED
+  CAMPAIGN_UPDATED
+  CAMPAIGN_ARCHIVED
+  CAMPAIGN_DELETED
+  CAMPAIGN_ASSIGNED
+  CAMPAIGN_UNASSIGNED
+  TEAM_MEMBER_INVITED
+  TEAM_MEMBER_ROLE_CHANGED
+  TEAM_MEMBER_REMOVED
+  ACCESS_SCOPE_GRANTED
+  ACCESS_SCOPE_REVOKED
+  COMPANY_SETTINGS_UPDATED
+  ORGANIZATION_CREATED
+  // --- Smart Campaign Playbooks (Fase 11) ---
+  RECOMMENDATION_APPLIED
+  RECOMMENDATION_IGNORED
+  PLAYBOOK_EXECUTION_UNDONE
+  AUTOPILOT_LEVEL_CHANGED
+}
+
+// --- Smart Campaign Playbooks (Fase 11) ---
+// O gatilho de um Playbook é sempre um entre um conjunto FIXO e pequeno de
+// avaliadores puros (`domain/playbooks/triggers.ts`) — o que varia por
+// Playbook é só o `triggerConfig` (limiares, janela de horário, tags de
+// mesa) e o `actionConfig`, ambos dados, nunca código. Um "Playbook" novo
+// nunca exige um deploy — só uma linha nova em `Playbook` reaproveitando um
+// `triggerType`/`actionType` já existente. Ver ADR-048.
+enum PlaybookTriggerType {
+  ZONE_TIME_PERFORMANCE // uma zona converte melhor numa janela de horário do que no resto do dia
+  RATING_DROP // taxa de conversão para avaliação caiu de forma significativa vs. a linha de base
+  SOCIAL_MOMENTUM // toques num canal social (Instagram) subindo, com campanha existente para impulsionar
+  VIP_TABLE_IDLE // uma mesa marcada "vip" está silenciosa há tempo demais
+  ZONE_SILENT // uma zona inteira está sem nenhum toque há tempo demais
+  LUNCH_WINDOW_UNDERUSED // a janela de almoço tem participação nos toques abaixo do esperado
+  WEEKEND_FORECAST_UP // a projeção linear da campanha líder aponta alta indo para o fim de semana
+}
+
+enum PlaybookActionType {
+  ASSIGN_CAMPAIGN_TO_SCOPE // atribui uma campanha já existente a um escopo (nunca cria)
+  CREATE_AND_ASSIGN_CAMPAIGN // cria uma campanha nova (sempre WHATSAPP/GOOGLE_REVIEWS — únicos tipos com dado garantido em Company) e atribui
+  BOOST_CAMPAIGN_PRIORITY // aumenta a prioridade de uma campanha já ativa
+  PAUSE_CAMPAIGN // pausa uma campanha já ativa
+}
+
+enum PlaybookCategory {
+  REVENUE
+  REPUTATION
+  ENGAGEMENT
+  CAPACITY
+}
+
+enum RecommendationStatus {
+  PENDING
+  APPLIED
+  IGNORED
+  EXPIRED
+}
+
+enum PlaybookExecutionStatus {
+  SCHEDULED
+  RUNNING
+  PAUSED
+  COMPLETED
+  FAILED
+  UNDONE
+  CANCELLED
+}
+
+enum AutoPilotLevel {
+  MANUAL
+  RECOMMENDED
+  SEMI_AUTOMATIC
+  AUTOMATIC
+}
+
+// Catálogo GLOBAL e declarativo (não por empresa — ver ADR-048): a "Biblioteca
+// de Playbooks Inteligentes" pedida é um conjunto compartilhado de receitas,
+// semeado uma vez (`prisma/seed.ts`), nunca hardcoded em componente React ou
+// serviço. Editar um limiar aqui nunca exige tocar em código.
+model Playbook {
+  id          String             @id @default(cuid())
+  key         String             @unique // slug estável ("happy-hour-boost") — nunca muda, é o identificador real
+  name        String
+  description String
+  category    PlaybookCategory
+  triggerType PlaybookTriggerType
+  // Limiares do gatilho (amostra mínima, delta mínimo, janela de horário) —
+  // consumidos por domain/playbooks/triggers.ts, nunca por número mágico
+  // embutido em código.
+  triggerConfig Json
+  actionType  PlaybookActionType
+  // Parâmetros da ação: tipo de campanha preferido para criação
+  // (WHATSAPP/GOOGLE_REVIEWS), modelo de mensagem, regra de tempo a anexar
+  // (TIME_WINDOW/DAY_OF_WEEK), delta de prioridade, etc. — tudo dado.
+  actionConfig Json
+  estimatedDurationHours Int
+  // Frase pronta (PT-BR) explicando como desfazer esta ação específica —
+  // mostrada no Explainability Panel, nunca inventada na hora pela UI.
+  reversalDescription String
+  // Só playbooks marcados aqui podem ser executados sem confirmação humana
+  // no nível AutoPilot "Automático" — ver ADR-049 (Autonomy Review).
+  safeForAutomation Boolean @default(false)
+  active      Boolean            @default(true)
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+
+  recommendations PlaybookRecommendation[]
+}
+
+// Uma sugestão concreta, gerada pelo Recommendation Engine para UMA empresa e
+// UM escopo (zona/mesa/empresa), nunca um insight solto — é isto que vira um
+// cartão em /dashboard/playbooks e na coluna "Próximas melhores ações".
+model PlaybookRecommendation {
+  id         String   @id @default(cuid())
+  companyId  String
+  company    Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  playbookId String
+  playbook   Playbook @relation(fields: [playbookId], references: [id], onDelete: Cascade)
+
+  status     RecommendationStatus @default(PENDING)
+  // 0..1, calculado por domain/playbooks/confidence-engine.ts a partir de
+  // amostra/efeito/recência — nunca um número decorativo. Explainability
+  // First exige mostrar isto sempre, nunca escondido atrás de "recomendado".
+  confidence Float
+  confidenceFactors Json // [{ label, value, weight }] — o detalhamento exibido no Explainability Panel
+  // { conversõesEsperadas, avaliaçõesEsperadas, receitaInfluenciada, label } —
+  // sempre rotulado como estimativa, nunca uma promessa (ver domain/playbooks/impact.ts).
+  estimatedImpact Json
+  // Dados usados + comparação histórica + eventos responsáveis + regra
+  // disparada — o conteúdo bruto do botão "Ver motivo".
+  evidence   Json
+  headline   String // "A Varanda converte 42% melhor depois das 18h..."
+  scopeType  TargetScope // reaproveita o enum já usado por CampaignAssignment — nunca um scope paralelo
+  scopeId    String? // zoneId/branchId/cardId conforme scopeType; null quando COMPANY
+  // Preenchido só quando o gatilho encontrou uma campanha JÁ EXISTENTE para
+  // agir sobre (Instagram Momentum, Weekend Accelerator) — nunca inventado.
+  // Sem @relation de propósito: sobrevive a uma campanha arquivada/excluída
+  // depois, mesma razão de EventLog não ter FK (ADR-032).
+  targetCampaignId String?
+
+  expiresAt        DateTime?
+  respondedAt      DateTime?
+  respondedByUserId String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  execution PlaybookExecution?
+
+  @@index([companyId, status])
+  @@index([playbookId])
+  @@index([companyId, playbookId, scopeType, scopeId])
+}
+
+// O registro de uma aplicação real — sempre criado no momento de "Aplicar",
+// nunca antes. `actionsTaken` guarda o suficiente do estado ANTERIOR para o
+// Undo ser completo (nunca parcial) — ver Achados do Architect Review em
+// RELATORIO_FASE_11.md.
+model PlaybookExecution {
+  id               String                  @id @default(cuid())
+  companyId        String
+  company          Company                 @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  recommendationId String                  @unique
+  recommendation   PlaybookRecommendation  @relation(fields: [recommendationId], references: [id], onDelete: Cascade)
+
+  status       PlaybookExecutionStatus @default(RUNNING)
+  triggeredBy  String // "USER" | "AUTOPILOT" — nunca ambíguo, sempre exibido (Autonomy Review)
+  triggeredByUserId String?
+  // O que foi feito de verdade: [{ type, campaignId, assignmentIds,
+  // ruleId, campaignWasCreated, previousStatus, previousPriority }] —
+  // suficiente para reverter sem adivinhar.
+  actionsTaken Json?
+  scheduledFor DateTime? // "executar depois"
+  recurrence   Json? // "repetir" — { type: "DAILY"|"WEEKLY", until? }
+  startedAt    DateTime?
+  completedAt  DateTime?
+  undoneAt     DateTime?
+  failureReason String?
+  createdAt    DateTime                @default(now())
+  updatedAt    DateTime                @updatedAt
+
+  @@index([companyId, status])
+  @@index([scheduledFor])
+}
+
+// Um nível por empresa (nunca por usuário — a decisão de autonomia é do
+// negócio, não de quem está logado no momento). Ausência de linha = MANUAL,
+// o nível mais conservador (ver ADR-049).
+model AutoPilotSetting {
+  id              String         @id @default(cuid())
+  companyId       String         @unique
+  company         Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  level           AutoPilotLevel @default(MANUAL)
+  updatedAt       DateTime       @updatedAt
+  updatedByUserId String?
+}
+
+// The franchise brand — optional, wraps multiple Company accounts. Deliberately
+// does NOT replace Company as the tenant/isolation boundary: every existing
+// query, service, and API route still scopes by companyId exactly as before.
+// A Company with organizationId=null (every company before Phase 4, and every
+// single-location business after it) is completely unaffected. See ADR-013.
+model Organization {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  companies           Company[]
+  campaignAssignments CampaignAssignment[]
+}
+
+model Company {
+  id              String        @id @default(cuid())
+  organizationId  String?
+  organization    Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  name            String
+  slug            String   @unique
+  logoUrl         String?
+  // Preparação para White Label (Fase 10, ainda não implementada) — mesmo
+  // padrão de `logoUrl`: nulo até a fase construir a UI de upload e o
+  // `<link rel="icon">` dinâmico que a lê. Ver ADR-039.
+  faviconUrl      String?
+  whatsapp        String
+  googleReviewUrl String
+  primaryColor    String   @default("#0F172A")
+  // White Label (Fase 10) — cor secundária opcional; sem ela, a UI de marca
+  // deriva um tom neutro de `primaryColor` (ver domain/white-label/color.ts),
+  // nunca inventa uma cor sem relação com a marca escolhida.
+  secondaryColor  String?
+  // `domain` já existia desde uma fase anterior (ver ADR-039) — sem uso até
+  // agora. Nesta fase ganha um leitor de verdade: `domainVerifiedAt` é nulo
+  // até uma checagem real de DNS (TXT) confirmar posse do domínio; o
+  // DomainResolver nunca resolve branding por um domínio não verificado
+  // (ver ADR-042).
+  domain          String?  @unique
+  domainVerifiedAt DateTime?
+  // Token aleatório por tentativa de verificação — o empresário publica
+  // `_nfcos-challenge.<domínio> TXT "<domainVerificationToken>"` no DNS;
+  // `verifyDomainOwnership` confirma via uma consulta DNS-over-HTTPS real
+  // antes de `domainVerifiedAt` ser preenchido. Nunca reaproveita um
+  // segredo de outra finalidade (ex.: IP_HASH_SALT) — token de posse de
+  // domínio é uma preocupação própria. Ver ADR-042.
+  domainVerificationToken String?
+  // Tela de login com marca própria (Fase 10) — ambos opcionais, nulos até
+  // configurados; sem eles a tela de login mostra o padrão do produto.
+  loginHeadline      String?
+  loginBackgroundUrl String?
+  plan            PlanType @default(STARTER)
+  // IANA identifier. Used by the Rule Engine to evaluate DAY_OF_WEEK/
+  // TIME_WINDOW/DATE_RANGE rules in the business's local time, not the
+  // server's — a "Friday 18:00" Happy Hour rule must mean 6pm in the
+  // restaurant, not 6pm UTC. Defaults to Brazil since every string in this
+  // product is already pt-BR; a real timezone picker is a Settings UI
+  // nicety, not a Phase 3 blocker.
+  timezone        String   @default("America/Sao_Paulo")
+  // ROI Mode (Fase 7) — configuração opcional, definida uma vez pelo
+  // empresário em Configurações, que transforma toques/conversões em
+  // dinheiro estimado. Os três campos só existem juntos (nulos até o
+  // empresário configurar pela primeira vez); o Analytics Engine só calcula
+  // receita influenciada quando os três estão preenchidos — nunca estima
+  // com valores parciais ou inventados. Ver ADR-029.
+  roiAvgTicket        Float?
+  roiReturnRate       Float?
+  roiNewCustomerValue Float?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  users               User[]
+  cards               NFCCard[]
+  visits              Visit[]
+  ratingEvents        RatingEvent[]
+  privateFeedbacks    PrivateFeedback[]
+  campaigns           Campaign[]
+  campaignAssignments CampaignAssignment[]
+  redirectLogs        RedirectLog[]
+  branches            Branch[]
+  zones               Zone[]
+  rules               Rule[]
+  campaignVariants    CampaignVariant[]
+  ruleExecutionLogs   RuleExecutionLog[]
+  userAccessScopes    UserAccessScope[]
+  auditLogs           AuditLog[]
+  apiKeys             ApiKey[]
+  webhookEndpoints    WebhookEndpoint[]
+  apiRequestLogs      ApiRequestLog[]
+  playbookRecommendations PlaybookRecommendation[]
+  playbookExecutions      PlaybookExecution[]
+  autoPilotSetting        AutoPilotSetting?
+
+  @@index([organizationId])
+}
+
+model User {
+  id        String            @id @default(cuid())
+  clerkId   String?           @unique
+  companyId String
+  company   Company           @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  email     String
+  name      String?
+  role      Role              @default(OPERATOR)
+  status    TeamMemberStatus  @default(PENDING)
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+
+  ownedCampaigns  Campaign[]
+  accessScopes    UserAccessScope[]
+  auditLogs       AuditLog[]
+  createdApiKeys  ApiKey[]
+
+  @@unique([companyId, email])
+  @@index([companyId])
+}
+
+// RECTANGLE/CIRCLE only — matches the two shapes every reference floor-plan
+// editor actually needs (a rectangular table or a round one); anything more
+// exotic (L-shaped booths, bar counters) can render as a RECTANGLE with a
+// custom width/height ratio without a new shape. See Phase 5 report.
+enum TableShape {
+  RECTANGLE
+  CIRCLE
+}
+
+model NFCCard {
+  id          String   @id @default(cuid())
+  companyId   String
+  company     Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  uniqueCode  String   @unique
+  name        String
+  tags        String[] @default([])
+  qrCodeUrl   String?
+  active      Boolean  @default(true)
+  // Both nullable and independent (a card can belong to a Branch without a
+  // Zone, e.g. a simple multi-location business that skips zoning). A
+  // ZONE-scope or BRANCH-scope CampaignAssignment matches by direct equality
+  // against these fields — never inferred transitively through zone.branchId
+  // — so there's no cross-referencing to keep consistent. See Phase 2 report
+  // for why the richer Organization/Branch hierarchy stays deferred while
+  // this minimal, single-company-scoped version ships now.
+  branchId    String?
+  branch      Branch?  @relation(fields: [branchId], references: [id], onDelete: SetNull)
+  zoneId      String?
+  zone        Zone?    @relation(fields: [zoneId], references: [id], onDelete: SetNull)
+  // Table Map (Phase 5) layout — entirely optional and additive. `layoutX`/
+  // `layoutY` are null until a merchant actually drags this card onto the
+  // canvas for the first time (an "unplaced" table); every other layout
+  // field has a sane default so a freshly-placed table renders immediately
+  // without a separate "configure it" step. None of this is read by the
+  // Campaign Resolution Engine — it's purely a dashboard visualization/
+  // editing concern, kept on NFCCard rather than a separate table since a
+  // "table" IS the NFCCard here, not a different entity that happens to
+  // reference one. See ADR-019.
+  layoutX        Float?
+  layoutY        Float?
+  layoutWidth    Float      @default(80)
+  layoutHeight   Float      @default(80)
+  layoutRotation Float      @default(0)
+  tableShape     TableShape @default(RECTANGLE)
+  seats          Int        @default(4)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  visits              Visit[]
+  campaignAssignments CampaignAssignment[]
+  redirectLogs        RedirectLog[]
+  ruleExecutionLogs   RuleExecutionLog[]
+
+  @@index([companyId])
+  @@index([branchId])
+  @@index([zoneId])
+}
+
+// A physical location ("unidade") within a company. Optional — a company
+// with zero Branch rows is a single-location business, unaffected. See
+// NFCCard's comment for how this deliberately stays flatter than the full
+// Organization -> Franquia -> Unidade hierarchy from the long-term roadmap.
+model Branch {
+  id        String   @id @default(cuid())
+  companyId String
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  cards               NFCCard[]
+  zones               Zone[]
+  campaignAssignments CampaignAssignment[]
+  userAccessScopes    UserAccessScope[]
+
+  @@index([companyId])
+}
+
+// A grouping of cards ("zona", e.g. VIP/Varanda/Interno) — optionally under
+// a Branch, or company-wide for a single-location business that still wants
+// to group tables without formally modeling multiple locations.
+model Zone {
+  id        String   @id @default(cuid())
+  companyId String
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  branchId  String?
+  branch    Branch?  @relation(fields: [branchId], references: [id], onDelete: SetNull)
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  cards               NFCCard[]
+  campaignAssignments CampaignAssignment[]
+  userAccessScopes    UserAccessScope[]
+
+  @@index([companyId])
+  @@index([branchId])
+}
+
+// Opt-in RESTRICTION, not a grant system: a user with zero rows has
+// unrestricted access within whatever their `role` already permits
+// (the default for every user before Phase 4, and every user Phase 4
+// doesn't explicitly restrict). One or more rows narrow that user to only
+// the listed branch(es)/zone(es) — a branch-level row implies every zone
+// under that branch. Exactly one of {branchId, zoneId} is set per row,
+// enforced at the application layer (src/domain/rbac/scope.ts), same
+// pattern as CampaignAssignment's scope/target pairing. See ADR-015.
+model UserAccessScope {
+  id        String   @id @default(cuid())
+  companyId String
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  branchId  String?
+  branch    Branch?  @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  zoneId    String?
+  zone      Zone?    @relation(fields: [zoneId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, branchId, zoneId])
+  @@index([companyId])
+  @@index([userId])
+  @@index([branchId])
+  @@index([zoneId])
+}
+
+// "Quem fez, quando fez, de onde fez" — deliberately covers high-value
+// mutations only (see AuditAction). ipHash uses the same salted-hash
+// convention as public visitor tracking (src/lib/ip.ts) for consistency,
+// even though these are internal actions, not anonymous public ones — one
+// privacy convention, not a special case for staff. `targetId` is a plain
+// string, not a foreign key: the target table varies by action (a campaign
+// id, a member id, ...), so this is intentionally loose, resolved by the
+// UI/report reader rather than the database.
+model AuditLog {
+  id        String      @id @default(cuid())
+  companyId String
+  company   Company     @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  userId    String?
+  user      User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action    AuditAction
+  targetId  String?
+  metadata  Json?
+  ipHash    String?
+  createdAt DateTime    @default(now())
+
+  @@index([companyId, createdAt])
+  @@index([userId])
+}
+
+// --- Event Sourcing (Fase 8) ---
+// O registro durável de todo evento de domínio publicado pelo Event Bus
+// (`src/lib/event-bus/`) — a fonte da verdade para o Replay de Eventos e
+// para reconstruir o que aconteceu mesmo que as filas (BullMQ/Redis) não
+// estejam disponíveis no momento da publicação. Deliberadamente SEM
+// relação de chave estrangeira com `Company`/`Organization`: um log de
+// eventos precisa sobreviver e continuar consultável mesmo que a entidade
+// que ele descreve mude ou seja removida depois — é o oposto do
+// acoplamento forte que uma FK expressaria. `companyId`/`organizationId`
+// são simples colunas indexadas, não relações. Ver ADR-032.
+model EventLog {
+  id             String   @id @default(cuid())
+  // Nome do evento em português, exatamente como definido em
+  // domain/events/types.ts (ex.: "RedirecionamentoResolvido") — uma string
+  // livre, não um enum do Postgres, para que novos tipos de evento nunca
+  // precisem de uma migração de schema, só de uma atualização de código.
+  type           String
+  // Versão do formato do payload — permite evoluir o "contrato" de um
+  // evento (novos campos, campos renomeados) sem quebrar consumidores/
+  // replays antigos, que podem checar `version` e lidar com formatos
+  // anteriores explicitamente.
+  version        Int      @default(1)
+  companyId      String?
+  organizationId String?
+  correlationId  String
+  payload        Json
+  createdAt      DateTime @default(now())
+
+  @@index([companyId, createdAt])
+  @@index([type, createdAt])
+  @@index([correlationId])
+}
+
+model Visit {
+  id        String   @id @default(cuid())
+  cardId    String
+  card      NFCCard  @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  companyId String
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  device    String?
+  browser   String?
+  os        String?
+  ipHash    String
+  country   String?
+  city      String?
+  createdAt DateTime @default(now())
+
+  ratingEvent RatingEvent?
+
+  @@index([companyId, createdAt])
+  @@index([cardId, createdAt])
+}
+
+model RatingEvent {
+  id               String   @id @default(cuid())
+  visitId          String   @unique
+  visit            Visit    @relation(fields: [visitId], references: [id], onDelete: Cascade)
+  companyId        String
+  company          Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  cardId           String
+  stars            Int
+  redirectedGoogle Boolean  @default(false)
+  createdAt        DateTime @default(now())
+
+  privateFeedback PrivateFeedback?
+
+  @@index([companyId, createdAt])
+  @@index([cardId, createdAt])
+}
+
+model PrivateFeedback {
+  id              String      @id @default(cuid())
+  ratingEventId   String      @unique
+  ratingEvent     RatingEvent @relation(fields: [ratingEventId], references: [id], onDelete: Cascade)
+  companyId       String
+  company         Company     @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  name            String?
+  phone           String?
+  message         String
+  resolved        Boolean     @default(false)
+  whatsappSentAt  DateTime?
+  createdAt       DateTime    @default(now())
+
+  @@index([companyId, createdAt])
+  @@index([companyId, resolved])
+}
+
+// --- Campaign Resolution Engine (Phase 1) ---
+// Pipeline: NFCCard (asset) -> CampaignAssignment -> Campaign -> destination.
+// The asset never carries a destination itself; see src/lib/resolution-engine.
+
+model Campaign {
+  id          String         @id @default(cuid())
+  companyId   String
+  company     Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  name        String
+  description String?
+  type        CampaignType
+  status      CampaignStatus @default(DRAFT)
+  // Higher wins. Ties are broken by assignment scope specificity (CARD beats
+  // ZONE beats BRANCH beats COMPANY) then recency — see resolution-engine/resolve.ts.
+  priority    Int            @default(0)
+  startsAt    DateTime?
+  endsAt      DateTime?
+  recurrenceType   RecurrenceType @default(NONE)
+  // Shape depends on recurrenceType, e.g. {"daysOfWeek":[5],"startTime":"18:00","endTime":"22:00"}
+  // for WEEKLY. Captured for the Rule Engine phase — not evaluated yet.
+  recurrenceConfig Json?
+  tags        String[]       @default([])
+  ownerId     String?
+  owner       User?          @relation(fields: [ownerId], references: [id], onDelete: SetNull)
+  // Shape is discriminated by `type` — validated at read time with the Zod
+  // schemas in src/lib/validations/campaign.ts, never trusted as typed.
+  config      Json
+  // ROI Mode (Fase 7) — opcional. Sem isso, "ROI da campanha" e "custo por
+  // avaliação" não têm como ser calculados honestamente (não existe
+  // integração de gasto de anúncio neste produto) — o Analytics Engine
+  // mostra "configure o custo desta campanha" em vez de inventar um número.
+  estimatedCost Float?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  assignments      CampaignAssignment[]
+  redirectLogs     RedirectLog[]
+  rules            Rule[]
+  variants         CampaignVariant[]
+  ruleExecutionLogs RuleExecutionLog[]
+
+  @@index([companyId, status])
+}
+
+// Additional eligibility conditions for a Campaign, layered on top of its
+// assignments' scope matching and its own startsAt/endsAt window — e.g. "only
+// Fridays 18-22h" alongside a COMPANY-scope assignment, without needing a
+// dedicated Zone just to express a time restriction. All rules on a campaign
+// are combined with AND (every rule must pass) — this is a deliberate Phase 3
+// simplification; OR/rule-groups are not implemented.
+model Rule {
+  id         String   @id @default(cuid())
+  companyId  String
+  company    Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  campaignId String
+  campaign   Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  type       RuleType
+  // Shape is discriminated by `type` — see src/lib/validations/rule.ts.
+  config     Json
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([companyId])
+  @@index([campaignId])
+}
+
+// A/B testing variant for a Campaign's destination. weight is a relative
+// share of traffic (e.g. 50/50 or 70/30 — need not sum to 100, the resolver
+// normalizes). A campaign with zero variants keeps using its own `config`
+// directly, unchanged from Phase 1/2 behavior — variants are additive, never
+// required.
+model CampaignVariant {
+  id         String   @id @default(cuid())
+  companyId  String
+  company    Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  campaignId String
+  campaign   Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  name       String
+  weight     Int      @default(50)
+  // Same shape as Campaign.config for the same campaign type — validated
+  // with the same Zod schemas (src/lib/validations/campaign.ts).
+  config     Json
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  redirectLogs RedirectLog[]
+
+  @@index([campaignId])
+}
+
+// Exactly one of {organizationId, branchId, zoneId, cardId} is set, matching
+// `scope` (COMPANY sets none) — enforced at the application layer in
+// domain/campaign/assignment.ts, not by the database. Note: Postgres's
+// unique constraints never treat two NULLs as equal, so the @@unique below
+// does NOT by itself stop a duplicate row for ANY scope here — COMPANY has
+// all 4 target columns null, and CARD/ZONE/BRANCH/ORGANIZATION each still
+// have 3 of the 4 null, which is enough to defeat the whole composite
+// constraint for that row (a single null column anywhere in a unique
+// constraint's key exempts that row from the comparison, regardless of
+// what its other columns contain). campaign.service.ts's assignCampaign
+// closes this for every scope with an explicit existence check (matched by
+// real equality — Prisma's `null` becomes `IS NULL`, not a broken NULL-vs-
+// NULL constraint comparison) inside the same Serializable transaction,
+// rather than a DB constraint, since Prisma's schema DSL has no
+// partial-unique-index syntax.
+//
+// `organizationId` (Phase 4) is the one field on this model that reaches
+// OUTSIDE `companyId`'s tenant boundary on purpose: an ORGANIZATION-scope
+// assignment resolves for every card in every company within that
+// organization, not just the company that owns this row. `companyId` still
+// records which company's dashboard created the assignment (ownership/audit);
+// `organizationId` is what the resolution engine actually reads for reach.
+// This is the ONLY place in the schema where a query intentionally crosses
+// company boundaries — see ADR-013 and resolution-engine/data.ts's
+// loadOrganizationCampaigns().
+model CampaignAssignment {
+  id             String        @id @default(cuid())
+  companyId      String
+  company        Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  campaignId     String
+  campaign       Campaign      @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  scope          TargetScope
+  organizationId String?
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  branchId       String?
+  branch         Branch?       @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  zoneId         String?
+  zone           Zone?         @relation(fields: [zoneId], references: [id], onDelete: Cascade)
+  cardId         String?
+  card           NFCCard?      @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  createdAt      DateTime      @default(now())
+
+  @@unique([campaignId, scope, organizationId, branchId, zoneId, cardId])
+  @@index([companyId, scope])
+  @@index([organizationId])
+  @@index([branchId])
+  @@index([zoneId])
+  @@index([cardId])
+}
+
+// Lightweight, best-effort audit trail of resolution decisions (written via
+// next/server's after(), off the redirect response path). Not a substitute
+// for real event sourcing (planned for a later phase) — writes can be lost
+// on a hard crash. NOT_FOUND codes are deliberately never logged here: there
+// is no tenant to attribute them to, which would be the one exception to
+// this schema's "every row carries companyId" convention; that abuse
+// surface is already covered by the existing publicCard rate limiter.
+model RedirectLog {
+  id                String          @id @default(cuid())
+  companyId         String
+  company           Company         @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  cardId            String
+  card              NFCCard         @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  campaignId        String?
+  campaign          Campaign?       @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+  // Which A/B variant was shown, if the winning campaign had any (Phase 3).
+  variantId         String?
+  variant           CampaignVariant? @relation(fields: [variantId], references: [id], onDelete: SetNull)
+  outcome           RedirectOutcome
+  resolvedFromCache Boolean         @default(false)
+  createdAt         DateTime        @default(now())
+
+  @@index([companyId, createdAt])
+  @@index([cardId, createdAt])
+  @@index([campaignId, createdAt])
+}
+
+// Debugging/audit trail for the Rule Engine — one row per CANDIDATE campaign
+// that actually had rules attached (not one row per individual rule, to keep
+// volume bounded), capturing whether it passed overall and the per-rule
+// breakdown. Written via next/server's after(), same best-effort semantics
+// as RedirectLog. The common case (a campaign with zero rules) writes
+// nothing here at all — this table's volume scales with how many campaigns
+// use rules, not with total traffic.
+model RuleExecutionLog {
+  id          String   @id @default(cuid())
+  companyId   String
+  company     Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  campaignId  String
+  campaign    Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  cardId      String
+  card        NFCCard  @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  passed      Boolean
+  // [{ ruleId, type, passed }] — the individual rule breakdown.
+  ruleResults Json
+  createdAt   DateTime @default(now())
+
+  @@index([companyId, createdAt])
+  @@index([campaignId, createdAt])
+}
+
+// --- API Pública v1 (Fase 9) ---
+// Uma ApiKey representa acesso de servidor-a-servidor a uma Company inteira
+// — nunca a um usuário específico, nunca herda RBAC de User. Carrega seus
+// próprios `scopes` (ex.: "cards:write"), checados independentemente do
+// papel de quem a criou. Nunca armazenamos o segredo em texto puro: o valor
+// completo (`nfc_live_<random>`) só existe no momento da criação, exibido
+// uma única vez; a partir daí só `keyPrefix` (os 12 primeiros caracteres,
+// para o usuário reconhecer qual chave é qual numa lista) fica visível, e
+// toda autenticação futura compara o hash SHA-256 de quem chega contra
+// `keyHash` — o mesmo padrão do Stripe/GitHub. Ver ADR-036.
+model ApiKey {
+  id              String    @id @default(cuid())
+  companyId       String
+  company         Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  name            String
+  keyPrefix       String
+  keyHash         String    @unique
+  scopes          String[]
+  createdByUserId String?
+  createdByUser   User?     @relation(fields: [createdByUserId], references: [id], onDelete: SetNull)
+  lastUsedAt      DateTime?
+  expiresAt       DateTime?
+  revokedAt       DateTime?
+  createdAt       DateTime  @default(now())
+
+  @@index([companyId])
+}
+
+// Um endpoint de webhook registrado pelo desenvolvedor — substitui o único
+// par Company.webhookUrl/webhookSecret da Fase 8 por N endpoints por
+// empresa, cada um com sua própria lista de eventos assinados e seu próprio
+// segredo HMAC. `events` guarda os nomes PÚBLICOS do evento (ex.:
+// "campaign.created"), nunca o nome interno em português do Event Bus —
+// esse desacoplamento é deliberado: o contrato público de nomes de evento
+// pode evoluir independentemente dos nomes internos do domínio. Ver ADR-036.
+model WebhookEndpoint {
+  id          String   @id @default(cuid())
+  companyId   String
+  company     Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  url         String
+  description String?
+  secret      String
+  events      String[]
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  deliveries  WebhookDelivery[]
+
+  @@index([companyId])
+}
+
+enum WebhookDeliveryStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  EXHAUSTED
+}
+
+// Histórico real de tentativas de entrega — o que alimenta "Últimas
+// chamadas"/Replay no Dashboard de Desenvolvedor. Ao contrário de EventLog
+// (Fase 8), esta tabela TEM foreign key para seu WebhookEndpoint: uma
+// entrega só faz sentido enquanto o endpoint que a originou existir, e
+// remover um endpoint deve mesmo levar seu histórico junto.
+model WebhookDelivery {
+  id            String                @id @default(cuid())
+  endpointId    String
+  endpoint      WebhookEndpoint       @relation(fields: [endpointId], references: [id], onDelete: Cascade)
+  eventId       String
+  eventType     String
+  payload       Json
+  status        WebhookDeliveryStatus @default(PENDING)
+  attempts      Int                   @default(0)
+  responseCode  Int?
+  errorMessage  String?
+  lastAttemptAt DateTime?
+  createdAt     DateTime              @default(now())
+
+  // Uma linha por (endpoint, evento) — nunca duas: se um job de fila com
+  // vários endpoints falhar em UM deles e o BullMQ tentar de novo, o worker
+  // usa isso para pular endpoints que já receberam este evento com sucesso,
+  // em vez de entregar duas vezes. Ver lib/workers/processors.ts.
+  @@unique([endpointId, eventId])
+  @@index([endpointId, createdAt])
+  @@index([eventId])
+}
+
+// Uma linha por requisição feita via /api/v1/** — alimenta o painel "Logs"
+// do Dashboard de Desenvolvedor (latência, status, endpoint) com dados
+// reais, nunca fabricados. Gravado via after(), best-effort, mesmo padrão
+// de RedirectLog (Fase 1)/EventLog (Fase 8) — nunca no caminho crítico da
+// resposta. Sem foreign key para ApiKey de propósito: uma chave revogada ou
+// excluída não deveria apagar o histórico de chamadas que ela já fez.
+model ApiRequestLog {
+  id         String   @id @default(cuid())
+  companyId  String
+  company    Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  apiKeyId   String?
+  method     String
+  path       String
+  statusCode Int
+  latencyMs  Int
+  createdAt  DateTime @default(now())
+
+  @@index([companyId, createdAt])
+  @@index([apiKeyId, createdAt])
+}

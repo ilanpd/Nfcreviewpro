@@ -1,0 +1,12 @@
+{
+  "crons": [
+    {
+      "path": "/api/queues/process",
+      "schedule": "* * * * *"
+    },
+    {
+      "path": "/api/playbooks/evaluate",
+      "schedule": "*/15 * * * *"
+    }
+  ]
+}
