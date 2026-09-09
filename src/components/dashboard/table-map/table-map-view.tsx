@@ -459,14 +459,14 @@ export function TableMapView({
 
   return (
     <div className={cn("flex h-[calc(100vh-2rem)] flex-col gap-3", className)}>
-      <div className="flex items-center justify-between gap-4">
+      <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight">
             <LayoutGrid className="size-5" /> Mapa de Mesas
           </h1>
           <p className="text-sm text-muted-foreground">Arraste, agrupe por zona e aplique campanhas visualmente — sem regravar nenhum cartão.</p>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex flex-wrap items-center gap-4">
           {selectedIds.size > 0 && canEditLayout ? (
             <Button variant="outline" size="sm" onClick={handleDuplicateSelected}>
               <Copy className="size-3.5" /> Duplicar ({selectedIds.size})
@@ -527,30 +527,32 @@ export function TableMapView({
 
       <UnplacedTray cards={unplacedCards} armedId={armedId} onToggleArm={(id) => setArmedId((cur) => (cur === id ? null : id))} />
 
-      <div className="flex flex-1 overflow-hidden rounded-lg border">
-        <Canvas
-          cards={visibleCards}
-          statusMap={effectiveStatusMap}
-          selectedIds={selectedIds}
-          onSelectionChange={setSelectedIds}
-          renamingId={renamingId}
-          onStartRename={setRenamingId}
-          onRenameCommit={handleRenameCommit}
-          onRenameCancel={() => setRenamingId(null)}
-          onMoveCommit={handleMoveCommit}
-          draggingCampaign={draggingCampaign}
-          onDropCampaignTarget={handleDropCampaignTarget}
-          canEdit={canEditLayout}
-          canAssign={canAssign}
-          pulseCardIds={pulseCardIds}
-          heatmapIntensities={heatmapIntensities}
-          heatmapTrends={heatmapTrends}
-          snapEnabled={snapEnabled}
-          zoneLabel={activeTabLabel}
-          armedCardId={armedId}
-          onPlaceArmed={handlePlaceArmed}
-          ghostAllVisible={ghostAllVisible}
-        />
+      <div className="flex flex-1 flex-col overflow-hidden rounded-lg border sm:flex-row">
+        <div className="min-h-[50vh] flex-1 sm:min-h-0">
+          <Canvas
+            cards={visibleCards}
+            statusMap={effectiveStatusMap}
+            selectedIds={selectedIds}
+            onSelectionChange={setSelectedIds}
+            renamingId={renamingId}
+            onStartRename={setRenamingId}
+            onRenameCommit={handleRenameCommit}
+            onRenameCancel={() => setRenamingId(null)}
+            onMoveCommit={handleMoveCommit}
+            draggingCampaign={draggingCampaign}
+            onDropCampaignTarget={handleDropCampaignTarget}
+            canEdit={canEditLayout}
+            canAssign={canAssign}
+            pulseCardIds={pulseCardIds}
+            heatmapIntensities={heatmapIntensities}
+            heatmapTrends={heatmapTrends}
+            snapEnabled={snapEnabled}
+            zoneLabel={activeTabLabel}
+            armedCardId={armedId}
+            onPlaceArmed={handlePlaceArmed}
+            ghostAllVisible={ghostAllVisible}
+          />
+        </div>
         <CampaignTray
           campaigns={campaigns}
           canAssign={canAssign}

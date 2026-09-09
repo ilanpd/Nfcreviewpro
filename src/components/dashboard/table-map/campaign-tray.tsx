@@ -13,7 +13,7 @@ interface CampaignTrayProps {
 
 export function CampaignTray({ campaigns, onDragStart, onDragEnd, canAssign }: CampaignTrayProps) {
   return (
-    <div className="flex h-full w-64 shrink-0 flex-col border-l">
+    <div className="flex max-h-64 w-full shrink-0 flex-col border-t sm:h-full sm:max-h-none sm:w-64 sm:border-l sm:border-t-0">
       <div className="border-b p-3">
         <h3 className="text-sm font-semibold">Campanhas ativas</h3>
         <p className="text-xs text-muted-foreground">
