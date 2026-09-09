@@ -1,6 +1,6 @@
-# Relatório Final — Gate de Entrega
+# Relatório Final — Gate de Entrega e Aperfeiçoamento Contínuo
 
-**Data:** 2026-09-09
+**Última atualização:** 2026-09-09 (duas rodadas de teste ao vivo nesta data)
 **Ambientes testados:** Staging real e vivo (destrutivo), Production real e vivo (verificação de saúde e dos mesmos fixes)
 
 ---
@@ -9,7 +9,7 @@
 
 > "Se eu receber esse projeto hoje, consigo entrar pela URL, criar minha conta, configurar uma empresa, navegar por absolutamente todas as áreas, executar o fluxo principal completo, gerar dados, visualizar os resultados e testar o produto como um cliente real sem precisar que você fique corrigindo coisas durante o meu teste?"
 
-**Resposta honesta: hoje, sim — para o fluxo principal (cadastro → empresa → cartão → campanha → NFC → redirecionamento → Analytics → RBAC → isolamento entre empresas).** Esse fluxo foi executado de ponta a ponta contra o Staging real nesta sessão, e os 4 bugs reais que ele expôs já foram corrigidos, testados de novo e reimplantados — em Staging e em Produção — antes deste relatório ser escrito. Isso é diferente de "todas as ~75 linhas do checklist foram clicadas": não foram. A seção 9 lista exatamente o que ficou de fora.
+**Resposta honesta nesta atualização: sim para um conjunto bem mais amplo do que na primeira rodada** — cadastro, empresa, Branches/Zones, UserAccessScope, Cartões, Table Map (incluindo mobile), Campanhas/Regras/A-B, isolamento entre tenants, RBAC com um segundo usuário real, o pipeline `/r/[code]` completo, Playbooks/AutoPilot de ponta a ponta (aplicar E desfazer, com efeito real no banco), Branding, e a API Pública v1 com escopos/erros/paginação. **8 bugs reais foram encontrados e corrigidos nas duas rodadas**, incluindo um crítico (Impressão/PDF retornava erro 500 em 100% das tentativas, em produção). Isso ainda não é "literalmente todas as ~75 linhas do checklist" — a seção 9 lista o que continua fora, com honestidade sobre o porquê.
 
 ---
 
@@ -24,14 +24,11 @@
 
 | Papel | E-mail | Senha | Empresa |
 |---|---|---|---|
-| Proprietário | `clara.wechsler+clerk_test_empresab@gmail.com` | `GateFinal2026!Teste` | Empresa Teste Gate Final B |
+| Proprietário | `clara.wechsler+clerk_test_empresab@gmail.com` | `GateFinal2026!Teste` | Empresa Teste Gate Final B (criada do zero via signup real) |
 | Gerente (convidado, RBAC) | `clara.wechsler+clerk_test_rbacmanager@gmail.com` | `GateFinal2026!Teste` | Empresa Teste Gate Final B (mesma) |
+| Proprietário (acesso de QA) | `clara.wechsler+clerk_test_bvaccess@gmail.com` | `GateFinal2026!Teste` | **Bella Vista** (empresa de seed, com 90 dias de histórico real) |
 
-Essas duas contas usam o padrão de teste da Clerk (`+clerk_test`) — o código de verificação de e-mail é sempre `424242`, nunca chega um e-mail de verdade. Use o mesmo padrão para criar mais contas de teste sem depender de caixas de e-mail reais.
-
-Dados de seed (pré-existentes, ambos os bancos): empresa "Bella Vista" com cartões/campanhas/regras/playbooks completos — útil para testar cenários que já têm histórico, sem precisar recriar do zero.
-
----
+Todas usam o padrão de teste da Clerk (`+clerk_test`) — o código de verificação de e-mail é sempre `424242`, nunca chega um e-mail de verdade. A terceira conta foi criada especificamente para poder testar Playbooks/Heatmap/Analytics contra dados históricos reais, já que uma empresa nova não tem volume suficiente para gerar recomendações — foi vinculada à Bella Vista via um registro `User` pendente criado diretamente no banco (não pelo fluxo de convite normal, que exigiria já estar logado como o dono original, que não existe como conta Clerk real).
 
 ## 3. Banco de dados por ambiente
 
@@ -40,7 +37,7 @@ Dados de seed (pré-existentes, ambos os bancos): empresa "Bella Vista" com cart
 | Produção | `wrxenecdfiteqkldsovz` ("Nfc Review Pro") | Transaction (6543) / Session (5432), `sa-east-1` |
 | Staging | `xcrniyhjiscldevjzgpt` ("Nfc Review Pro 2") | Idêntico, projeto separado |
 
-Bancos completamente separados — nunca compartilham dados. Redis: só Produção tem (decisão deliberada de isolamento, ver `DEPLOY_SETUP.md`).
+Bancos completamente separados — nunca compartilham dados. Redis: só Produção tem (decisão deliberada de isolamento, ver `DEPLOY_SETUP.md` e seção 11 abaixo sobre a consequência disso para Idempotência e Chaos Mode).
 
 ## 4. Como resetar/repopular o Staging
 
@@ -56,91 +53,84 @@ Isso NÃO apaga o que você criou manualmente (contas via signup, novas empresas
 
 ## 5. Rotas auditadas
 
-Ver `ROTAS_AUDITADAS.md` (atualizado nesta sessão) — 26 páginas + 126 rotas de API inventariadas, com verificação estática (100%) e verificação ao vivo (a maioria das páginas principais do dashboard, isolamento entre tenants, e RBAC nos grupos de API mais sensíveis).
+Ver `ROTAS_AUDITADAS.md` — 26 páginas + 126 rotas de API inventariadas, com verificação estática (100%) e verificação ao vivo (a maioria das páginas do dashboard, isolamento entre tenants, RBAC, e agora também Branding e a API Pública).
 
-## 6. Fluxos E2E testados de verdade
+## 6. Fluxos E2E testados de verdade (as duas rodadas)
 
-Ver `E2E_FINAL_CHECKLIST.md` (atualizado nesta sessão, linha a linha, com resultado real). Resumo do que foi executado contra o Staging real nesta rodada:
+Ver `E2E_FINAL_CHECKLIST.md` para o detalhe linha a linha. Resumo do que foi executado contra o Staging real:
 
-1. **Cadastro → verificação de e-mail → onboarding → empresa criada** (Bloco 1, 8/8 linhas ✅/⚠️).
-2. **Pipeline `/r/[code]` completo**, incluindo desempate de especificidade real entre 3 campanhas concorrentes, regras de dispositivo/recorrência/data filtrando de verdade, `RedirectLog` gravado, fallback correto (Bloco 5, 5/7 linhas ✅).
-3. **Analytics refletindo dados reais** gerados nesta própria sessão, não decorativos (Bloco 6.1 ✅).
-4. **RBAC real com um segundo usuário** (convite → aceite automático → permissões testadas via API: 1 ação corretamente permitida, 3 corretamente bloqueadas) (Bloco 10, 3/7 linhas ✅).
-5. **Isolamento entre 2 tenants reais** (Bella Vista vs. Empresa Teste Gate Final B): 6 tentativas de acesso cross-tenant (campanha GET/PATCH, cartão PATCH/DELETE, membro de equipe PATCH/DELETE) — todas corretamente bloqueadas com 403 (Bloco 11, 5/6 linhas ✅).
+1. **Cadastro → verificação de e-mail → onboarding → empresa criada**, com 2 empresas e 3 contas reais distintas.
+2. **Pipeline `/r/[code]` completo** — desempate de especificidade real entre até 3 campanhas concorrentes, regras de dispositivo/recorrência/data filtrando de verdade, `RedirectLog` gravado, fallback correto, campanha DRAFT vs. ACTIVE mudando o resultado de verdade.
+3. **Analytics e Heatmap refletindo dados reais** — números batendo com os testes gerados na própria sessão, não decorativos.
+4. **Branches/Zones/UserAccessScope**: criação "on the fly" ao atribuir campanha; 3 cenários de restrição de acesso testados via API (COMPANY bloqueado para usuário restrito, zona fora do escopo bloqueada, unidade dentro do escopo permitida).
+5. **Table Map**: drag-to-reposition persiste de verdade (confirmado no banco e após reload); arrastar uma campanha para uma mesa cria a atribuição real; agora também usável em viewport mobile (bug corrigido, ver seção 7).
+6. **Campanhas → Regras → A/B**: criação de variante A/B testada; os 3 editores (Atribuições/Regras/Variantes) tinham o mesmo bug de contador (corrigido, seção 7).
+7. **Playbooks — ciclo completo, ponta a ponta**: motor de avaliação real rodado contra os dados históricos da Bella Vista, gerou recomendações genuínas com números reais; "Ver motivo" (painel de explicabilidade com dados reais, não texto genérico); "Aplicar" (criou de verdade uma Campaign + Rule + CampaignAssignment no banco); "Desfazer" (reverteu tudo — campanha arquivada, atribuição removida, confirmado no banco).
+8. **RBAC real com um segundo usuário**: convite → aceite automático (sem passar por onboarding) → 4 permissões testadas via API (1 corretamente permitida, 3 corretamente bloqueadas) → acesso à Configurações/Desenvolvedores/Branding corretamente restrito ou bloqueado conforme o papel.
+9. **Isolamento entre 2 tenants reais**: 6 tentativas de acesso cross-tenant (campanha GET/PATCH, cartão PATCH/DELETE, membro de equipe PATCH/DELETE) — todas corretamente bloqueadas com 403.
+10. **Branding/Theme Studio**: cor salva persiste de verdade, preview ao vivo funciona antes de salvar — mas encontrou e corrigiu uma alegação enganosa no texto (ver seção 7).
+11. **API Pública v1**: chave com escopo `cards:read` funciona; sem header → 401; escopo insuficiente → 403; paginação por cursor real; limite de plano aplicado também via API. Criação de Webhook funciona, segredo HMAC gerado.
+12. **Impressão Profissional (PDF)**: os 5 templates confirmados gerando PDF real depois do bug crítico corrigido (seção 7).
 
 ---
 
-## 7. Bugs encontrados e corrigidos nesta sessão
+## 7. Bugs encontrados e corrigidos (as duas rodadas)
 
-Todos encontrados durante o teste ao vivo (não por leitura estática de código), corrigidos, testados de novo, e reimplantados em **Staging e Produção** antes de fechar este relatório.
+Todos encontrados durante teste ao vivo (não por leitura estática de código), corrigidos, testados de novo, e reimplantados em **Staging e Produção**.
 
 | # | Bug | Onde | Impacto | Correção |
 |---|---|---|---|---|
-| 1 | Criar campanha com recorrência "Nenhuma" (a opção padrão) falhava sempre com "Dados inválidos" | `src/lib/validations/campaign.ts` | **Bloqueava 100% das criações de campanha** com a configuração mais comum — o fluxo principal do produto | Schema Zod passou a aceitar `null` além de `undefined` em `recurrenceConfig` |
-| 2 | A página de Campanhas quebrava (`TypeError: Cannot read properties of undefined`) logo após criar, editar, duplicar ou arquivar qualquer campanha | `src/repositories/campaign.repository.ts` | Crash da UI a cada ação de escrita em campanhas | `createCampaign`/`updateCampaign` passaram a incluir `_count`/`owner`, igual à listagem |
-| 3 | O badge de Status ficava em branco (nunca "Ativa"/"Rascunho") após criar/editar/duplicar/arquivar uma campanha, até recarregar a página | `src/services/campaign.service.ts` | Confuso, mas não bloqueante — usuário não sabia se a campanha estava ativa sem dar F5 | `displayStatus` passou a ser calculado nos 4 pontos de escrita, não só na listagem |
-| 4 | A página de Configurações mostrava o formulário de edição completo (dados da empresa + ROI Mode) para papéis sem permissão de editar — salvar resultava num toast de erro confuso em vez do formulário simplesmente não aparecer | `src/app/dashboard/settings/page.tsx` | Beco sem saída de UX para papéis Marketing/Gerente/Operador/Somente leitura | Os dois formulários agora só renderizam para quem tem `settings:write`, igual ao padrão já usado em Desenvolvedores/Branding |
+| 1 | Criar campanha com recorrência "Nenhuma" (opção padrão) falhava sempre com "Dados inválidos" | `src/lib/validations/campaign.ts` | **Bloqueava 100% das criações de campanha** com a configuração mais comum | Schema Zod passou a aceitar `null` além de `undefined` em `recurrenceConfig` |
+| 2 | Página de Campanhas quebrava (`TypeError`) logo após criar, editar, duplicar ou arquivar qualquer campanha | `src/repositories/campaign.repository.ts` | Crash da UI a cada ação de escrita em campanhas | `createCampaign`/`updateCampaign` passaram a incluir `_count`/`owner`, igual à listagem |
+| 3 | Badge de Status ficava em branco após criar/editar/duplicar/arquivar uma campanha, até recarregar | `src/services/campaign.service.ts` | Confuso — usuário não sabia se a campanha estava ativa sem dar F5 | `displayStatus` passou a ser calculado nos 4 pontos de escrita, não só na listagem |
+| 4 | Configurações mostrava o formulário de edição completo para papéis sem permissão — salvar dava erro em vez do formulário não aparecer | `src/app/dashboard/settings/page.tsx` | Beco sem saída de UX para Marketing/Gerente/Operador/Somente leitura | Formulários só renderizam para quem tem `settings:write`, igual ao padrão de Desenvolvedores/Branding |
+| 5 | Contador "Atribuições"/"Regras"/"A-B" no editor de campanha não atualizava sem reabrir o painel — mesmo bug nos 3 editores | `assignment-manager.tsx`, `rule-manager.tsx`, `variant-manager.tsx` | Usuário via "(0)" mesmo depois de criar algo com sucesso; risco de duplicar por achar que não salvou | Os 3 componentes agora notificam o pai (`onAssignmentsChange`/`onRulesChange`/`onVariantsChange`) a cada criação/remoção |
+| 6 | Theme Studio afirmava que salvar a marca muda "dashboard, login, QR e impressão" — o dashboard real nunca muda (o preview é só uma ilustração, por design) | `theme-studio-view.tsx`, `brand-preview-panels.tsx` | Alegação falsa sobre o que o produto faz | Texto corrigido para não prometer o que não acontece; legenda explícita adicionada sob o preview de Dashboard |
+| 7 | **Crítico** — `/api/cards/[id]/print` (Impressão Profissional) retornava 500 em **100% das tentativas**, em Staging e Produção | `next.config.ts` (config de deploy, não o código do PDF em si) | Toda a funcionalidade de imprimir adesivo/cartão PVC/displex/cavalete/plaquinha estava completamente quebrada em qualquer ambiente implantado | `pdfkit` carrega fontes com `require()` dinâmico que o file tracer da Vercel não segue — `outputFileTracingIncludes` força a inclusão do diretório de fontes no bundle da função. Os 5 templates testados de novo, todos gerando PDF real |
+| 8 | Mapa de Mesas praticamente inutilizável em viewport mobile — canvas espremido a ~50px de largura, barra de ferramentas vazando para fora da tela | `table-map-view.tsx`, `campaign-tray.tsx` | Uma das telas mais importantes do produto (a mais visual/espacial) inutilizável no celular | Layout agora empilha verticalmente abaixo do breakpoint `sm`, canvas ganha altura mínima real, barra de ferramentas quebra linha |
 
-## 8. Bugs conhecidos remanescentes
+## 8. Achados arquiteturais reais (não bugs pontuais — decisões que precisam ficar registradas)
 
-Nenhum bug bloqueante conhecido no fluxo principal após as correções acima. Observações menores, não corrigidas por serem de baixo risco e fora do caminho crítico:
+- **Idempotency-Key não é aplicado no Staging** — testei repetir uma criação de Webhook com o mesmo `Idempotency-Key` duas vezes e recebi dois recursos diferentes (deveria ter recebido a mesma resposta). O próprio código (`src/lib/api-v1/idempotency.ts`) documenta que isso é esperado: sem Redis, a idempotência degrada de propósito para "sem proteção" em vez de bloquear a chamada. Staging não tem Redis por uma decisão de isolamento já tomada (para não vazar Chaos Mode para a Produção). **Não testei isso ainda contra a Produção** (que tem Redis real) — isso exigiria criar uma chave de API direto no banco de Produção fora do fluxo normal da aplicação, o que não fiz por ser uma ação sensível demais para prosseguir sozinha. Recomendo validar isso pela UI normal da Produção antes de declarar o item fechado.
+- **Chaos Mode não é alcançável em nenhum ambiente implantado** — `/dev/ceo/reliability` (onde as flags de Chaos Mode são ligadas) retorna 404 tanto em Staging quanto em Produção, porque as rotas `/dev/**` são bloqueadas de propósito sempre que `NODE_ENV=production`, e os dois ambientes da Vercel rodam nesse modo. Isso significa que o Chaos Mode, do jeito que está construído, só é testável rodando a aplicação localmente (`npm run dev`) — nunca contra um ambiente real implantado. Testar com Redis real localmente exigiria apontar para o Redis de Produção (as flags são globais, não isoladas por ambiente — ver ADR já registrado), o que arriscaria afetar o comportamento real da Produção; por isso não fiz esse teste nesta rodada.
+- **Bella Vista (empresa de seed) tem 51 cartões no plano PRO, que declara limite de 10** — inconsistência entre o dado semeado e a regra de negócio atual. Não corrigi unilateralmente (mudar o plano ou remover cartões de uma empresa de demonstração é uma decisão de produto, não um bug de código) — sinalizando para você decidir.
 
-- O contador "Atribuições" no cabeçalho da aba, dentro do editor de campanha, não incrementa imediatamente após criar uma nova atribuição na mesma sessão (mostra 0 até fechar e reabrir o editor) — o dado real está correto, é só o número exibido que fica momentaneamente desatualizado.
+## 9. O que fica pendente (não executado ainda)
 
-## 9. O que fica pendente (não executado nesta rodada)
-
-Estas linhas do `E2E_FINAL_CHECKLIST.md` continuam `⏳` — não são bugs conhecidos, são partes do roteiro que o tempo desta rodada não cobriu:
-
-- Bloco 2: criar Branch/Zone pelo dashboard, restringir um usuário a uma zona específica (`UserAccessScope`).
-- Bloco 3: Mapa de Mesas — drag-and-drop de posição, persistência de layout, comportamento em viewport mobile.
-- Bloco 6.2-6.7: Heatmap, Live Mode (SSE), Time Machine, Event Explorer, painel de Reliability.
-- Bloco 7: Playbooks — geração de uma recomendação real a partir de volume de dados, aplicar/desfazer, AutoPilot automático.
-- Bloco 8: Branding/White Label — mudança de cor/logo, domínio customizado, PDF de impressão.
-- Bloco 9: API Pública v1 — criar API key, chamadas autenticadas/não autenticadas, webhooks, idempotência.
-- Bloco 10.1/10.5-10.7: restrição por zona específica, expiração de sessão, refresh no meio de uma edição não salva, botão voltar do navegador.
-- Bloco 11.6: branding por subdomínio e isolamento de webhooks entre tenants.
-- Bloco 12: Chaos Mode (Redis down, fila travada, falha de webhook).
-- Passagem dedicada de UX/Design polish pelo produto inteiro (item 8 do pedido original) — não foi feita como etapa própria; os problemas de UX encontrados (bugs #2, #3, #4 acima) surgiram como efeito colateral do teste funcional, não de uma varredura visual dedicada.
-
-Nenhum destes, pelo que foi possível observar do restante do código nesta sessão, aparenta ser um bloqueio do fluxo principal — mas "aparenta" não é o padrão que este Gate pediu, por isso seguem listados como pendentes, não como aprovados.
+- Sessão/expiração real, refresh no meio de uma edição não salva, botão voltar do navegador (Bloco 10.5-10.7).
+- Domínio customizado / White Label por subdomínio de verdade, e isolamento de branding entre tenants nesse cenário (a lógica existe no código — `resolve-brand.ts` — mas não configurei um domínio de teste real).
+- Isolamento de Webhooks entre tenants (criei um Webhook, mas não testei se o de uma empresa nunca recebe evento de outra).
+- Event Explorer, painel de Reliability (ambos são páginas `/dev/**`, mesma limitação de acesso da seção 8).
+- Uma auditoria página-a-página dedicada e sistemática das 26 páginas com a lista completa de estados (loading/empty/error/duplicidade/muitos dados) pedida no item 2 do pedido — o que foi encontrado até aqui (bugs #2-#8) surgiu como efeito colateral de testar funcionalidade, não de uma varredura visual própria e exaustiva.
+- Uma passagem dedicada de UX/Design polish (item 4 do pedido) — ainda não feita como exercício visual isolado.
+- O documento de Definition of Done (item 15 do pedido).
+- Uma segunda rodada de regressão completa depois de TODAS as correções (item 17) — os quality gates (seção 12) foram rodados após cada correção individual, mas não há ainda uma passada final única, de ponta a ponta, revalidando tudo junto.
+- O teste final "como cliente real, sem olhar o código" (item 18).
 
 ## 10. Stubs, mocks e integrações declaradamente não reais
 
-Nenhum encontrado além do que já era documentado e visível ao usuário como tal:
+Nenhum encontrado além do que já era documentado e visível ao usuário como tal — `COUPON`/`AI_MENU` mostram "Em breve"; `/dev/**` bloqueado em produção; `/demo` gera dados reais via Scenario Engine, rotulado como demonstração; nenhum `console.log`/`TODO`/número decorativo encontrado na varredura.
 
-- `COUPON` e `AI_MENU` (tipos de campanha): UI mostra "Em breve" claramente, nunca finge estar funcionando.
-- `/dev/**` e `/dev/ceo/**`: ferramentas de desenvolvedor, bloqueadas em produção por `NODE_ENV`, nunca expostas a um cliente real.
-- `/demo` e `/demo/investor`: dados de demonstração explicitamente rotulados como tal, gerados por escritas reais no banco (Scenario Engine), não por dados estáticos fingidos.
-- Varredura por `console.log`/`TODO`/`Math.random()` usado para exibir números: nada suspeito encontrado além de um randomizador de largura de skeleton de carregamento (padrão de UI legítimo) e os geradores de dados de demonstração já documentados.
+## 11. Limitações conhecidas (arquiteturais, aceitas)
 
-## 11. Limitações conhecidas (arquiteturais, não bugs)
-
-- Clerk roda em modo Development para os dois ambientes (única instância criada) — inclui a proteção "Bot sign-up protection" (Cloudflare Turnstile), que teve de ser desativada manualmente no Dashboard da Clerk para permitir o teste automatizado de cadastro. Recomendação: ao promover para um domínio de produção real, criar uma instância Clerk de Production separada.
-- Staging roda sem Redis (decisão deliberada de isolamento — ver `DEPLOY_SETUP.md`) — cache e filas caem no fallback gracioso já existente no produto, não no comportamento real de Produção.
-- Cron Jobs no plano Hobby da Vercel rodam só 1x/dia — o processamento de fila e a avaliação periódica de Playbooks por cron ficam menos frequentes que o desenhado; o processamento orientado a evento (fila `"playbooks"`) não é afetado.
-- `git push` para o GitHub não foi possível completar automaticamente nesta sessão (bloqueio de permissão do próprio Claude Code, não do repositório) — os commits existem localmente; rodar `git push -u origin main` e `git push -u origin staging` resolve.
+- Clerk em modo Development para os dois ambientes — Bot Protection precisou ser desativada manualmente para permitir teste automatizado de cadastro.
+- Staging sem Redis (decisão de isolamento) — consequências diretas: cache/filas em fallback gracioso, e Idempotency-Key sem proteção real (seção 8).
+- Cron Jobs da Vercel Hobby rodam 1x/dia.
+- `git push` para o GitHub segue pendente do seu lado (bloqueio de permissão do Claude Code, não do repositório).
 
 ## 12. Resultado dos quality gates
 
 | Gate | Resultado |
 |---|---|
-| `tsc --noEmit` | ✅ limpo (rodado de novo após cada correção desta sessão) |
+| `tsc --noEmit` | ✅ limpo (rodado de novo após cada uma das 8 correções) |
 | `eslint . --max-warnings=0` | ✅ limpo |
 | `prisma validate` | ✅ schema válido |
-| `npm run build` (via deploy real na Vercel) | ✅ dois builds de produção completos e bem-sucedidos nesta sessão (Staging e Produção), depois das correções |
-| Navegação manual pós-build | ✅ feita — esta sessão inteira foi navegação real contra o build de produção da Vercel, não `npm run dev` local. "Build passou" não foi tratado como sinônimo de "produto funciona" — os 4 bugs da seção 7 só apareceram na navegação real, nunca no build |
+| `npm run build` (via deploy real na Vercel) | ✅ múltiplos builds de produção completos e bem-sucedidos, depois de cada correção, em Staging e Produção |
+| Navegação manual pós-build | ✅ — toda esta sessão foi navegação real contra o build de produção da Vercel. O bug #7 (PDF) é a prova mais clara de por que isso importa: `tsc`/`eslint`/`build` local nunca o teriam pego — só apareceu no ambiente real implantado |
 
-## 13. Resultado das 4 reviews obrigatórias de fase
+## 13. O que ainda impede chamar isto de "pronto para produção" hoje
 
-Aplicadas ao trabalho desta sessão (correção de bugs reais + infraestrutura), não a uma fase nova de roadmap:
-
-- **Architect Review**: as 4 correções seguem os padrões já estabelecidos no código (mesmo formato de `include` do Prisma usado na listagem, mesmo padrão de gate de página já usado em Desenvolvedores/Branding) — nenhuma nova abstração introduzida, nenhum atalho que crie dívida técnica nova.
-- **Product Review**: os 4 bugs corrigidos eram, sem exceção, parte do fluxo principal (criar/editar campanha, configurações da empresa) — exatamente o tipo de "ponta solta" que o pedido original instruiu a corrigir agora, não adiar.
-- **Demo First Review**: o fluxo demonstrável a um cliente real (cadastro → empresa → cartão → campanha → NFC → resultado no Analytics) funciona de ponta a ponta no Staging real, sem precisar de intervenção manual durante a demonstração.
-- **Reliability Review**: os bugs encontrados eram todos de UI/validação (nunca perda de dados, nunca vazamento entre tenants, nunca falha de segurança) — o teste de isolamento entre tenants e RBAC, que é o teste de maior risco de confiabilidade real, passou 100% das 9 tentativas cross-tenant/cross-role testadas.
-
-## 14. O que ainda impede chamar isto de "pronto para produção" hoje
-
-- O push para o GitHub (item administrativo, seção 11) — sem impacto no produto rodando, mas sem ele o histórico de versionamento remoto não existe ainda.
-- As pendências da seção 9 — nenhuma delas apareceu, pelo código lido, como um bloqueio do fluxo principal, mas "não bloqueia pelo que vi" é uma afirmação mais fraca que "testei e confirmei", que é o padrão que este Gate pediu. Antes de uma demonstração ao vivo para um investidor ou cliente cobrindo Playbooks, Branding/White Label ou a API Pública v1, essas três áreas merecem a mesma rodada de teste ao vivo que Campanhas/RBAC/Isolamento já receberam aqui.
-- Nenhuma passagem dedicada de UX/Design polish foi feita — o produto está funcionalmente correto no que foi testado, mas a barra "parece um SaaS premium pronto para vender" não foi avaliada como exercício visual próprio nesta rodada.
+- As pendências da seção 9 — nenhuma apareceu como bloqueio do fluxo principal pelo que foi possível observar, mas não foram testadas ao vivo ainda.
+- Confirmar Idempotency-Key contra a Produção real (seção 8).
+- Decidir o que fazer com a inconsistência de plano/limite da Bella Vista (seção 8).
+- A auditoria página-a-página exaustiva, o polish de UX dedicado, e o documento de Definition of Done (itens 2, 4 e 15 do pedido) ainda não foram feitos como exercícios próprios.
