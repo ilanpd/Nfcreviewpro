@@ -111,7 +111,7 @@ export function ThemeStudioView({
         const data = await res.json().catch(() => ({}));
         throw new Error(data.error ?? "Não foi possível salvar a marca");
       }
-      toast.success("Marca salva — vale para dashboard, login, QR e impressão.");
+      toast.success("Marca salva — vale para login, QR e impressão.");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Erro inesperado");
     } finally {
@@ -127,7 +127,9 @@ export function ThemeStudioView({
             <Palette className="size-6 text-brand" /> Theme Studio
           </h1>
           <p className="text-sm text-muted-foreground">
-            Sua identidade completa — dashboard, login, QR e impressão mudam juntos, ao vivo, antes de salvar.
+            Sua identidade completa — login, QR e impressão mudam juntos, ao vivo, antes de salvar. O preview de
+            Dashboard ao lado é ilustrativo: o painel interno do NFC OS mantém a mesma aparência para todas as
+            empresas.
           </p>
         </div>
         <BrandRipple>

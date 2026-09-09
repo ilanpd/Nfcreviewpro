@@ -212,8 +212,12 @@ export function BrandPreviewPanels(props: PreviewProps) {
           <TabsTrigger value="qr">QR Code</TabsTrigger>
           <TabsTrigger value="physical">Mockups físicos</TabsTrigger>
         </TabsList>
-        <TabsContent value="dashboard">
+        <TabsContent value="dashboard" className="space-y-2">
           <DashboardMockup {...props} />
+          <p className="text-xs text-muted-foreground">
+            Ilustrativo — o painel interno do NFC OS mantém a mesma aparência para todas as empresas. O que muda de
+            verdade ao salvar são as telas que seus clientes veem: Login, QR Code e Impressão.
+          </p>
         </TabsContent>
         <TabsContent value="login">
           <LoginMockup {...props} />
