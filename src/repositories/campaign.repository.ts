@@ -57,11 +57,24 @@ export function findCampaignById(companyId: string, campaignId: string) {
 }
 
 export function createCampaign(companyId: string, data: Omit<Prisma.CampaignUncheckedCreateInput, "companyId">) {
-  return prisma.campaign.create({ data: { ...data, companyId } });
+  return prisma.campaign.create({
+    data: { ...data, companyId },
+    include: {
+      owner: { select: { id: true, name: true, email: true } },
+      _count: { select: { assignments: true, redirectLogs: true } },
+    },
+  });
 }
 
 export function updateCampaign(campaignId: string, data: Prisma.CampaignUncheckedUpdateInput) {
-  return prisma.campaign.update({ where: { id: campaignId }, data });
+  return prisma.campaign.update({
+    where: { id: campaignId },
+    data,
+    include: {
+      owner: { select: { id: true, name: true, email: true } },
+      _count: { select: { assignments: true, redirectLogs: true } },
+    },
+  });
 }
 
 export function deleteCampaign(campaignId: string) {

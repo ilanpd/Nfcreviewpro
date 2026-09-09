@@ -19,6 +19,7 @@ export default async function SettingsPage() {
     ctx.organizationId ? getOrganization(ctx.organizationId) : Promise.resolve(null),
   ]);
   const plan = PLANS[company.plan];
+  const canManageSettings = roleHasPermission(ctx.role, "settings:write");
   const canManageOrganization = roleHasPermission(ctx.role, "organization:write");
   const canReadAudit = roleHasPermission(ctx.role, "audit:read");
   const auditLogs = canReadAudit ? await listAuditLogs(ctx.companyId, 50) : [];
@@ -40,9 +41,9 @@ export default async function SettingsPage() {
         </CardContent>
       </Card>
 
-      <SettingsForm company={company} />
+      {canManageSettings ? <SettingsForm company={company} /> : null}
 
-      <RoiSettingsForm company={company} />
+      {canManageSettings ? <RoiSettingsForm company={company} /> : null}
 
       <AnalyticsCard
         title="Papéis e permissões"

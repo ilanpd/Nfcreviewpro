@@ -41,7 +41,7 @@ export async function getCampaign(companyId: string, campaignId: string) {
 // createCampaignSchema never accepting a `status` field) — never eligible
 // for resolution yet, so no cache invalidation is needed here.
 export async function createCampaign(companyId: string, input: CreateCampaignInput) {
-  return campaignRepo.createCampaign(companyId, {
+  const created = await campaignRepo.createCampaign(companyId, {
     name: input.name,
     description: input.description || null,
     type: input.type,
@@ -55,6 +55,7 @@ export async function createCampaign(companyId: string, input: CreateCampaignInp
     config: input.config as Prisma.InputJsonValue,
     estimatedCost: input.estimatedCost ?? null,
   });
+  return withDisplayStatus(created);
 }
 
 async function assertCampaignInCompany(companyId: string, campaignId: string) {
@@ -101,7 +102,7 @@ export async function updateCampaign(companyId: string, campaignId: string, inpu
   });
 
   await invalidateCompanyCampaigns(companyId);
-  return updated;
+  return withDisplayStatus(updated);
 }
 
 export async function duplicateCampaign(companyId: string, campaignId: string) {
@@ -109,7 +110,7 @@ export async function duplicateCampaign(companyId: string, campaignId: string) {
   // Assignments are deliberately NOT copied — re-assigning is a conscious
   // choice, and copying would risk instantly cloning a COMPANY-scope
   // assignment (see the uniqueness invariant below).
-  return campaignRepo.createCampaign(companyId, {
+  const created = await campaignRepo.createCampaign(companyId, {
     name: `${original.name} (cópia)`,
     description: original.description,
     type: original.type,
@@ -123,13 +124,14 @@ export async function duplicateCampaign(companyId: string, campaignId: string) {
     config: original.config as Prisma.InputJsonValue,
     estimatedCost: original.estimatedCost,
   });
+  return withDisplayStatus(created);
 }
 
 export async function archiveCampaign(companyId: string, campaignId: string) {
   await assertCampaignInCompany(companyId, campaignId);
   const updated = await campaignRepo.updateCampaign(campaignId, { status: "ARCHIVED" });
   await invalidateCompanyCampaigns(companyId);
-  return updated;
+  return withDisplayStatus(updated);
 }
 
 export async function deleteCampaign(companyId: string, campaignId: string) {

@@ -37,7 +37,8 @@ const recurrenceConfigSchema = z
     startTime: z.string().regex(/^\d{2}:\d{2}$/).optional(),
     endTime: z.string().regex(/^\d{2}:\d{2}$/).optional(),
   })
-  .optional();
+  .optional()
+  .nullable();
 
 const campaignBaseSchema = z.object({
   name: z.string().trim().min(2, "Nome muito curto").max(80),
