@@ -2,7 +2,7 @@
 
 Este documento é o inventário completo de todas as **26 páginas** e **126 rotas de API** existentes no NFC OS até a Fase 12, como primeira etapa do Gate Final de Entrega pedido.
 
-**Leia isto antes das tabelas:** a coluna "Verificação estática" reflete o que já foi comprovado por `tsc`/`eslint`/`prisma validate`/`npm run build` (todos limpos, ver `RELATORIO_FASE_12.md`) — ou seja, toda rota aqui listada **existe, compila, e segue o padrão de autenticação correto no código**. A coluna "Verificação ao vivo" é sobre clicar de verdade, ver a tela renderizar, submeter um formulário e confirmar que persiste — **isso exige um banco Postgres real acessível, que não existe neste sandbox** (documentado em todo relatório de fase desde a Fase 1) e será preenchido assim que o ambiente de Staging do `DEPLOY_SETUP.md` estiver no ar. Nenhuma linha abaixo foi marcada como "ok" sem ter sido, de fato, checada da forma indicada.
+**Leia isto antes das tabelas:** a coluna "Verificação estática" reflete o que já foi comprovado por `tsc`/`eslint`/`prisma validate`/`npm run build` (todos limpos). A coluna "Verificação ao vivo" foi **atualizada em 2026-09-09 contra o Staging real** (`https://nfc-os-staging.vercel.app`) — as páginas onde o dashboard completo foi navegado (como dono e como um segundo usuário convidado com papel Gerente) estão marcadas ✅ com o resultado real observado; as que não foram clicadas nesta rodada continuam ⏳. Nenhuma linha abaixo foi marcada como "ok" sem ter sido, de fato, checada da forma indicada.
 
 ---
 
@@ -11,19 +11,19 @@ Este documento é o inventário completo de todas as **26 páginas** e **126 rot
 | Rota | Autenticação (por código) | Propósito | Verificação estática | Verificação ao vivo |
 |---|---|---|---|---|
 | `/` | Pública | Landing page de marketing | ✅ compila, ✅ renderiza (build estático) | ✅ feita nesta sessão (200 OK) |
-| `/sign-in/[[...sign-in]]` | Pública (Clerk) | Login | ✅ compila | ⏳ exige Clerk real |
-| `/sign-up/[[...sign-up]]` | Pública (Clerk) | Cadastro | ✅ compila | ⏳ exige Clerk real |
-| `/onboarding` | Autenticada (Clerk, sem empresa ainda) | Criar a primeira empresa após o cadastro | ✅ compila | ⏳ exige Clerk + Postgres reais |
-| `/dashboard` | Autenticada | Visão geral | ✅ compila | ⏳ exige Clerk + Postgres reais |
-| `/dashboard/cards` | Autenticada | Cartões NFC | ✅ compila | ⏳ |
-| `/dashboard/table-map` | Autenticada | Mapa de Mesas | ✅ compila | ⏳ |
-| `/dashboard/campaigns` | Autenticada (`campaign:write`/`campaign:assign` controlam ações) | Campanhas/Regras/Variantes/Atribuições | ✅ compila | ⏳ |
-| `/dashboard/analytics` | Autenticada | Analytics Enterprise | ✅ compila | ⏳ |
-| `/dashboard/playbooks` | Autenticada (`campaign:assign` para aplicar, `automation:manage` para AutoPilot) | Recommendation Center | ✅ compila | ⏳ |
-| `/dashboard/branding` | Autenticada (`settings:write`, bloqueio total sem a permissão) | Theme Studio / White Label | ✅ compila | ⏳ |
-| `/dashboard/developers` | Autenticada (`developers:manage`) | Chaves de API, Webhooks, Logs | ✅ compila | ⏳ |
-| `/dashboard/team` | Autenticada (`team:write` controla ações) | Equipe/RBAC/Escopos de acesso | ✅ compila | ⏳ |
-| `/dashboard/settings` | Autenticada | Configurações da empresa | ✅ compila | ⏳ |
+| `/sign-in/[[...sign-in]]` | Pública (Clerk) | Login | ✅ compila | ✅ testada de verdade (login de 2 usuários distintos) |
+| `/sign-up/[[...sign-up]]` | Pública (Clerk) | Cadastro | ✅ compila | ✅ testada de verdade — ver achado sobre Bot Protection/Turnstile no `DEPLOY_SETUP.md` |
+| `/onboarding` | Autenticada (Clerk, sem empresa ainda) | Criar a primeira empresa após o cadastro | ✅ compila | ✅ empresa real criada no Postgres |
+| `/dashboard` | Autenticada | Visão geral | ✅ compila | ✅ KPIs reais, zerados corretamente para empresa nova |
+| `/dashboard/cards` | Autenticada | Cartões NFC | ✅ compila | ✅ criação real de cartão com QR, limite de plano aplicado corretamente |
+| `/dashboard/table-map` | Autenticada | Mapa de Mesas | ✅ compila | ✅ renderiza cartão/campanha reais, sem crash |
+| `/dashboard/campaigns` | Autenticada (`campaign:write`/`campaign:assign` controlam ações) | Campanhas/Regras/Variantes/Atribuições | ✅ compila | ⚠️ 3 bugs reais encontrados e corrigidos nesta rodada — ver `E2E_FINAL_CHECKLIST.md` 4.1/4.2 |
+| `/dashboard/analytics` | Autenticada | Analytics Enterprise | ✅ compila | ✅ reflete dados reais gerados nesta sessão |
+| `/dashboard/playbooks` | Autenticada (`campaign:assign` para aplicar, `automation:manage` para AutoPilot) | Recommendation Center | ✅ compila | ✅ carrega, estado vazio correto para empresa nova |
+| `/dashboard/branding` | Autenticada (`settings:write`, bloqueio total sem a permissão) | Theme Studio / White Label | ✅ compila | ✅ bloqueio de acesso confirmado para papel Gerente |
+| `/dashboard/developers` | Autenticada (`developers:manage`) | Chaves de API, Webhooks, Logs | ✅ compila | ✅ bloqueio de acesso confirmado para papel Gerente |
+| `/dashboard/team` | Autenticada (`team:write` controla ações) | Equipe/RBAC/Escopos de acesso | ✅ compila | ✅ convite real enviado e aceito (auto-join sem onboarding) |
+| `/dashboard/settings` | Autenticada | Configurações da empresa | ✅ compila | ⚠️ bug real encontrado e corrigido (formulário visível sem permissão) — ver 10.3 no checklist |
 | `/feedback` | Pública (token de link, sem sessão) | Feedback privado pós-avaliação baixa | ✅ compila | ⏳ |
 | `/thank-you` | Pública | Agradecimento pós-avaliação alta | ✅ compila | ⏳ |
 | `/r/[code]` | Pública (o pipeline NFC/QR inteiro) | Resolution Engine — redireciona ou mostra o fluxo de estrelas | ✅ compila | ⏳ **crítico, ver seção dedicada abaixo** |
@@ -72,20 +72,29 @@ Listar as 126 uma a uma em linhas repetitivas teria menos valor do que agrupar p
 
 **Verificação estática (todos os 126):** `tsc`/`eslint`/`prisma validate`/`npm run build` limpos nesta sessão — toda rota compila, toda rota que deveria ter `requireAuthContext()` tem, toda rota `/dev/**` genuína tem o gate de `NODE_ENV`, toda rota `/api/demo/**` NUNCA tem esse gate (verificado por leitura de código nesta auditoria, coerente com a Fase 12).
 
-**Verificação ao vivo:** ⏳ pendente do ambiente de Staging para a maioria — as exceções já confirmadas ao vivo nesta sessão: `GET /api/demo/scenarios` (200 OK, sem precisar de banco), `GET /api/playbooks/evaluate` sem `CRON_SECRET` (503, sem precisar de banco), `GET /api/brand/icon`/`GET /api/brand/og` no domínio raiz (200 OK, sem precisar de banco).
+**Verificação ao vivo:** ⏳ pendente para a maioria dos 126 endpoints individualmente, mas os grupos de MAIOR risco (isolamento entre tenants e RBAC) foram testados de verdade nesta rodada, contra dados reais de duas empresas distintas:
+
+- `/api/campaigns/**`: GET/PATCH cross-tenant → 403 corretamente; POST como papel Gerente → 201 corretamente (permitido); PATCH de status/atribuição → funcionam e refletem no `/r/[code]` real.
+- `/api/cards/**`: PATCH/DELETE cross-tenant → 403 corretamente.
+- `/api/team/**`: PATCH/DELETE cross-tenant → 403 corretamente; POST (convidar) como papel Gerente → 403 corretamente (sem `team:write`).
+- `/api/company/**`: PATCH como papel Gerente → 403 corretamente (sem `settings:write`).
+- `/api/api-keys/**`: POST como papel Gerente → 403 corretamente (sem `developers:manage`).
+- Confirmados em fases anteriores: `GET /api/demo/scenarios`, `GET /api/playbooks/evaluate` sem `CRON_SECRET` (503), `GET /api/brand/icon`/`og`.
+
+Os demais grupos (`/api/v1/**`, webhooks, playbooks apply/undo, branches/zones, heatmap, live/SSE) não foram exercitados ao vivo nesta rodada.
 
 ---
 
 ## `/r/[code]` — o pipeline mais crítico, tratamento dedicado
 
-Por ser o coração do produto, esta rota recebe uma seção própria em vez de uma linha na tabela. O pipeline completo (`NFC/QR → resolveDestination → Campaign → Rules → Variant → Destination → RedirectLog/EventBus → Analytics`) está implementado desde a Fase 1 e estendido em toda fase seguinte — mas **nunca foi exercitado de ponta a ponta contra um banco real neste sandbox**, pela mesma razão de sempre. A lista de cenários que o `RELATORIO_FASE_N.md` de cada fase já documentou como logicamente implementados (mas não observados ao vivo):
+**Executado ao vivo contra o Staging real em 2026-09-09 — resultado: pipeline genuinamente conectado, ponta a ponta, com evidência em `RedirectLog`.** Cenários confirmados:
 
-- Ativo sem campanha → fallback para o fluxo de estrelas (`REVIEW_FLOW_FALLBACK`).
-- Campanha pausada/encerrada/agendada → nunca vence a resolução (checado por `status`/`startsAt`/`endsAt`).
-- Múltiplas campanhas concorrendo → desempate por especificidade de escopo (CARD > ZONE > BRANCH > COMPANY > ORGANIZATION) → prioridade → recência.
-- Regras (`Rule`, dia/hora/data/dispositivo) → todas combinadas com AND.
-- Variantes A/B → seleção por peso.
-- Cache do Resolution Engine → `cachedOrLoad`, com bypass automático quando `redisDown` (Chaos Mode) está ativo.
-- Ativo inexistente → 404 honesto, nunca um crash.
+- ✅ **Especificidade de escopo real**: no cartão "Mesa VIP 1" (Bella Vista), 3 campanhas elegíveis simultaneamente (CARD com regra de dispositivo, ZONE com recorrência semanal, COMPANY agendada) — nenhuma bateu nas condições do momento do teste (desktop/quarta-feira/antes da data de início), e o engine corretamente caiu para uma campanha ORGANIZATION-scope ativa sem regras, em vez de ir direto ao fallback. Prova que a cadeia CARD → ZONE → BRANCH → COMPANY → ORGANIZATION → fallback é avaliada de verdade, não hardcoded.
+- ✅ **Regras (`Rule`) filtrando de verdade**: regra `DEVICE_TYPE` (mobile/tablet) corretamente desqualificou a campanha num acesso desktop; recorrência `WEEKLY` (só sexta 18h-22h) corretamente desqualificou a campanha numa quarta-feira; janela de datas (`startsAt`/`endsAt`) corretamente desqualificou uma campanha agendada para novembro.
+- ✅ **Ativo sem campanha → fallback**: cartão novo (Empresa B) sem nenhuma campanha ativa renderizou o fluxo de estrelas padrão, título correto, sem erro.
+- ✅ **Campanha DRAFT nunca vence a resolução**: mesmo cartão, mesma campanha, só mudando o status — DRAFT caiu no fallback, ACTIVE redirecionou para o WhatsApp configurado. Confirma que o "Ativar" no dashboard realmente invalida o Resolution Engine.
+- ✅ **`RedirectLog` gravado de verdade**: cada teste acima gerou uma linha nova em `RedirectLog` com o outcome e o timestamp exatos, consultado diretamente no Postgres — não é um log decorativo.
+- ✅ **Ativo inexistente → resposta honesta, nunca um crash**: `/r/codigo-que-nao-existe` devolve HTTP 200 com "Cartão não encontrado" (decisão deliberada de UX amigável para um cliente físico escaneando um cartão morto — não chama `notFound()` de propósito, ver comentário em `src/app/r/[code]/page.tsx`).
+- ⏳ Não executado nesta rodada: variantes A/B (seleção por peso) e o comportamento do cache do Resolution Engine sob `redisDown` (Chaos Mode) — Staging roda sem Redis por decisão de isolamento (ver `DEPLOY_SETUP.md`), então esse teste específico só é significativo em Produção.
 
-Isso entra como o item #1 do roteiro em `E2E_FINAL_CHECKLIST.md` assim que houver um banco real — é o teste de maior prioridade de todo o Gate Final.
+Ver `E2E_FINAL_CHECKLIST.md`, Bloco 5, para o passo a passo exato reproduzível.

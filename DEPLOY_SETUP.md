@@ -8,6 +8,32 @@ Eu não posso criar essas contas por você — exigem e-mail de verificação, a
 
 ---
 
+## Status final (executado em 2026-09-09 — os dois ambientes estão no ar)
+
+| Peça | Produção | Staging |
+|---|---|---|
+| **URL** | https://nfc-os-production.vercel.app | https://nfc-os-staging.vercel.app |
+| Banco (Supabase) | Projeto "Nfc Review Pro" (`wrxenecdfiteqkldsovz`, região `sa-east-1`) | Projeto "Nfc Review Pro 2" (`xcrniyhjiscldevjzgpt`, região `sa-east-1`) |
+| Conexão | Pooler Supavisor — Transaction (porta 6543) para `DATABASE_URL`, Session (porta 5432) para `DIRECT_URL` | Idêntico, projeto diferente |
+| Clerk | Mesma instância de Development para os dois ambientes (única instância criada) | — |
+| Redis | Upstash real configurado (única instância do plano free) | **Sem Redis** — decisão deliberada, ver nota abaixo |
+| Migrations | `prisma/migrations/20260909170425_init` aplicada via `migrate deploy` | Idêntica |
+| Seed | 4 empresas (Bella Vista, Sushi House, Nova Steakhouse + 1) | Idêntico ao rodar o seed |
+| Git | Commitado localmente em `main`; **push para o GitHub ainda não fechado** — ver nota abaixo | |
+
+**Por que Staging roda sem Redis:** o único plano gratuito do Upstash permite 1 banco. As flags do Chaos Mode (`src/lib/chaos/flags.ts`) são chaves GLOBAIS no Redis, não isoladas por empresa/ambiente — compartilhar o mesmo Redis entre Produção e Staging deixaria os testes destrutivos do Chaos Mode em Staging (ex.: "Falha de Redis") vazarem para o cache/comportamento real da Produção. Em vez disso, Produção ficou com o único Redis real, e Staging roda inteiramente sobre o fallback gracioso que o produto já tinha antes desta fase (rate-limit em memória, cache caindo direto no Postgres, sem motor de fila BullMQ real). Resolve o Passo 4 abaixo sem simplificar a arquitetura sem consulta.
+
+**Achados reais de infraestrutura durante o primeiro deploy** (não hipóteses — erros de plataforma genuínos, corrigidos):
+1. Cron Jobs no plano Hobby da Vercel só rodam 1x/dia — `vercel.json` tinha agendamentos por minuto/15min, rejeitados no deploy. Corrigido para diário; documentado em **ADR-056**.
+2. Um projeto Vercel criado via `vercel project add` (CLI puro, sem import de Git) fica com `framework: null` — o build passa, mas TODAS as rotas retornam 404 de plataforma (zero invocações de função). Corrigido via `PATCH /v9/projects/<nome>` da API da Vercel setando `framework: "nextjs"`.
+3. 4 bugs reais de produto encontrados durante a auditoria E2E ao vivo (não durante o deploy em si) — ver `RELATORIO_GATE_FINAL.md` e `E2E_FINAL_CHECKLIST.md` (linhas 4.1, 4.2, 10.3).
+
+**Pendência que depende de você:** `git push -u origin main` e `git push -u origin staging` para o repositório `https://github.com/ilanpd/Nfcreviewpro` — o push automático foi bloqueado pelo classificador de permissões do Claude Code neste ambiente (não um problema do repositório). Os commits já existem localmente; rodar os dois comandos acima do seu terminal resolve.
+
+**Recomendação de segurança não-bloqueante:** as senhas do Supabase foram compartilhadas em texto puro nesta conversa — considere trocá-las depois de validar os ambientes.
+
+---
+
 ## Visão geral do que vamos montar
 
 | Peça | Produção/Demo | Staging/Testes |
