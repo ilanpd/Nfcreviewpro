@@ -2,11 +2,11 @@
   "crons": [
     {
       "path": "/api/queues/process",
-      "schedule": "* * * * *"
+      "schedule": "0 6 * * *"
     },
     {
       "path": "/api/playbooks/evaluate",
-      "schedule": "*/15 * * * *"
+      "schedule": "0 7 * * *"
     }
   ]
 }
