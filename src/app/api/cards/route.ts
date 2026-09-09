@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAuthContext } from "@/lib/auth";
+import { requireAuthContext, requirePermission } from "@/lib/auth";
 import { createCardSchema } from "@/lib/validations/card";
 import { createCard, listCards } from "@/services/card.service";
 import { publishEvent } from "@/lib/event-bus";
@@ -18,6 +18,7 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   try {
     const ctx = await requireAuthContext();
+    requirePermission(ctx, "card:write");
     const input = createCardSchema.parse(await req.json());
     const card = await createCard(ctx.companyId, input);
     await publishEvent("MesaAtualizada", { cardId: card.id, action: "CREATED" }, { companyId: ctx.companyId });

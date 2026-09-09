@@ -14,9 +14,10 @@ interface CardsViewProps {
   cardLimit: number | null;
   initialBranches: BranchListItem[];
   initialZones: ZoneListItem[];
+  canManage: boolean;
 }
 
-export function CardsView({ initialCards, cardLimit, initialBranches, initialZones }: CardsViewProps) {
+export function CardsView({ initialCards, cardLimit, initialBranches, initialZones, canManage }: CardsViewProps) {
   const [cards, setCards] = useState(initialCards);
   const [branches] = useState(initialBranches);
   const [zones] = useState(initialZones);
@@ -44,16 +45,18 @@ export function CardsView({ initialCards, cardLimit, initialBranches, initialZon
             {cards.length} {cardLimit !== null ? `de ${cardLimit}` : ""} cartão(ões) NFC
           </p>
         </div>
-        <CardFormDialog
-          branches={branches}
-          zones={zones}
-          onSaved={handleCreated}
-          trigger={
-            <Button disabled={limitReached}>
-              <Plus className="size-4" /> Novo cartão
-            </Button>
-          }
-        />
+        {canManage ? (
+          <CardFormDialog
+            branches={branches}
+            zones={zones}
+            onSaved={handleCreated}
+            trigger={
+              <Button disabled={limitReached}>
+                <Plus className="size-4" /> Novo cartão
+              </Button>
+            }
+          />
+        ) : null}
       </div>
 
       {limitReached ? (
@@ -77,6 +80,7 @@ export function CardsView({ initialCards, cardLimit, initialBranches, initialZon
               zones={zones}
               onUpdated={handleUpdated}
               onDeleted={handleDeleted}
+              canManage={canManage}
             />
           ))}
         </div>

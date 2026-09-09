@@ -24,9 +24,10 @@ interface CardItemProps {
   zones: ZoneListItem[];
   onUpdated: (card: NFCCard) => void;
   onDeleted: (id: string) => void;
+  canManage: boolean;
 }
 
-export function CardItem({ card, branches, zones, onUpdated, onDeleted }: CardItemProps) {
+export function CardItem({ card, branches, zones, onUpdated, onDeleted, canManage }: CardItemProps) {
   const [busy, setBusy] = useState(false);
   const publicUrl = cardPublicUrl(card.uniqueCode);
 
@@ -83,31 +84,39 @@ export function CardItem({ card, branches, zones, onUpdated, onDeleted }: CardIt
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <CardFormDialog
-              card={card}
-              branches={branches}
-              zones={zones}
-              onSaved={(updated) => onUpdated(updated)}
-              trigger={<DropdownMenuItem onSelect={(e) => e.preventDefault()}>Editar</DropdownMenuItem>}
-            />
-            <DropdownMenuItem onClick={toggleActive}>
-              {card.active ? (
-                <>
-                  <Pause className="size-4" /> Pausar
-                </>
-              ) : (
-                <>
-                  <Play className="size-4" /> Ativar
-                </>
-              )}
-            </DropdownMenuItem>
+            {canManage ? (
+              <CardFormDialog
+                card={card}
+                branches={branches}
+                zones={zones}
+                onSaved={(updated) => onUpdated(updated)}
+                trigger={<DropdownMenuItem onSelect={(e) => e.preventDefault()}>Editar</DropdownMenuItem>}
+              />
+            ) : null}
+            {canManage ? (
+              <DropdownMenuItem onClick={toggleActive}>
+                {card.active ? (
+                  <>
+                    <Pause className="size-4" /> Pausar
+                  </>
+                ) : (
+                  <>
+                    <Play className="size-4" /> Ativar
+                  </>
+                )}
+              </DropdownMenuItem>
+            ) : null}
             <DropdownMenuItem onClick={copyLink}>
               <Link2 className="size-4" /> Copiar link
             </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem variant="destructive" onClick={handleDelete}>
-              <Trash2 className="size-4" /> Excluir
-            </DropdownMenuItem>
+            {canManage ? (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem variant="destructive" onClick={handleDelete}>
+                  <Trash2 className="size-4" /> Excluir
+                </DropdownMenuItem>
+              </>
+            ) : null}
           </DropdownMenuContent>
         </DropdownMenu>
       </CardHeader>

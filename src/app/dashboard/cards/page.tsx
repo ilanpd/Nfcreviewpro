@@ -4,6 +4,7 @@ import { getCompanyById } from "@/services/company.service";
 import { listBranches } from "@/services/branch.service";
 import { listZones } from "@/services/zone.service";
 import { cardLimitForPlan } from "@/lib/plans";
+import { roleHasPermission } from "@/domain/rbac/roles";
 import { CardsView } from "@/components/dashboard/cards-view";
 
 export default async function CardsPage() {
@@ -21,6 +22,7 @@ export default async function CardsPage() {
       cardLimit={cardLimitForPlan(company.plan)}
       initialBranches={branches}
       initialZones={zones}
+      canManage={roleHasPermission(ctx.role, "card:write")}
     />
   );
 }

@@ -1,4 +1,5 @@
 import { requireAuthContext } from "@/lib/auth";
+import { roleHasPermission } from "@/domain/rbac/roles";
 import { getAnalytics } from "@/services/analytics.service";
 import { listFeedback } from "@/services/feedback.service";
 import {
@@ -111,7 +112,7 @@ export default async function AnalyticsPage() {
         </TabsContent>
 
         <TabsContent value="feedback">
-          <FeedbackList initialFeedback={feedback} />
+          <FeedbackList initialFeedback={feedback} canManage={roleHasPermission(ctx.role, "feedback:resolve")} />
         </TabsContent>
       </Tabs>
     </div>

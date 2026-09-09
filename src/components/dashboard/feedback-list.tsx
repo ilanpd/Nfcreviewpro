@@ -9,7 +9,13 @@ import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import type { FeedbackWithContext } from "@/types";
 
-export function FeedbackList({ initialFeedback }: { initialFeedback: FeedbackWithContext[] }) {
+export function FeedbackList({
+  initialFeedback,
+  canManage,
+}: {
+  initialFeedback: FeedbackWithContext[];
+  canManage: boolean;
+}) {
   const [items, setItems] = useState(initialFeedback);
 
   async function toggleResolved(id: string, resolved: boolean) {
@@ -69,7 +75,11 @@ export function FeedbackList({ initialFeedback }: { initialFeedback: FeedbackWit
                   </TableCell>
                   <TableCell className="max-w-xs whitespace-normal text-sm">{f.message}</TableCell>
                   <TableCell>
-                    <Switch checked={f.resolved} onCheckedChange={(checked) => toggleResolved(f.id, checked)} />
+                    <Switch
+                      checked={f.resolved}
+                      disabled={!canManage}
+                      onCheckedChange={(checked) => toggleResolved(f.id, checked)}
+                    />
                   </TableCell>
                 </TableRow>
               ))}
