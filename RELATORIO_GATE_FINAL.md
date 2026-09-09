@@ -1,7 +1,57 @@
 # Relatório Final — Gate de Entrega e Aperfeiçoamento Contínuo
 
-**Última atualização:** 2026-09-09 (duas rodadas de teste ao vivo nesta data)
-**Ambientes testados:** Staging real e vivo (destrutivo), Production real e vivo (verificação de saúde e dos mesmos fixes)
+**Última atualização:** 2026-09-09 (três rodadas de teste ao vivo nesta data — ver Ciclo 3 no topo)
+**Ambientes testados:** Staging real e vivo (destrutivo), Production real e vivo (verificação segura, não-destrutiva)
+
+---
+
+## CICLO 3 (mais recente) — Fase de Fechamento e Preparação para Produção
+
+### 1. O que foi auditado
+- A inconsistência de plano/limite da Bella Vista (item explicitamente pedido).
+- RBAC com o papel mais restritivo (Somente Leitura) contra Cartões e Feedback.
+- Todas as rotas de escrita da API (`POST`/`PATCH`/`DELETE`) fora de `/v1`, `/dev`, `/demo` — checagem sistemática de quais chamam `requirePermission`.
+- Todos os componentes do dashboard com ações destrutivas (`Trash2`/`handleDelete`/`onDelete`) — checagem de quais têm gating de permissão na UI.
+- Isolamento de Webhooks entre tenants (Staging).
+- Idempotency-Key, resolução NFC, e isolamento entre tenants — na Produção real, de forma não-destrutiva.
+
+### 2. O que foi encontrado
+- 🔴 **Bella Vista com plano PRO (limite 10) mas 51 cartões reais** — inconsistência do seed, não da regra de negócio.
+- 🔴 **RBAC crítico**: um usuário Somente Leitura conseguia `POST /api/cards` (criar cartão, 201) e `PATCH /api/feedback/[id]` (resolver feedback) — nenhuma das duas rotas checava permissão, só autenticação. Único achado desse tipo em toda a API (as demais rotas sem `requirePermission` são legitimamente públicas: `/api/visits`, `/api/ratings`, `/api/onboarding`).
+- 🔴 **Mesmo gap na UI**: o botão "Novo cartão", o menu Editar/Pausar/Excluir de cada cartão, e o switch "Resolvido" de feedback ficavam sempre visíveis/habilitados, independente do papel.
+- 🟢 Isolamento de Webhooks entre tenants: correto.
+- 🟢 Idempotency-Key: confirmado funcionando perfeitamente em Produção (Redis real) — duas chamadas com a mesma chave retornaram o EXATO mesmo recurso, sem duplicar.
+- 🟢 Resolução NFC em Produção: testada com um cartão real da Bella Vista, redirecionou corretamente.
+- 🟢 Isolamento entre tenants em Produção: tentativa de editar um cartão de outra empresa bloqueada com 403.
+
+### 3. O que foi corrigido
+- Plano da Bella Vista alterado para BUSINESS na fonte do seed e nos dois bancos já semeados (Staging e Produção).
+- `requirePermission(ctx, "card:write")` adicionado em `POST/PATCH/DELETE /api/cards`.
+- `requirePermission(ctx, "feedback:resolve")` adicionado em `PATCH /api/feedback/[id]`.
+- `canManage` passado de ponta a ponta (página → view → item) para esconder/desabilitar os controles correspondentes na UI de Cartões e Feedback.
+- Todas as correções testadas de novo e reimplantadas em Staging **e** Produção.
+
+### 4. O que foi validado (teste real, não leitura de código)
+- Somente Leitura bloqueado tanto na API quanto na UI, confirmado após o fix.
+- Bella Vista sem mais o aviso de limite, com "Novo cartão" habilitado.
+- Idempotency-Key, resolução NFC e isolamento de tenant confirmados ao vivo em Produção, sem nenhuma ação destrutiva.
+
+### 5. O que ainda falta
+- White Label por domínio/subdomínio real (não configurado ainda).
+- Event Explorer, Reliability, Chaos Mode — inacessíveis em qualquer ambiente implantado (achado já registrado; só testável localmente).
+- Sessão/expiração real, RBAC completo para os papéis Marketing e Operador (só Gerente e Somente Leitura foram testados com conta real até agora).
+- Auditoria página-a-página sistemática das 26 páginas com a matriz completa de estados.
+- Rodada de UX/UI dedicada (item 4 do pedido).
+- `DEFINITION_OF_DONE.md` (ainda não criado).
+- Regressão integrada final (Cadastro→Logout com múltiplos papéis/tenants/dispositivos).
+
+### 6. Recomendação para o próximo passo
+Continuar o ciclo: (a) criar o `DEFINITION_OF_DONE.md` agora que há critérios claros o suficiente para defini-los, (b) testar Marketing/Operador do mesmo jeito que Somente Leitura foi testado agora (mesma técnica, alto valor, baixo custo), (c) começar a auditoria página-a-página sistemática.
+
+### 7. Status geral do produto
+🟡 **Significativamente mais sólido que no Ciclo 2, mas ainda não fechado.** O achado mais importante desta rodada (RBAC de Cartões/Feedback) era uma falha de segurança real, não cosmética — do tipo que só uma pessoa realmente testando com um usuário restrito encontraria. Já corrigido e verificado. Nenhum bloqueio conhecido do fluxo principal permanece em aberto.
+
+---
 
 ---
 
