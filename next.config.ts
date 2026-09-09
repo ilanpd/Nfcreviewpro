@@ -9,6 +9,19 @@ const nextConfig: NextConfig = {
   // `require` normal, em vez do webpack tentar (e falhar) empacotá-los.
   serverExternalPackages: ["bullmq", "ioredis"],
 
+  // Impressão Profissional (Fase 10, bônus) — achado real no Gate Final:
+  // `/api/cards/[id]/print` (via @react-pdf/renderer → pdfkit) retornava
+  // 500 em produção na Vercel com `Cannot find module
+  // '.../pdfkit/js/standard-fonts/Helvetica.cjs'`. O pdfkit carrega essas
+  // fontes com um require() dinâmico que o file tracer da Vercel não
+  // consegue seguir estaticamente, então excluía o diretório inteiro do
+  // pacote da função serverless — funcionava em `npm run dev` (node_modules
+  // completo no disco) e quebrava só no deploy real. `outputFileTracingIncludes`
+  // força a inclusão desse diretório para a rota que precisa dele.
+  outputFileTracingIncludes: {
+    "/api/cards/[id]/print": ["./node_modules/pdfkit/js/**/*"],
+  },
+
   // Segurança (Fase 10 — White Label) — HSTS real, não preparação de
   // mentira: navegadores só o honram sobre HTTPS (inofensivo em
   // desenvolvimento local sobre HTTP). `preload` deliberadamente omitido —
