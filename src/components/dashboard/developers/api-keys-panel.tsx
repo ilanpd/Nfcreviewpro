@@ -2,22 +2,13 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
-import { Copy, Plus, ShieldOff } from "lucide-react";
-import { AnalyticsCard, SmartBadge } from "@nfc-os/ui";
+import { Copy, KeyRound, Plus, ShieldOff } from "lucide-react";
+import { AnalyticsCard, EmptyState, PremiumModal, SmartBadge } from "@nfc-os/ui";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import { API_SCOPES, API_SCOPE_LABELS, type ApiScope } from "@/domain/api-v1/scopes";
 
 export interface ApiKeyRow {
@@ -99,83 +90,76 @@ export function ApiKeysPanel({ initialApiKeys }: { initialApiKeys: ApiKeyRow[] }
       title="Chaves de API"
       description="Uma chave representa acesso de servidor-a-servidor a esta empresa inteira, dentro dos escopos escolhidos — nunca herda o papel de quem a criou."
       action={
-        <Dialog
-          open={open}
-          onOpenChange={(next) => {
-            setOpen(next);
-            if (!next) setRevealedKey(null);
-          }}
-        >
-          <DialogTrigger asChild>
-            <Button size="sm">
-              <Plus className="size-3.5" /> Nova chave de API
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-md">
+        <>
+          <Button size="sm" onClick={() => setOpen(true)}>
+            <Plus className="size-3.5" /> Nova chave de API
+          </Button>
+          <PremiumModal
+            open={open}
+            onOpenChange={(next) => {
+              setOpen(next);
+              if (!next) setRevealedKey(null);
+            }}
+            icon={KeyRound}
+            size="md"
+            title={revealedKey ? "Copie sua chave agora" : "Nova chave de API"}
+            description={
+              revealedKey
+                ? "Por segurança, não é possível ver este valor de novo depois de fechar esta janela."
+                : "Escolha exatamente o que esta chave pode fazer — nunca mais do que o necessário."
+            }
+            footer={
+              revealedKey ? (
+                <Button
+                  onClick={() => {
+                    setOpen(false);
+                    setRevealedKey(null);
+                  }}
+                >
+                  Já copiei, fechar
+                </Button>
+              ) : (
+                <Button disabled={busy} onClick={createKey}>
+                  Criar chave
+                </Button>
+              )
+            }
+          >
             {revealedKey ? (
-              <>
-                <DialogHeader>
-                  <DialogTitle>Copie sua chave agora</DialogTitle>
-                  <DialogDescription>
-                    Por segurança, não é possível ver este valor de novo depois de fechar esta janela.
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="flex items-center gap-2 rounded-lg border border-border bg-muted px-3 py-2">
-                  <code className="flex-1 overflow-x-auto whitespace-nowrap text-xs">{revealedKey}</code>
-                  <Button size="sm" variant="outline" onClick={() => copy(revealedKey)}>
-                    <Copy className="size-3.5" />
-                  </Button>
-                </div>
-                <DialogFooter>
-                  <Button
-                    onClick={() => {
-                      setOpen(false);
-                      setRevealedKey(null);
-                    }}
-                  >
-                    Já copiei, fechar
-                  </Button>
-                </DialogFooter>
-              </>
+              <div className="flex items-center gap-2 rounded-lg border border-border bg-muted px-3 py-2">
+                <code className="flex-1 overflow-x-auto whitespace-nowrap text-xs">{revealedKey}</code>
+                <Button size="sm" variant="outline" onClick={() => copy(revealedKey)}>
+                  <Copy className="size-3.5" />
+                </Button>
+              </div>
             ) : (
-              <>
-                <DialogHeader>
-                  <DialogTitle>Nova chave de API</DialogTitle>
-                  <DialogDescription>Escolha exatamente o que esta chave pode fazer — nunca mais do que o necessário.</DialogDescription>
-                </DialogHeader>
-                <div className="space-y-4">
-                  <div className="space-y-1.5">
-                    <Label>Nome</Label>
-                    <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="ex.: Integração Zapier" />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label>Escopos</Label>
-                    <div className="max-h-64 space-y-2 overflow-y-auto rounded-lg border border-border p-3">
-                      {API_SCOPES.map((scope) => (
-                        <div key={scope} className="flex items-center justify-between gap-3">
-                          <div>
-                            <p className="text-sm font-medium text-foreground">{scope}</p>
-                            <p className="text-xs text-muted-foreground">{API_SCOPE_LABELS[scope]}</p>
-                          </div>
-                          <Switch checked={scopes.has(scope)} onCheckedChange={(checked) => toggleScope(scope, checked)} />
+              <div className="space-y-4">
+                <div className="space-y-1.5">
+                  <Label>Nome</Label>
+                  <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="ex.: Integração Zapier" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Escopos</Label>
+                  <div className="max-h-64 space-y-2 overflow-y-auto rounded-lg border border-border p-3">
+                    {API_SCOPES.map((scope) => (
+                      <div key={scope} className="flex items-center justify-between gap-3">
+                        <div>
+                          <p className="text-sm font-medium text-foreground">{scope}</p>
+                          <p className="text-xs text-muted-foreground">{API_SCOPE_LABELS[scope]}</p>
                         </div>
-                      ))}
-                    </div>
+                        <Switch checked={scopes.has(scope)} onCheckedChange={(checked) => toggleScope(scope, checked)} />
+                      </div>
+                    ))}
                   </div>
                 </div>
-                <DialogFooter>
-                  <Button disabled={busy} onClick={createKey}>
-                    Criar chave
-                  </Button>
-                </DialogFooter>
-              </>
+              </div>
             )}
-          </DialogContent>
-        </Dialog>
+          </PremiumModal>
+        </>
       }
     >
       {apiKeys.length === 0 ? (
-        <p className="text-sm text-muted-foreground">Nenhuma chave de API criada ainda.</p>
+        <EmptyState icon={<KeyRound />} title="Nenhuma chave de API criada ainda" description="Crie uma para integrar sua empresa a outros sistemas." />
       ) : (
         <Table>
           <TableHeader>

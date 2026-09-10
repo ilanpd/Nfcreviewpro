@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { getReliabilitySnapshot } from "@/services/reliability.service";
 import { ReliabilityView } from "./reliability-view";
+import { devToolsEnabled } from "@/lib/dev/gate";
 
 /**
  * Painel de Saúde / Centro de Confiabilidade (Fase 8) — a contraparte
@@ -12,7 +13,7 @@ import { ReliabilityView } from "./reliability-view";
  * tela decorativa. Local dev/preview only, como todo `/dev/ceo/*`.
  */
 export default async function ReliabilityPage() {
-  if (process.env.NODE_ENV === "production") notFound();
+  if (!devToolsEnabled()) notFound();
 
   const snapshot = await getReliabilitySnapshot();
 

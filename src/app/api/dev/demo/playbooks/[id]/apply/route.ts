@@ -4,6 +4,7 @@ import { getDemoCompany } from "@/lib/dev/demo-company";
 import { buildSyntheticAuthContext } from "@/lib/api-v1/auth";
 import { executeRecommendation } from "@/services/execution-engine.service";
 import { handleApiError } from "@/lib/api-error";
+import { devToolsEnabled } from "@/lib/dev/gate";
 
 /**
  * Executive Copilot (Fase 11) — a ÚNICA rota de escrita que `/dev/ceo`
@@ -22,7 +23,7 @@ import { handleApiError } from "@/lib/api-error";
  * manual, chamada pela mesma rota `/api/playbooks/executions/:id/undo`).
  */
 export async function POST(_req: Request, { params }: { params: Promise<{ id: string }> }) {
-  if (process.env.NODE_ENV === "production") notFound();
+  if (!devToolsEnabled()) notFound();
   try {
     const company = await getDemoCompany();
     if (!company) return NextResponse.json({ error: "Empresa de demonstração não encontrada" }, { status: 404 });

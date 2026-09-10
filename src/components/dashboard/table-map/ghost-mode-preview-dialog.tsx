@@ -1,16 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { AlertTriangle, Loader2 } from "lucide-react";
+import { AlertTriangle, Sparkles } from "lucide-react";
+import { Spinner } from "@/components/ui/spinner";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { PremiumModal } from "@nfc-os/ui";
 
 const NAME_PREVIEW_LIMIT = 8;
 
@@ -71,15 +65,24 @@ export function GhostModePreviewDialog({
   const remaining = affectedNames.length - previewNames.length;
 
   return (
-    <Dialog open={open} onOpenChange={(next) => !next && onCancel()}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Aplicar &ldquo;{campaignName}&rdquo;?</DialogTitle>
-          <DialogDescription>
-            Esta ação vai atribuir a campanha a <strong>{scopeLabel}</strong>.
-          </DialogDescription>
-        </DialogHeader>
-
+    <PremiumModal
+      open={open}
+      onOpenChange={(next) => !next && onCancel()}
+      icon={Sparkles}
+      title={`Aplicar "${campaignName}"?`}
+      description={`Esta ação vai atribuir a campanha a ${scopeLabel}.`}
+      footer={
+        <>
+          <Button variant="outline" onClick={onCancel} disabled={confirming}>
+            Cancelar
+          </Button>
+          <Button onClick={onConfirm} disabled={confirming}>
+            {confirming ? <Spinner className="size-3.5" /> : null}
+            Confirmar
+          </Button>
+        </>
+      }
+    >
         <div className="space-y-3">
           {previewNames.length > 0 ? (
             <div className="flex flex-wrap gap-1.5">
@@ -97,7 +100,7 @@ export function GhostModePreviewDialog({
           <div className="rounded-md bg-muted/60 px-3 py-2 text-xs text-muted-foreground">
             {impact === "loading" ? (
               <span className="flex items-center gap-1.5">
-                <Loader2 className="size-3 animate-spin" /> Calculando impacto estimado…
+                <Spinner className="size-3" /> Calculando impacto estimado…
               </span>
             ) : impact === "unavailable" ? (
               "Não foi possível estimar o impacto agora."
@@ -116,17 +119,6 @@ export function GhostModePreviewDialog({
             </div>
           ) : null}
         </div>
-
-        <DialogFooter>
-          <Button variant="outline" onClick={onCancel} disabled={confirming}>
-            Cancelar
-          </Button>
-          <Button onClick={onConfirm} disabled={confirming}>
-            {confirming ? <Loader2 className="size-3.5 animate-spin" /> : null}
-            Confirmar
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+    </PremiumModal>
   );
 }

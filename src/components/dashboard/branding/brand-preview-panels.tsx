@@ -41,7 +41,7 @@ function DashboardMockup({ companyName, logoUrl, primaryColor }: PreviewProps) {
         <div className="flex w-16 flex-col items-center gap-3 border-r border-border bg-muted/40 py-3">
           <LogoOrInitial logoUrl={logoUrl} companyName={companyName} primaryColor={primaryColor} size={28} />
           {["a", "b", "c", "d"].map((k, i) => (
-            <div key={k} className="h-2 w-8 rounded" style={{ backgroundColor: i === 0 ? primaryColor : "#E5E7EB" }} />
+            <div key={k} className="h-2 w-8 rounded" style={{ backgroundColor: i === 0 ? primaryColor : "var(--border)" }} />
           ))}
         </div>
         <div className="flex-1 bg-white p-3">
@@ -55,7 +55,7 @@ function DashboardMockup({ companyName, logoUrl, primaryColor }: PreviewProps) {
             {[0, 1, 2, 3].map((i) => (
               <div key={i} className="rounded-md border border-border p-2">
                 <div className="h-1.5 w-10 rounded bg-muted" />
-                <div className="mt-2 h-4 w-14 rounded" style={{ backgroundColor: i === 0 ? primaryColor : "#E5E7EB", opacity: i === 0 ? 1 : 0.6 }} />
+                <div className="mt-2 h-4 w-14 rounded" style={{ backgroundColor: i === 0 ? primaryColor : "var(--border)", opacity: i === 0 ? 1 : 0.6 }} />
               </div>
             ))}
           </div>

@@ -7,6 +7,7 @@ import { listZones } from "@/services/zone.service";
 import { listBranches } from "@/services/branch.service";
 import { getReliabilitySnapshot } from "@/services/reliability.service";
 import { MissionControlView } from "./mission-control-view";
+import { devToolsEnabled } from "@/lib/dev/gate";
 
 /**
  * Mission Control (Fase 8) — um único ecrã estilo NOC (Network Operations
@@ -18,7 +19,7 @@ import { MissionControlView } from "./mission-control-view";
  * custa de inventar um dado. Local dev/preview only.
  */
 export default async function MissionControlPage() {
-  if (process.env.NODE_ENV === "production") notFound();
+  if (!devToolsEnabled()) notFound();
 
   const company = await getDemoCompany();
   if (!company) {

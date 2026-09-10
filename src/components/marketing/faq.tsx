@@ -1,4 +1,7 @@
+"use client";
+
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { BlurFade } from "@/components/ui/blur-fade";
 
 const FAQS = [
   {
@@ -26,18 +29,22 @@ const FAQS = [
 export function Faq() {
   return (
     <section id="faq" className="mx-auto max-w-3xl px-6 py-24">
-      <div className="text-center">
-        <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">Perguntas frequentes</h2>
-      </div>
+      <BlurFade inView>
+        <div className="text-center">
+          <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">Perguntas frequentes</h2>
+        </div>
+      </BlurFade>
 
-      <Accordion type="single" collapsible className="mt-12 w-full">
-        {FAQS.map((faq, index) => (
-          <AccordionItem key={faq.question} value={`item-${index}`}>
-            <AccordionTrigger className="text-left">{faq.question}</AccordionTrigger>
-            <AccordionContent className="text-muted-foreground">{faq.answer}</AccordionContent>
-          </AccordionItem>
-        ))}
-      </Accordion>
+      <BlurFade delay={0.08} inView offset={12}>
+        <Accordion type="single" collapsible className="mt-12 w-full">
+          {FAQS.map((faq, index) => (
+            <AccordionItem key={faq.question} value={`item-${index}`}>
+              <AccordionTrigger className="text-left">{faq.question}</AccordionTrigger>
+              <AccordionContent className="text-muted-foreground">{faq.answer}</AccordionContent>
+            </AccordionItem>
+          ))}
+        </Accordion>
+      </BlurFade>
     </section>
   );
 }

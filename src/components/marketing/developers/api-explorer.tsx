@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Play, Loader2 } from "lucide-react";
+import { Play } from "lucide-react";
+import { Spinner } from "@/components/ui/spinner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -147,7 +148,7 @@ export function ApiExplorer({ demoApiKey }: { demoApiKey: string }) {
         <pre className="overflow-x-auto rounded-lg bg-neutral-950 p-3 text-xs text-neutral-100">{curlSnippet}</pre>
 
         <Button onClick={run} disabled={loading} className="w-full">
-          {loading ? <Loader2 className="size-4 animate-spin" /> : <Play className="size-4" />}
+          {loading ? <Spinner className="size-4" /> : <Play className="size-4" />}
           Executar contra a Bella Vista (dados de demonstração)
         </Button>
       </div>

@@ -2,9 +2,10 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
-import { Activity, Timer } from "lucide-react";
-import { KpiCard, AnalyticsCard, SmartBadge } from "@nfc-os/ui";
+import { Activity, ScrollText, Timer } from "lucide-react";
+import { KpiCard, AnalyticsCard, EmptyState, SmartBadge } from "@nfc-os/ui";
 import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 export interface ApiRequestLogRow {
@@ -57,7 +58,11 @@ export function LogsPanel({ initialLogs, initialSummary }: { initialLogs: ApiReq
 
       <AnalyticsCard title="Chamadas recentes" description="Toda requisição feita à API pública v1 com uma chave desta empresa.">
         {logs.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Nenhuma chamada registrada ainda — faça sua primeira requisição em Documentação rápida.</p>
+          <EmptyState
+            icon={<ScrollText />}
+            title="Nenhuma chamada registrada ainda"
+            description="Faça sua primeira requisição em Documentação rápida."
+          />
         ) : (
           <>
             <Table>
@@ -86,6 +91,7 @@ export function LogsPanel({ initialLogs, initialSummary }: { initialLogs: ApiReq
             </Table>
             <div className="mt-3 flex justify-center">
               <Button size="sm" variant="outline" disabled={loadingMore} onClick={loadMore}>
+                {loadingMore ? <Spinner className="size-3.5" /> : null}
                 Carregar mais
               </Button>
             </div>

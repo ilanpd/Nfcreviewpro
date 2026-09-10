@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles, Play, Rocket, Radio } from "lucide-react";
-import { KpiCard, RecommendationCard, SmartBadge } from "@nfc-os/ui";
+import { EmptyState, KpiCard, RecommendationCard, SmartBadge } from "@nfc-os/ui";
 import { TableMapView } from "@/components/dashboard/table-map/table-map-view";
 import { BrandProvider } from "@/components/white-label/brand-provider";
 import { useLiveConnection } from "@/lib/live/use-live-connection";
@@ -241,7 +241,12 @@ export function DemoOSView({
           <div>
             <h2 className="mb-3 text-sm font-semibold text-foreground">Próximas melhores ações</h2>
             {recommendations.length === 0 ? (
-              <p className="text-xs text-muted-foreground">Nenhuma recomendação agora — clique em &ldquo;Assistir a operação acontecer&rdquo; para gerar uma de verdade.</p>
+              <EmptyState
+                icon={<Sparkles />}
+                title="Nenhuma recomendação agora"
+                description='Clique em "Assistir a operação acontecer" para gerar uma de verdade.'
+                action={!running ? { label: "Assistir a operação acontecer", onClick: startStory } : undefined}
+              />
             ) : (
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {recommendations.map((r) => (

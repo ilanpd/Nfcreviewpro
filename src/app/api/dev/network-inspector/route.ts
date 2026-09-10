@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDemoCompany } from "@/lib/dev/demo-company";
 import { listApiRequestLogs, getApiUsageSummary } from "@/services/api-request-log.service";
+import { devToolsEnabled } from "@/lib/dev/gate";
 
 /**
  * Network Inspector (Fase 12) — toda chamada `/api/v1/**` já é gravada em
@@ -8,7 +9,7 @@ import { listApiRequestLogs, getApiUsageSummary } from "@/services/api-request-l
  * essas linhas para a nova tela, nunca duplica a gravação.
  */
 export async function GET(req: NextRequest) {
-  if (process.env.NODE_ENV === "production") return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (!devToolsEnabled()) return NextResponse.json({ error: "Not found" }, { status: 404 });
   const company = await getDemoCompany();
   if (!company) return NextResponse.json({ error: "Empresa de demonstração não encontrada" }, { status: 404 });
 

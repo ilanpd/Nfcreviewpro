@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { getDemoCompany } from "@/lib/dev/demo-company";
 import { listRecentEventLogs } from "@/services/replay.service";
 import { EventExplorerView } from "./event-explorer-view";
+import { devToolsEnabled } from "@/lib/dev/gate";
 
 /**
  * Event Explorer (Fase 12) — inspirado em Temporal/Stripe Events/Supabase
@@ -9,7 +10,7 @@ import { EventExplorerView } from "./event-explorer-view";
  * replay/duração, tudo derivado do `EventLog` real (Fase 8), nunca inventado.
  */
 export default async function EventExplorerPage() {
-  if (process.env.NODE_ENV === "production") notFound();
+  if (!devToolsEnabled()) notFound();
 
   const company = await getDemoCompany();
   if (!company) {

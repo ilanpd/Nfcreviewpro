@@ -50,8 +50,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   // `<ClerkProvider>` (que exige chaves reais para inicializar no cliente)
   // fica de fora inteiramente, de propósito e permanentemente — nunca mais
   // removido/religado à mão a cada fase. Ver ADR-052.
+  // Dark mode (Fase 14) — os tokens `.dark` existem desde a Fase 4.5
+  // (ADR-023) mas nunca tinham sido ligados (`forcedTheme="light"` travava
+  // tudo — ADR-047). `enableSystem` continua desligado de propósito: uma
+  // ferramenta de trabalho não deveria trocar de tema sozinha por causa do
+  // SO de quem está usando — só quando a pessoa escolhe, via o toggle. Ver
+  // ADR-061.
   const body = (
-    <ThemeProvider attribute="class" forcedTheme="light" enableSystem={false}>
+    <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
       <TooltipProvider delayDuration={200}>
         {children}
         <Toaster position="top-center" richColors />

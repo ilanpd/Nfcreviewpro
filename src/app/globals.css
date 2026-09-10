@@ -7,7 +7,7 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-sans);
+  --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
   --font-heading: var(--font-sans);
   --color-sidebar-ring: var(--sidebar-ring);
@@ -53,6 +53,8 @@
   --color-brand: var(--brand);
   --color-brand-foreground: var(--brand-foreground);
   --color-brand-subtle: var(--brand-subtle);
+  --color-noc-surface: var(--noc-surface);
+  --color-noc-border: var(--noc-border);
 
   --shadow-subtle: 0 1px 2px oklch(0 0 0 / 0.04);
   --shadow-elevated: 0 1px 2px oklch(0 0 0 / 0.04), 0 4px 16px oklch(0 0 0 / 0.06);
@@ -67,6 +69,83 @@
   --animate-fade-in: fade-in 0.2s var(--ease-enter);
   --animate-scale-in: scale-in 0.16s var(--ease-spring);
   --animate-shimmer: shimmer 1.8s ease-in-out infinite;
+  --animate-aurora-drift-a: aurora-drift-a 22s ease-in-out infinite;
+  --animate-aurora-drift-b: aurora-drift-b 26s ease-in-out infinite;
+  --animate-aurora-drift-c: aurora-drift-c 30s ease-in-out infinite;
+  --animate-meteor: meteor 5s linear infinite;
+  --animate-marquee: marquee var(--duration) infinite linear;
+  --animate-marquee-vertical: marquee-vertical var(--duration) linear infinite;
+  --animate-blink-cursor: blink-cursor 1.2s step-end infinite;
+  --animate-shiny-text: shiny-text 8s infinite;
+  @keyframes aurora-drift-a {
+  0%, 100% {
+    transform: translate(-50%, 0) scale(1);
+    }
+  50% {
+    transform: translate(-42%, 6%) scale(1.12);
+    }
+  }
+  @keyframes aurora-drift-b {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+    }
+  50% {
+    transform: translate(-8%, -8%) scale(1.08);
+    }
+  }
+  @keyframes aurora-drift-c {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+    }
+  50% {
+    transform: translate(6%, -6%) scale(1.1);
+    }
+  }
+  @keyframes meteor {
+  0% {
+    transform: rotate(var(--angle)) translateX(0);
+    opacity: 1;
+    }
+  70% {
+    opacity: 1;
+    }
+  100% {
+    transform: rotate(var(--angle)) translateX(-500px);
+    opacity: 0;
+    }
+  }
+  @keyframes marquee {
+  from {
+    transform: translateX(0);
+    }
+  to {
+    transform: translateX(calc(-100% - var(--gap)));
+    }
+  }
+  @keyframes marquee-vertical {
+  from {
+    transform: translateY(0);
+    }
+  to {
+    transform: translateY(calc(-100% - var(--gap)));
+    }
+  }
+  @keyframes blink-cursor {
+  0%, 49% {
+    opacity: 1;
+    }
+  50%, 100% {
+    opacity: 0;
+    }
+  }
+  @keyframes shiny-text {
+  0%, 90%, 100% {
+    background-position: calc(-100% - var(--shiny-width)) 0;
+    }
+  30%, 60% {
+    background-position: calc(100% + var(--shiny-width)) 0;
+    }
+  }
 }
 
 @keyframes fade-in {
@@ -89,6 +168,14 @@
   --brand: oklch(0.549 0.214 279);
   --brand-foreground: oklch(0.98 0.005 279);
   --brand-subtle: oklch(0.965 0.02 279);
+
+  /* Superfície sempre-escura para telas de operação/NOC (Mission Control,
+     Command Center) — deliberadamente independente de `--background`
+     (que hoje é sempre clara, `forcedTheme="light"` em layout.tsx). Um
+     único token em vez de `bg-[#0B0F17]` repetido cru em cada seção da
+     tela — achado da auditoria da Fase A. */
+  --noc-surface: oklch(0.145 0.02 265);
+  --noc-border: oklch(1 0 0 / 8%);
 
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
@@ -283,6 +370,20 @@
     }
   }
 
+  /* Bento Features da Landing (Fase 14) — barras do mockup de Analytics
+     "crescem" uma vez ao entrar em vista, nunca em loop (loop contínuo
+     não comunicaria nada novo depois do primeiro segundo). */
+  @keyframes bento-bar-rise {
+    from {
+      transform: scaleY(0);
+      transform-origin: bottom;
+    }
+    to {
+      transform: scaleY(1);
+      transform-origin: bottom;
+    }
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .skeleton-shimmer {
       animation: none;
@@ -303,4 +404,8 @@
       scroll-behavior: auto !important;
     }
   }
+}
+  ::view-transition-old(root), ::view-transition-new(root) {
+    animation: none;
+    mix-blend-mode: normal;
 }

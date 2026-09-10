@@ -77,7 +77,7 @@ export function MissionControlView({
   const resolutionCache = reliability.cache.find((c) => c.namespace === "resolution");
 
   return (
-    <div className="flex h-screen flex-col bg-[#0B0F17] text-white">
+    <div className="flex h-screen flex-col bg-noc-surface text-white">
       <header className="flex shrink-0 items-center justify-between border-b border-white/10 px-6 py-3">
         <div className="flex items-center gap-4">
           <Link href="/dev/ceo" className="flex items-center gap-1 text-xs text-white/50 hover:text-white/80">
@@ -93,7 +93,7 @@ export function MissionControlView({
       </header>
 
       <div className="grid min-h-0 flex-1 grid-cols-1 gap-px bg-white/10 lg:grid-cols-[1fr_360px]">
-        <div className="min-h-0 bg-[#0B0F17]">
+        <div className="min-h-0 bg-noc-surface">
           <TableMapView
             initialCards={cards}
             zones={zones}
@@ -109,7 +109,7 @@ export function MissionControlView({
         </div>
 
         <aside className="flex min-h-0 flex-col gap-px overflow-y-auto bg-white/10">
-          <section className="bg-[#0B0F17] p-4">
+          <section className="bg-noc-surface p-4">
             <p className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-white/50">
               <HeartPulse className="size-3.5" /> Redis
             </p>
@@ -125,7 +125,7 @@ export function MissionControlView({
             />
           </section>
 
-          <section className="bg-[#0B0F17] p-4">
+          <section className="bg-noc-surface p-4">
             <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-white/50">Filas</p>
             {reliability.queues.map((q) => (
               <StatRow
@@ -138,7 +138,7 @@ export function MissionControlView({
             {totalDead > 0 && <StatRow label="Dead-letter (total)" value={totalDead} tone="danger" />}
           </section>
 
-          <section className="bg-[#0B0F17] p-4">
+          <section className="bg-noc-surface p-4">
             <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-white/50">Event Bus &amp; Observabilidade</p>
             <StatRow label="Eventos/min" value={reliability.events.lastMinute} />
             <StatRow label="Eventos (5min)" value={reliability.events.last5Minutes} />
@@ -150,7 +150,7 @@ export function MissionControlView({
             />
           </section>
 
-          <section className="bg-[#0B0F17] p-4">
+          <section className="bg-noc-surface p-4">
             <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-white/50">Chaos Mode</p>
             {Object.entries(reliability.chaos).map(([flag, active]) => (
               <StatRow key={flag} label={flag} value={active ? "Ativo" : "Off"} tone={active ? "danger" : "neutral"} />

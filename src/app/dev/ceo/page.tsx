@@ -4,12 +4,13 @@ import { ArrowLeft, Clock, FileText, Layers, TrendingUp, Radio, HeartPulse, Sate
 import { KpiCard, AnalyticsCard, SmartBadge, Timeline } from "@nfc-os/ui";
 import { Button } from "@/components/ui/button";
 import { readDevStatus, countArchitectureDecisions } from "@/lib/dev-status";
+import { devToolsEnabled } from "@/lib/dev/gate";
 
 // Mesmos dados de /dev, vistos como um resumo executivo: quanto está
 // pronto, o que está pendente, riscos conhecidos, arquitetura e o backlog
 // priorizado — sem detalhe de implementação linha a linha. Local dev/preview only.
 export default function CeoModePage() {
-  if (process.env.NODE_ENV === "production") notFound();
+  if (!devToolsEnabled()) notFound();
 
   const status = readDevStatus();
   const adrCount = countArchitectureDecisions();

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { reconstructSequence, replayToQueues } from "@/services/replay.service";
 import { handleApiError } from "@/lib/api-error";
 import type { DomainEventType } from "@/domain/events/types";
+import { devToolsEnabled } from "@/lib/dev/gate";
 
 function parseFilter(params: URLSearchParams) {
   const since = params.get("since");
@@ -19,7 +20,7 @@ function parseFilter(params: URLSearchParams) {
 
 /** Somente leitura — reconstrói a sequência de eventos gravados. */
 export async function GET(req: NextRequest) {
-  if (process.env.NODE_ENV === "production") return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (!devToolsEnabled()) return NextResponse.json({ error: "Not found" }, { status: 404 });
   try {
     const events = await reconstructSequence(parseFilter(req.nextUrl.searchParams));
     return NextResponse.json({ events });
@@ -30,7 +31,7 @@ export async function GET(req: NextRequest) {
 
 /** Com efeito colateral — reenfileira os eventos encontrados para seus consumidores. */
 export async function POST(req: NextRequest) {
-  if (process.env.NODE_ENV === "production") return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (!devToolsEnabled()) return NextResponse.json({ error: "Not found" }, { status: 404 });
   try {
     const body = await req.json().catch(() => ({}));
     const result = await replayToQueues({

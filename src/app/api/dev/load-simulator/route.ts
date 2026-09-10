@@ -3,6 +3,7 @@ import { getDemoCompany } from "@/lib/dev/demo-company";
 import { prisma } from "@/lib/prisma";
 import { publishEvent } from "@/lib/event-bus";
 import { handleApiError } from "@/lib/api-error";
+import { devToolsEnabled } from "@/lib/dev/gate";
 
 /**
  * Simulador de Carga da Bella Vista (Fase 8) — dispara uma rajada de
@@ -14,7 +15,7 @@ import { handleApiError } from "@/lib/api-error";
  * verdade, só o efeito no Event Bus/Queue Engine); local dev/preview only.
  */
 export async function POST(req: NextRequest) {
-  if (process.env.NODE_ENV === "production") return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (!devToolsEnabled()) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   try {
     const company = await getDemoCompany();

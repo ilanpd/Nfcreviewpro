@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { CHAOS_FLAGS, getAllChaosFlags, setChaosFlag, type ChaosFlag } from "@/lib/chaos/flags";
+import { devToolsEnabled } from "@/lib/dev/gate";
 
 /**
  * Chaos Engine (Fase 8) — liga/desliga as 5 flags de injeção de falha para
@@ -9,13 +10,13 @@ import { CHAOS_FLAGS, getAllChaosFlags, setChaosFlag, type ChaosFlag } from "@/l
  * `lib/chaos/flags.ts`.
  */
 export async function GET() {
-  if (process.env.NODE_ENV === "production") return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (!devToolsEnabled()) return NextResponse.json({ error: "Not found" }, { status: 404 });
   const flags = await getAllChaosFlags();
   return NextResponse.json({ flags });
 }
 
 export async function POST(req: NextRequest) {
-  if (process.env.NODE_ENV === "production") return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (!devToolsEnabled()) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   const body = await req.json();
   const flag = body?.flag as ChaosFlag | undefined;

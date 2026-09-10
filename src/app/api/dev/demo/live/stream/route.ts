@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { getDemoCompany } from "@/lib/dev/demo-company";
 import { listRecentEvents } from "@/services/live.service";
 import { incrementSseConnections, decrementSseConnections } from "@/lib/observability/sse-metrics";
+import { devToolsEnabled } from "@/lib/dev/gate";
 
 /**
  * Equivalente de `/api/live/stream` para o Command Center de demonstração em
@@ -17,7 +18,7 @@ const HEARTBEAT_INTERVAL_MS = 15000;
 const MAX_CONNECTION_MS = 50_000;
 
 export async function GET(req: NextRequest) {
-  if (process.env.NODE_ENV === "production") return new Response("Not found", { status: 404 });
+  if (!devToolsEnabled()) return new Response("Not found", { status: 404 });
 
   const company = await getDemoCompany();
   if (!company) return new Response("Empresa de demonstração não encontrada — rode o seed", { status: 404 });

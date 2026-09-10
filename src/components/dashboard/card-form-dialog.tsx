@@ -2,20 +2,14 @@
 
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { CreditCard } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { NFCCard } from "@/generated/prisma/client";
 import type { BranchListItem, ZoneListItem } from "@/types";
+import { PremiumModal } from "@nfc-os/ui";
 
 interface CardFormDialogProps {
   card?: NFCCard;
@@ -78,14 +72,23 @@ export function CardFormDialog({ card, trigger, branches, zones, onSaved }: Card
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>{trigger}</DialogTrigger>
-      <DialogContent>
-        <form onSubmit={handleSubmit}>
-          <DialogHeader>
-            <DialogTitle>{card ? "Editar cartão" : "Novo cartão NFC"}</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
+    <>
+      <span className="contents" onClick={() => setOpen(true)}>
+        {trigger}
+      </span>
+      <PremiumModal
+        open={open}
+        onOpenChange={setOpen}
+        icon={CreditCard}
+        title={card ? "Editar cartão" : "Novo cartão NFC"}
+        footer={
+          <Button type="submit" form="card-form" disabled={saving}>
+            {saving ? "Salvando…" : "Salvar"}
+          </Button>
+        }
+      >
+        <form id="card-form" onSubmit={handleSubmit}>
+          <div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="card-name">Nome</Label>
               <Input
@@ -148,13 +151,8 @@ export function CardFormDialog({ card, trigger, branches, zones, onSaved }: Card
               </div>
             ) : null}
           </div>
-          <DialogFooter>
-            <Button type="submit" disabled={saving}>
-              {saving ? "Salvando…" : "Salvar"}
-            </Button>
-          </DialogFooter>
         </form>
-      </DialogContent>
-    </Dialog>
+      </PremiumModal>
+    </>
   );
 }

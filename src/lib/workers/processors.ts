@@ -12,6 +12,7 @@ import { evaluatePlaybooksForCompany } from "@/services/playbook-engine.service"
 import { runScheduledExecution } from "@/services/execution-engine.service";
 import type { DomainEvent, DomainEventType } from "@/domain/events/types";
 import type { QueueName } from "@/lib/queues/definitions";
+import { devToolsEnabled } from "@/lib/dev/gate";
 
 /**
  * Worker Engine (Fase 8) — um processador por fila. Cada um:
@@ -34,7 +35,7 @@ async function delay(ms: number) {
 }
 
 async function maybeApplyChaos(scope: "worker" | "webhook") {
-  if (process.env.NODE_ENV === "production") return;
+  if (!devToolsEnabled()) return;
   if (await isChaosActive("workerSlow")) await delay(4000);
   if (scope === "webhook" && (await isChaosActive("timeout"))) await delay(60_000);
   if (scope === "webhook" && (await isChaosActive("webhookFailure"))) {

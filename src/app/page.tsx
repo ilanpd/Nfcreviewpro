@@ -1,7 +1,7 @@
 import { SiteHeader } from "@/components/marketing/site-header";
 import { Hero } from "@/components/marketing/hero";
 import { HowItWorks } from "@/components/marketing/how-it-works";
-import { Benefits } from "@/components/marketing/benefits";
+import { BentoFeatures } from "@/components/marketing/bento-features";
 import { Testimonials } from "@/components/marketing/testimonials";
 import { Pricing } from "@/components/marketing/pricing";
 import { Faq } from "@/components/marketing/faq";
@@ -15,7 +15,7 @@ export default function LandingPage() {
       <main className="flex-1">
         <Hero />
         <HowItWorks />
-        <Benefits />
+        <BentoFeatures />
         <Testimonials />
         <Pricing />
         <Faq />

@@ -11,8 +11,8 @@ import {
 } from "@/services/analytics-engine.service";
 import { getTopOfEachRanking } from "@/services/ranking-engine.service";
 import { getInsights } from "@/services/insights-engine.service";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { AnalyticsCard } from "@nfc-os/ui";
 import { VisitsChart } from "@/components/dashboard/visits-chart";
 import { HourlyChart } from "@/components/dashboard/hourly-chart";
 import { BreakdownList } from "@/components/dashboard/breakdown-list";
@@ -63,51 +63,26 @@ export default async function AnalyticsPage() {
         </TabsContent>
 
         <TabsContent value="overview" className="space-y-4">
-          <Card className="border-none shadow-sm shadow-black/5">
-            <CardHeader>
-              <CardTitle className="text-base font-medium">Acessos e conversões</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <VisitsChart data={analytics.timeseries} />
-            </CardContent>
-          </Card>
+          <AnalyticsCard title="Acessos e conversões">
+            <VisitsChart data={analytics.timeseries} />
+          </AnalyticsCard>
 
           <div className="grid gap-4 lg:grid-cols-2">
-            <Card className="border-none shadow-sm shadow-black/5">
-              <CardHeader>
-                <CardTitle className="text-base font-medium">Acessos por horário</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <HourlyChart data={analytics.byHour} />
-              </CardContent>
-            </Card>
+            <AnalyticsCard title="Acessos por horário">
+              <HourlyChart data={analytics.byHour} />
+            </AnalyticsCard>
 
-            <Card className="border-none shadow-sm shadow-black/5">
-              <CardHeader>
-                <CardTitle className="text-base font-medium">Localização aproximada</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <BreakdownList items={analytics.byLocation} />
-              </CardContent>
-            </Card>
+            <AnalyticsCard title="Localização aproximada">
+              <BreakdownList items={analytics.byLocation} />
+            </AnalyticsCard>
 
-            <Card className="border-none shadow-sm shadow-black/5">
-              <CardHeader>
-                <CardTitle className="text-base font-medium">Dispositivos</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <BreakdownList items={analytics.byDevice} />
-              </CardContent>
-            </Card>
+            <AnalyticsCard title="Dispositivos">
+              <BreakdownList items={analytics.byDevice} />
+            </AnalyticsCard>
 
-            <Card className="border-none shadow-sm shadow-black/5">
-              <CardHeader>
-                <CardTitle className="text-base font-medium">Navegadores</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <BreakdownList items={analytics.byBrowser} />
-              </CardContent>
-            </Card>
+            <AnalyticsCard title="Navegadores">
+              <BreakdownList items={analytics.byBrowser} />
+            </AnalyticsCard>
           </div>
         </TabsContent>
 

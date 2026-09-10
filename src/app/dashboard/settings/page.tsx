@@ -8,9 +8,7 @@ import { RoiSettingsForm } from "@/components/dashboard/roi-settings-form";
 import { OrganizationCard } from "@/components/dashboard/organization-card";
 import { AuditLogCard } from "@/components/dashboard/audit-log-card";
 import { PLANS } from "@/lib/plans";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { AnalyticsCard, PermissionMatrix } from "@nfc-os/ui";
+import { AnalyticsCard, PermissionMatrix, SmartBadge } from "@nfc-os/ui";
 
 export default async function SettingsPage() {
   const ctx = await requireAuthContext();
@@ -31,15 +29,15 @@ export default async function SettingsPage() {
         <p className="text-sm text-muted-foreground">Gerencie os dados públicos e o plano da sua empresa.</p>
       </div>
 
-      <Card className="max-w-2xl border-none shadow-sm shadow-black/5">
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>Seu plano</CardTitle>
-          <Badge>{plan.name}</Badge>
-        </CardHeader>
-        <CardContent className="text-sm text-muted-foreground">
+      <AnalyticsCard
+        title="Seu plano"
+        action={<SmartBadge label={plan.name} tone="brand" />}
+        className="max-w-2xl"
+      >
+        <p className="text-sm text-muted-foreground">
           {plan.priceLabel} · {plan.cardLimit === null ? "cartões ilimitados" : `até ${plan.cardLimit} cartão(ões)`}
-        </CardContent>
-      </Card>
+        </p>
+      </AnalyticsCard>
 
       {canManageSettings ? <SettingsForm company={company} /> : null}
 

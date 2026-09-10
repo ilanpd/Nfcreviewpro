@@ -3,10 +3,11 @@ import Link from "next/link";
 import { ArrowUpRight, CheckCircle2, FileText, GitBranch, History, ShieldCheck } from "lucide-react";
 import { KpiCard, AnalyticsCard, SmartBadge, Timeline, ActivityFeed, EmptyState } from "@nfc-os/ui";
 import { readDevStatus, countArchitectureDecisions } from "@/lib/dev-status";
+import { devToolsEnabled } from "@/lib/dev/gate";
 
 // Local dev/preview only — este dashboard expõe status interno de build, não é uma rota voltada ao cliente.
 export default function DevStatusPage() {
-  if (process.env.NODE_ENV === "production") notFound();
+  if (!devToolsEnabled()) notFound();
 
   const status = readDevStatus();
   const adrCount = countArchitectureDecisions();

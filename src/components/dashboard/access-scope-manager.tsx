@@ -2,18 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Building2, MapPin, Plus, Trash2 } from "lucide-react";
+import { Building2, MapPin, Plus, Shield, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { BranchListItem, ZoneListItem } from "@/types";
+import { EmptyState, PremiumModal } from "@nfc-os/ui";
 
 interface AccessScopeItem {
   id: string;
@@ -90,24 +83,26 @@ export function AccessScopeManager({ memberId, memberName, branches, zones, trig
   const options = kind === "BRANCH" ? branches : zones;
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>{trigger}</DialogTrigger>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Acesso de {memberName}</DialogTitle>
-          <DialogDescription>
-            Sem restrições, este membro acessa tudo que o cargo dele permite. Adicionar uma ou mais unidades/zonas
-            aqui restringe o acesso apenas a elas.
-          </DialogDescription>
-        </DialogHeader>
-
+    <>
+      <span className="contents" onClick={() => setOpen(true)}>
+        {trigger}
+      </span>
+      <PremiumModal
+        open={open}
+        onOpenChange={setOpen}
+        icon={Shield}
+        title={`Acesso de ${memberName}`}
+        description="Sem restrições, este membro acessa tudo que o cargo dele permite. Adicionar uma ou mais unidades/zonas aqui restringe o acesso apenas a elas."
+      >
         <div className="space-y-4">
           {loading ? (
             <p className="text-sm text-muted-foreground">Carregando…</p>
           ) : scopes.length === 0 ? (
-            <p className="rounded-md border border-dashed p-4 text-center text-sm text-muted-foreground">
-              Sem restrições — acesso completo, conforme o cargo.
-            </p>
+            <EmptyState
+              icon={<Shield />}
+              title="Acesso completo, conforme o cargo"
+              description="Sem restrições — adicione uma unidade ou zona abaixo para limitar o que este membro vê."
+            />
           ) : (
             <ul className="space-y-2">
               {scopes.map((s) => (
@@ -161,7 +156,7 @@ export function AccessScopeManager({ memberId, memberName, branches, zones, trig
             </Button>
           </div>
         </div>
-      </DialogContent>
-    </Dialog>
+      </PremiumModal>
+    </>
   );
 }

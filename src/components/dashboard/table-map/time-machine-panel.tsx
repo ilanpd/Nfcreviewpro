@@ -1,9 +1,10 @@
 "use client";
 
-import { Rewind, Play, Square, Loader2 } from "lucide-react";
+import { Rewind, Play, Square } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Spinner } from "@/components/ui/spinner";
 import { Label } from "@/components/ui/label";
+import { PremiumPopover } from "@nfc-os/ui";
 
 interface TimeMachineSummary {
   totalTouches: number;
@@ -50,19 +51,22 @@ export function TimeMachinePanel({
   const active = minutesAgo !== null;
 
   return (
-    <Popover onOpenChange={(open) => !open && !active && onMinutesAgoChange(null)}>
-      <PopoverTrigger asChild>
+    <PremiumPopover
+      align="end"
+      className="w-80 space-y-3"
+      onOpenChange={(open) => !open && !active && onMinutesAgoChange(null)}
+      trigger={
         <Button variant={active ? "default" : "outline"} size="sm">
           <Rewind className="size-3.5" /> Time Machine
         </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-80 space-y-3" align="end">
+      }
+    >
         <div className="space-y-1.5">
           <div className="flex items-center justify-between">
             <Label className="text-xs text-muted-foreground">
               {active ? `Vendo o salão às ${formatAt(minutesAgo)}` : "Agora (ao vivo)"}
             </Label>
-            {loading ? <Loader2 className="size-3 animate-spin text-muted-foreground" /> : null}
+            {loading ? <Spinner className="size-3 text-muted-foreground" /> : null}
           </div>
           <input
             type="range"
@@ -112,7 +116,6 @@ export function TimeMachinePanel({
             </Button>
           ) : null}
         </div>
-      </PopoverContent>
-    </Popover>
+    </PremiumPopover>
   );
 }

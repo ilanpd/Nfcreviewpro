@@ -4,9 +4,9 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PremiumCardShell } from "@nfc-os/ui";
 
 const PRESET_COLORS = ["#0F172A", "#1D4ED8", "#059669", "#B91C1C", "#7C3AED", "#EA580C"];
 
@@ -44,8 +44,8 @@ export function OnboardingForm() {
   }
 
   return (
-    <Card className="border-none shadow-lg shadow-black/5">
-      <CardContent className="pt-6">
+    <PremiumCardShell className="shadow-premium">
+      <div className="p-6">
         <form onSubmit={handleSubmit} className="space-y-5">
           <div className="space-y-2">
             <Label htmlFor="name">Nome da empresa</Label>
@@ -109,7 +109,7 @@ export function OnboardingForm() {
             {loading ? "Criando…" : "Concluir cadastro"}
           </Button>
         </form>
-      </CardContent>
-    </Card>
+      </div>
+    </PremiumCardShell>
   );
 }

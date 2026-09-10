@@ -27,7 +27,7 @@ export function DevelopersView({ initialApiKeys, initialWebhooks, initialLogs, i
   const [tab, setTab] = useState("keys");
 
   return (
-    <main className="mx-auto max-w-6xl space-y-6 p-6 sm:p-10">
+    <main className="mx-auto w-full min-w-0 max-w-6xl space-y-6 p-6 sm:p-10">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Desenvolvedores</h1>
         <p className="text-sm text-muted-foreground">

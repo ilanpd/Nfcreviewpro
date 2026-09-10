@@ -12,6 +12,7 @@ import { getInsights } from "@/services/insights-engine.service";
 import { getReviewGoalForecast, getTopCampaignTrend } from "@/services/forecast-engine.service";
 import { listTopActionableRecommendations } from "@/services/recommendation-engine.service";
 import { CommandCenterView } from "./command-center-view";
+import { devToolsEnabled } from "@/lib/dev/gate";
 
 const COMMAND_CENTER_DAYS = 30;
 
@@ -25,7 +26,7 @@ const COMMAND_CENTER_DAYS = 30;
  * si são exatamente os mesmos serviços do dashboard real.
  */
 export default async function CommandCenterPage() {
-  if (process.env.NODE_ENV === "production") notFound();
+  if (!devToolsEnabled()) notFound();
 
   const company = await getDemoCompany();
 

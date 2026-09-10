@@ -3,9 +3,7 @@
 import { useState } from "react";
 import { toast } from "sonner";
 import { Download, Link2, MoreVertical, Pause, Play, Trash2 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,6 +15,7 @@ import { CardFormDialog } from "@/components/dashboard/card-form-dialog";
 import { cardPublicUrl } from "@/lib/qrcode";
 import type { BranchListItem, CardWithStats, ZoneListItem } from "@/types";
 import type { NFCCard } from "@/generated/prisma/client";
+import { PremiumCardShell, SmartBadge } from "@nfc-os/ui";
 
 interface CardItemProps {
   card: CardWithStats;
@@ -71,8 +70,8 @@ export function CardItem({ card, branches, zones, onUpdated, onDeleted, canManag
   }
 
   return (
-    <Card className="border-none shadow-sm shadow-black/5">
-      <CardHeader className="flex flex-row items-start justify-between gap-2 space-y-0">
+    <PremiumCardShell>
+      <div className="flex flex-row items-start justify-between gap-2 p-5 pb-0">
         <div className="min-w-0">
           <p className="truncate font-medium">{card.name}</p>
           <p className="truncate text-xs text-muted-foreground">/r/{card.uniqueCode}</p>
@@ -119,8 +118,8 @@ export function CardItem({ card, branches, zones, onUpdated, onDeleted, canManag
             ) : null}
           </DropdownMenuContent>
         </DropdownMenu>
-      </CardHeader>
-      <CardContent className="flex items-center justify-center">
+      </div>
+      <div className="flex items-center justify-center p-5">
         {card.qrCodeUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={card.qrCodeUrl} alt={`QR Code — ${card.name}`} className="size-32 rounded-lg" />
@@ -129,20 +128,18 @@ export function CardItem({ card, branches, zones, onUpdated, onDeleted, canManag
             Sem QR
           </div>
         )}
-      </CardContent>
-      <CardFooter className="flex items-center justify-between">
+      </div>
+      <div className="flex items-center justify-between border-t border-border/60 p-5 pt-4">
         <div className="flex flex-wrap gap-1">
-          <Badge variant={card.active ? "default" : "secondary"}>{card.active ? "Ativo" : "Pausado"}</Badge>
+          <SmartBadge label={card.active ? "Ativo" : "Pausado"} tone={card.active ? "success" : "neutral"} />
           {card.zoneId ? (
-            <Badge variant="outline">{zones.find((z) => z.id === card.zoneId)?.name ?? "Zona"}</Badge>
+            <SmartBadge label={zones.find((z) => z.id === card.zoneId)?.name ?? "Zona"} tone="neutral" />
           ) : null}
           {card.branchId ? (
-            <Badge variant="outline">{branches.find((b) => b.id === card.branchId)?.name ?? "Unidade"}</Badge>
+            <SmartBadge label={branches.find((b) => b.id === card.branchId)?.name ?? "Unidade"} tone="neutral" />
           ) : null}
           {card.tags.slice(0, 2).map((tag) => (
-            <Badge key={tag} variant="outline">
-              {tag}
-            </Badge>
+            <SmartBadge key={tag} label={tag} tone="neutral" />
           ))}
         </div>
         {card.qrCodeUrl ? (
@@ -152,7 +149,7 @@ export function CardItem({ card, branches, zones, onUpdated, onDeleted, canManag
             </Button>
           </a>
         ) : null}
-      </CardFooter>
-    </Card>
+      </div>
+    </PremiumCardShell>
   );
 }

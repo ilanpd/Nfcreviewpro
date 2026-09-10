@@ -5,6 +5,7 @@ import { getDemoCompany } from "@/lib/dev/demo-company";
 import { getCommandCenterSnapshot } from "@/services/command-center.service";
 import { listCardsForMap } from "@/services/table-map.service";
 import { DevCommandCenterView } from "./dev-command-center-view";
+import { devToolsEnabled } from "@/lib/dev/gate";
 
 /**
  * Dev Command Center v2 (Fase 12) — `/dev/command-center`, inspirado em
@@ -16,7 +17,7 @@ import { DevCommandCenterView } from "./dev-command-center-view";
  * Event Flow) — nunca recalcula, só compõe (ver `command-center.service.ts`).
  */
 export default async function DevCommandCenterPage() {
-  if (process.env.NODE_ENV === "production") notFound();
+  if (!devToolsEnabled()) notFound();
 
   const company = await getDemoCompany();
   if (!company) {

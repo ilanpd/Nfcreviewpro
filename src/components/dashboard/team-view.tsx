@@ -2,18 +2,10 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
-import { Plus, Shield, Trash2 } from "lucide-react";
+import { Plus, Shield, Trash2, UserPlus } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -22,6 +14,7 @@ import { AccessScopeManager } from "./access-scope-manager";
 import { ASSIGNABLE_ROLES, ROLE_LABEL } from "@/domain/rbac/roles";
 import type { User, Role } from "@/generated/prisma/client";
 import type { BranchListItem, ZoneListItem } from "@/types";
+import { PremiumModal, SmartBadge } from "@nfc-os/ui";
 
 type AssignableRole = (typeof ASSIGNABLE_ROLES)[number];
 
@@ -104,18 +97,23 @@ export function TeamView({ initialMembers, canManage, currentUserId, branches, z
           </p>
         </div>
         {canManage ? (
-          <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="size-4" /> Convidar
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <form onSubmit={handleInvite}>
-                <DialogHeader>
-                  <DialogTitle>Convidar membro</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4 py-4">
+          <>
+            <Button onClick={() => setOpen(true)}>
+              <Plus className="size-4" /> Convidar
+            </Button>
+            <PremiumModal
+              open={open}
+              onOpenChange={setOpen}
+              icon={UserPlus}
+              title="Convidar membro"
+              footer={
+                <Button type="submit" form="invite-form" disabled={saving}>
+                  {saving ? "Enviando…" : "Enviar convite"}
+                </Button>
+              }
+            >
+              <form id="invite-form" onSubmit={handleInvite}>
+                <div className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="member-name">Nome</Label>
                     <Input id="member-name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
@@ -146,14 +144,9 @@ export function TeamView({ initialMembers, canManage, currentUserId, branches, z
                     </Select>
                   </div>
                 </div>
-                <DialogFooter>
-                  <Button type="submit" disabled={saving}>
-                    {saving ? "Enviando…" : "Enviar convite"}
-                  </Button>
-                </DialogFooter>
               </form>
-            </DialogContent>
-          </Dialog>
+            </PremiumModal>
+          </>
         ) : null}
       </div>
 
@@ -172,20 +165,40 @@ export function TeamView({ initialMembers, canManage, currentUserId, branches, z
             {members.map((member) => (
               <TableRow key={member.id}>
                 <TableCell>
-                  <div className="flex items-center gap-3">
-                    <Avatar className="size-8">
-                      <AvatarFallback>{(member.name || member.email).slice(0, 1).toUpperCase()}</AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <p className="text-sm font-medium">{member.name || member.email}</p>
-                      <p className="text-xs text-muted-foreground">{member.email}</p>
-                    </div>
-                  </div>
+                  <HoverCard openDelay={200}>
+                    <HoverCardTrigger asChild>
+                      <div className="flex w-fit items-center gap-3">
+                        <Avatar className="size-8">
+                          <AvatarFallback>{(member.name || member.email).slice(0, 1).toUpperCase()}</AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <p className="text-sm font-medium">{member.name || member.email}</p>
+                          <p className="text-xs text-muted-foreground">{member.email}</p>
+                        </div>
+                      </div>
+                    </HoverCardTrigger>
+                    <HoverCardContent side="right">
+                      <div className="flex items-center gap-3">
+                        <Avatar className="size-9">
+                          <AvatarFallback>{(member.name || member.email).slice(0, 1).toUpperCase()}</AvatarFallback>
+                        </Avatar>
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-medium text-foreground">{member.name || "Sem nome definido"}</p>
+                          <p className="truncate text-xs text-muted-foreground">{member.email}</p>
+                        </div>
+                      </div>
+                      <div className="mt-2.5 space-y-1 border-t border-border/60 pt-2.5 text-xs text-muted-foreground">
+                        <p>Cargo: {ROLE_LABEL[member.role]}</p>
+                        <p>Membro desde {new Date(member.createdAt).toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" })}</p>
+                      </div>
+                    </HoverCardContent>
+                  </HoverCard>
                 </TableCell>
                 <TableCell>
-                  <Badge variant={member.status === "ACTIVE" ? "default" : "secondary"}>
-                    {member.status === "ACTIVE" ? "Ativo" : "Pendente"}
-                  </Badge>
+                  <SmartBadge
+                    label={member.status === "ACTIVE" ? "Ativo" : "Pendente"}
+                    tone={member.status === "ACTIVE" ? "success" : "neutral"}
+                  />
                 </TableCell>
                 <TableCell>
                   {canManage && member.role !== "OWNER" ? (

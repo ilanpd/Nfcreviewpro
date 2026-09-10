@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { staggerContainer } from "@nfc-os/animations";
 import { RecommendationCard, AnalyticsCard, EmptyState, SmartBadge } from "@nfc-os/ui";
 import { Sparkles, Clock, Pause, Play, X, Undo2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { PlaybookApplyDialog, type ScheduleChoice } from "./playbook-apply-dialog";
 import { ExplainabilityPanel, type ExplainabilityData } from "./explainability-panel";
 import { AutoPilotSelector } from "./autopilot-selector";
@@ -151,17 +152,17 @@ export function PlaybooksView({ initialRecommendations, autoPilotLevel, canApply
                   />
                   <div className="flex gap-1.5">
                     {r.execution!.status === "SCHEDULED" ? (
-                      <button onClick={() => handleExecutionAction(r.execution!.id, "pause")} className="rounded-lg border border-border/60 p-1.5 hover:bg-muted" title="Pausar">
+                      <Button size="icon-sm" variant="outline" onClick={() => handleExecutionAction(r.execution!.id, "pause")} title="Pausar">
                         <Pause className="size-3.5" />
-                      </button>
+                      </Button>
                     ) : (
-                      <button onClick={() => handleExecutionAction(r.execution!.id, "resume")} className="rounded-lg border border-border/60 p-1.5 hover:bg-muted" title="Retomar">
+                      <Button size="icon-sm" variant="outline" onClick={() => handleExecutionAction(r.execution!.id, "resume")} title="Retomar">
                         <Play className="size-3.5" />
-                      </button>
+                      </Button>
                     )}
-                    <button onClick={() => handleExecutionAction(r.execution!.id, "cancel")} className="rounded-lg border border-border/60 p-1.5 hover:bg-muted" title="Cancelar">
+                    <Button size="icon-sm" variant="outline" onClick={() => handleExecutionAction(r.execution!.id, "cancel")} title="Cancelar">
                       <X className="size-3.5" />
-                    </button>
+                    </Button>
                   </div>
                 </div>
               </AnalyticsCard>
@@ -181,12 +182,33 @@ export function PlaybooksView({ initialRecommendations, autoPilotLevel, canApply
                   <p className="text-muted-foreground">{r.playbook.name}</p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <SmartBadge label={r.status === "APPLIED" ? "Aplicada" : r.status === "IGNORED" ? "Ignorada" : "Expirada"} tone={r.status === "APPLIED" ? "success" : "neutral"} />
+                  <SmartBadge
+                    label={
+                      r.status === "APPLIED"
+                        ? r.execution?.status === "UNDONE"
+                          ? "Desfeita"
+                          : r.execution?.status === "FAILED"
+                            ? "Falhou"
+                            : "Aplicada"
+                        : r.status === "IGNORED"
+                          ? "Ignorada"
+                          : "Expirada"
+                    }
+                    tone={
+                      r.status === "APPLIED"
+                        ? r.execution?.status === "FAILED"
+                          ? "danger"
+                          : r.execution?.status === "UNDONE"
+                            ? "neutral"
+                            : "success"
+                        : "neutral"
+                    }
+                  />
                   {r.status === "APPLIED" && r.execution && r.execution.status === "COMPLETED" ? (
-                    <button onClick={() => handleExecutionAction(r.execution!.id, "undo")} className="inline-flex items-center gap-1 rounded-lg border border-border/60 px-2 py-1 hover:bg-muted">
+                    <Button size="sm" variant="outline" onClick={() => handleExecutionAction(r.execution!.id, "undo")}>
                       <Undo2 className="size-3.5" />
                       Desfazer
-                    </button>
+                    </Button>
                   ) : null}
                 </div>
               </div>

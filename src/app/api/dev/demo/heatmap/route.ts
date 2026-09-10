@@ -2,12 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { getDemoCompany } from "@/lib/dev/demo-company";
 import { getHeatmapCounts, getLastInteractionByCard } from "@/services/heatmap.service";
 import type { HeatmapLayer } from "@/domain/heatmap/types";
+import { devToolsEnabled } from "@/lib/dev/gate";
 
 const COUNT_LAYERS: HeatmapLayer[] = ["APPROACHES", "CONVERSIONS", "GOOGLE_REVIEWS", "INSTAGRAM"];
 
 /** Equivalente de `/api/heatmap` para o Command Center — ver ADR-027. */
 export async function GET(req: NextRequest) {
-  if (process.env.NODE_ENV === "production") return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (!devToolsEnabled()) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   const company = await getDemoCompany();
   if (!company) return NextResponse.json({ error: "Empresa de demonstração não encontrada — rode o seed" }, { status: 404 });

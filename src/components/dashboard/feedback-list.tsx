@@ -2,12 +2,12 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
-import { Download, Star } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { Download, MessageSquareWarning, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import type { FeedbackWithContext } from "@/types";
+import { EmptyState, SmartBadge } from "@nfc-os/ui";
 
 export function FeedbackList({
   initialFeedback,
@@ -44,7 +44,11 @@ export function FeedbackList({
       </div>
 
       {items.length === 0 ? (
-        <p className="py-12 text-center text-sm text-muted-foreground">Nenhum feedback privado por enquanto.</p>
+        <EmptyState
+          icon={<MessageSquareWarning />}
+          title="Nenhum feedback privado por enquanto"
+          description="Quando um cliente avaliar com 1 a 3 estrelas, o feedback aparece aqui em vez de ir para o Google."
+        />
       ) : (
         <div className="overflow-x-auto rounded-lg border">
           <Table>
@@ -64,10 +68,11 @@ export function FeedbackList({
                     {new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short" }).format(f.createdAt)}
                   </TableCell>
                   <TableCell>
-                    <Badge variant="outline" className="gap-1">
-                      <Star className="size-3 fill-amber-400 text-amber-400" />
-                      {f.ratingEvent.stars}
-                    </Badge>
+                    <SmartBadge
+                      tone="neutral"
+                      icon={<Star className="fill-amber-400 text-amber-400" />}
+                      label={String(f.ratingEvent.stars)}
+                    />
                   </TableCell>
                   <TableCell>
                     <div className="text-sm">{f.name || "Não informado"}</div>

@@ -7,16 +7,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetFooter,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
+import { Megaphone } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { PremiumDrawer } from "@nfc-os/ui";
 import { DestinationPicker } from "./destination-picker";
 import { DestinationConfigFields } from "./destination-config-fields";
 import { AssignmentManager } from "./assignment-manager";
@@ -196,18 +189,23 @@ export function CampaignBuilderSheet({
   }
 
   return (
-    <Sheet open={open} onOpenChange={setOpen}>
-      <SheetTrigger asChild>{trigger}</SheetTrigger>
-      <SheetContent className="w-full overflow-y-auto sm:max-w-xl">
-        <SheetHeader>
-          <SheetTitle>{isEdit ? "Editar campanha" : "Nova campanha"}</SheetTitle>
-          <SheetDescription>
-            {isEdit
-              ? "Ajuste o destino, agendamento e a quem esta campanha se aplica."
-              : "Defina o destino e o agendamento. Você atribui a quem ela se aplica depois de criar."}
-          </SheetDescription>
-        </SheetHeader>
-
+    <>
+      <span className="contents" onClick={() => setOpen(true)}>
+        {trigger}
+      </span>
+      <PremiumDrawer
+        open={open}
+        onOpenChange={setOpen}
+        icon={Megaphone}
+        glass={false}
+        title={isEdit ? "Editar campanha" : "Nova campanha"}
+        description={
+          isEdit
+            ? "Ajuste o destino, agendamento e a quem esta campanha se aplica."
+            : "Defina o destino e o agendamento. Você atribui a quem ela se aplica depois de criar."
+        }
+        className="w-full overflow-y-auto sm:max-w-xl"
+      >
         <Tabs defaultValue="details" className="px-4">
           <TabsList className="w-full">
             <TabsTrigger value="details" className="flex-1">
@@ -430,11 +428,11 @@ export function CampaignBuilderSheet({
               </div>
 
               {canManage ? (
-                <SheetFooter className="px-0">
+                <div className="mt-4">
                   <Button type="submit" disabled={saving} className="w-full">
                     {saving ? "Salvando…" : isEdit ? "Salvar alterações" : "Criar campanha"}
                   </Button>
-                </SheetFooter>
+                </div>
               ) : null}
             </form>
           </TabsContent>
@@ -496,7 +494,7 @@ export function CampaignBuilderSheet({
             ) : null}
           </TabsContent>
         </Tabs>
-      </SheetContent>
-    </Sheet>
+      </PremiumDrawer>
+    </>
   );
 }

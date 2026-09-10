@@ -66,12 +66,17 @@ interface PremiumDrawerProps {
   children: React.ReactNode;
   footer?: React.ReactNode;
   className?: string;
+  /** `.glass` (translúcido/blur) é o padrão — certo para painéis leves
+   * (Explainability, Event Explorer), errado para formulários densos de
+   * leitura/edição, onde prejudica contraste (ver MANIFESTO_DO_DESIGN.md).
+   * `false` para um drawer sólido normal. */
+  glass?: boolean;
 }
 
-export function PremiumDrawer({ open, onOpenChange, icon: Icon, title, description, side = "right", children, footer, className }: PremiumDrawerProps) {
+export function PremiumDrawer({ open, onOpenChange, icon: Icon, title, description, side = "right", children, footer, className, glass = true }: PremiumDrawerProps) {
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side={side} className={cn("glass sm:max-w-md", className)}>
+      <SheetContent side={side} className={cn(glass && "glass", "sm:max-w-md", className)}>
         <SheetHeader className="border-b border-border/60">
           <SheetTitle className="flex items-center gap-2">
             {Icon ? (
@@ -96,11 +101,16 @@ interface PremiumPopoverProps {
   children: React.ReactNode;
   align?: "start" | "center" | "end";
   className?: string;
+  /** Controlado, para quando o chamador precisa reagir ao fechar (ex.:
+   * resetar um valor quando o popover fecha sem confirmação). Omitir
+   * mantém o comportamento não-controlado padrão do Radix. */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
-export function PremiumPopover({ trigger, title, children, align = "center", className }: PremiumPopoverProps) {
+export function PremiumPopover({ trigger, title, children, align = "center", className, open, onOpenChange }: PremiumPopoverProps) {
   return (
-    <Popover>
+    <Popover open={open} onOpenChange={onOpenChange}>
       <PopoverTrigger asChild>{trigger}</PopoverTrigger>
       <PopoverContent align={align} className={cn("glass", className)}>
         {title ? <p className="text-xs font-semibold text-muted-foreground">{title}</p> : null}

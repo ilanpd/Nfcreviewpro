@@ -10,6 +10,7 @@ import { SCOPE_LABEL } from "@/domain/campaign/assignment";
 import type { CampaignAssignmentItem, BranchListItem, ZoneListItem } from "@/types";
 import type { CardWithStats } from "@/types";
 import type { TargetScope } from "@/generated/prisma/client";
+import { EmptyState } from "@nfc-os/ui";
 
 const SCOPE_ICON: Record<TargetScope, typeof Building2> = {
   ORGANIZATION: Globe2,
@@ -158,9 +159,11 @@ export function AssignmentManager({
   return (
     <div className="space-y-4">
       {assignments.length === 0 ? (
-        <p className="rounded-md border border-dashed p-4 text-center text-sm text-muted-foreground">
-          Nenhuma atribuição ainda — sem atribuições, esta campanha não é exibida para ninguém.
-        </p>
+        <EmptyState
+          icon={<Globe2 />}
+          title="Nenhuma atribuição ainda"
+          description="Sem atribuições, esta campanha não é exibida para ninguém. Adicione uma abaixo."
+        />
       ) : (
         <ul className="space-y-2">
           {assignments.map((a) => {

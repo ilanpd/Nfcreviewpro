@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { notFound } from "next/navigation";
 import { getDemoCompany } from "@/lib/dev/demo-company";
 import { listTopActionableRecommendations } from "@/services/recommendation-engine.service";
+import { devToolsEnabled } from "@/lib/dev/gate";
 
 /**
  * Executive Copilot (Fase 11) — espelho somente-leitura para o Command
@@ -9,7 +10,7 @@ import { listTopActionableRecommendations } from "@/services/recommendation-engi
  * resolve `companyId` pela empresa fixa de demonstração, nunca por sessão.
  */
 export async function GET() {
-  if (process.env.NODE_ENV === "production") notFound();
+  if (!devToolsEnabled()) notFound();
   const company = await getDemoCompany();
   if (!company) return NextResponse.json({ recommendations: [] });
   const recommendations = await listTopActionableRecommendations(company.id, 5);

@@ -9,7 +9,8 @@ const DEMO_COMPANY_SLUG = "bella-vista";
  * `/dev/ceo` — sempre a mesma empresa fixa (o slug nunca vem de fora), então
  * não existe uma superfície de "escolher outra empresa" por onde vazar dado
  * de um tenant real. Toda rota que chama isto também deve checar
- * `process.env.NODE_ENV === "production"` ela mesma antes — ver ADR-027.
+ * `devToolsEnabled()` (`lib/dev/gate.ts`) ela mesma antes — ver ADR-027 e
+ * ADR-057.
  */
 export async function getDemoCompany() {
   return prisma.company.findUnique({ where: { slug: DEMO_COMPANY_SLUG } });

@@ -120,7 +120,7 @@ export function ThemeStudioView({
   }
 
   return (
-    <main className="mx-auto max-w-7xl space-y-6 p-6 sm:p-10">
+    <main className="mx-auto w-full min-w-0 max-w-7xl space-y-6 p-6 sm:p-10">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight">

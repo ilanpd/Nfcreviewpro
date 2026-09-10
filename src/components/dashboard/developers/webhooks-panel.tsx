@@ -2,22 +2,14 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
-import { Copy, Plus, RotateCw, Trash2 } from "lucide-react";
-import { AnalyticsCard, SmartBadge } from "@nfc-os/ui";
+import { Copy, Plus, RotateCw, Trash2, Webhook } from "lucide-react";
+import { AnalyticsCard, EmptyState, PremiumModal, SmartBadge } from "@nfc-os/ui";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Spinner } from "@/components/ui/spinner";
 import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import { PUBLIC_WEBHOOK_EVENT_TYPES } from "@/domain/api-v1/webhook-events";
 import type { WebhookDeliveryStatus } from "@/generated/prisma/client";
 
@@ -163,17 +155,22 @@ export function WebhooksPanel({ initialWebhooks }: { initialWebhooks: WebhookEnd
         title="Webhooks"
         description="Endpoints que recebem eventos em tempo real (assinados com HMAC-SHA256) quando algo acontece nesta empresa."
         action={
-          <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-              <Button size="sm">
-                <Plus className="size-3.5" /> Novo endpoint
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-md">
-              <DialogHeader>
-                <DialogTitle>Novo endpoint de webhook</DialogTitle>
-                <DialogDescription>Escolha quais eventos este endpoint deve receber.</DialogDescription>
-              </DialogHeader>
+          <>
+            <Button size="sm" onClick={() => setOpen(true)}>
+              <Plus className="size-3.5" /> Novo endpoint
+            </Button>
+            <PremiumModal
+              open={open}
+              onOpenChange={setOpen}
+              icon={Webhook}
+              title="Novo endpoint de webhook"
+              description="Escolha quais eventos este endpoint deve receber."
+              footer={
+                <Button disabled={busy} onClick={createWebhook}>
+                  Criar endpoint
+                </Button>
+              }
+            >
               <div className="space-y-4">
                 <div className="space-y-1.5">
                   <Label>URL</Label>
@@ -195,17 +192,12 @@ export function WebhooksPanel({ initialWebhooks }: { initialWebhooks: WebhookEnd
                   </div>
                 </div>
               </div>
-              <DialogFooter>
-                <Button disabled={busy} onClick={createWebhook}>
-                  Criar endpoint
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+            </PremiumModal>
+          </>
         }
       >
         {webhooks.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Nenhum endpoint de webhook configurado ainda.</p>
+          <EmptyState icon={<Webhook />} title="Nenhum endpoint de webhook configurado ainda" description="Crie um para receber eventos em tempo real." />
         ) : (
           <Table>
             <TableHeader>
@@ -260,17 +252,21 @@ export function WebhooksPanel({ initialWebhooks }: { initialWebhooks: WebhookEnd
         )}
       </AnalyticsCard>
 
-      <Dialog open={deliveriesFor !== null} onOpenChange={(next) => !next && setDeliveriesFor(null)}>
-        <DialogContent className="sm:max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Entregas — {deliveriesFor?.url}</DialogTitle>
-            <DialogDescription>Histórico real de tentativas de entrega deste endpoint.</DialogDescription>
-          </DialogHeader>
-          {loadingDeliveries ? (
-            <p className="text-sm text-muted-foreground">Carregando…</p>
-          ) : deliveries.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Nenhum evento entregue ainda para este endpoint.</p>
-          ) : (
+      <PremiumModal
+        open={deliveriesFor !== null}
+        onOpenChange={(next) => !next && setDeliveriesFor(null)}
+        icon={RotateCw}
+        size="xl"
+        title={`Entregas — ${deliveriesFor?.url ?? ""}`}
+        description="Histórico real de tentativas de entrega deste endpoint."
+      >
+        {loadingDeliveries ? (
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Spinner className="size-4" /> Carregando…
+          </div>
+        ) : deliveries.length === 0 ? (
+          <EmptyState icon={<RotateCw />} title="Nenhum evento entregue ainda" description="Assim que este endpoint receber um evento, ele aparece aqui." />
+        ) : (
             <div className="max-h-96 overflow-y-auto">
               <Table>
                 <TableHeader>
@@ -305,8 +301,7 @@ export function WebhooksPanel({ initialWebhooks }: { initialWebhooks: WebhookEnd
               </Table>
             </div>
           )}
-        </DialogContent>
-      </Dialog>
+      </PremiumModal>
     </>
   );
 }

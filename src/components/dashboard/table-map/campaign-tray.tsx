@@ -1,5 +1,6 @@
 "use client";
 
+import { Megaphone } from "lucide-react";
 import { DESTINATION_META } from "@/domain/campaign/destination";
 import { DESTINATION_TYPE_ICON } from "@/components/dashboard/campaigns/destination-type-icon";
 import type { TableMapCampaignItem } from "@/types";
@@ -23,7 +24,12 @@ export function CampaignTray({ campaigns, onDragStart, onDragEnd, canAssign }: C
 
       <div className="flex-1 space-y-1.5 overflow-y-auto p-2">
         {campaigns.length === 0 ? (
-          <p className="p-3 text-center text-xs text-muted-foreground">Nenhuma campanha ativa ainda.</p>
+          // Tray compacta demais (w-64) para o EmptyState padrão (py-12) —
+          // mesma ideia (ícone + próximo passo), em escala menor.
+          <div className="flex flex-col items-center gap-1.5 p-4 text-center">
+            <Megaphone className="size-5 text-muted-foreground/60" strokeWidth={1.5} />
+            <p className="text-xs text-muted-foreground">Nenhuma campanha ativa ainda.</p>
+          </div>
         ) : (
           campaigns.map((campaign) => {
             const meta = DESTINATION_META[campaign.type];
