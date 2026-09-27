@@ -137,6 +137,19 @@ CARD_URL_REQUIRE_FINAL=1
 - **Depois do primeiro lote, nunca remova o domínio antigo da Vercel**: ele continua respondendo aos chips já entregues.
 - Mudança de domínio a qualquer momento: o QR e as listas do Admin passam a usar o novo endereço em até um dia (cache do QR); chips já gravados continuam no domínio antigo, que precisa seguir ativo e apontando para o app.
 
+## Retorno e cobrança do painel (ADR-079)
+
+Variáveis novas, em cada projeto Vercel:
+
+```
+RETURN_PIN_SECRET=<string aleatória longa, uma por ambiente>
+BILLING_GATE_ENFORCE=<vazio até o lançamento; 1 para exigir assinatura no painel>
+```
+
+- `RETURN_PIN_SECRET` protege o PIN da loja (4 dígitos). **Obrigatório em produção**: sem ele, definir ou trocar o PIN falha de propósito. Nunca troque depois de haver PINs gravados: todos deixam de conferir.
+- As duas migrações do Retorno (`retorno_fundacao` e `retorno_auditoria`) são só de expansão. Em produção: snapshot antes, `DIRECT_URL` passado inline, e nunca no mesmo dia de um deploy grande.
+- O piloto é ligado por empresa no Admin (ficha da empresa, "Retorno (piloto)"). O interruptor geral fica em Admin, "Conteúdo do site", e desliga emissão e resgate para todas na hora.
+
 ## Passo 6 — De volta para mim
 
 Quando os dois ambientes estiverem no ar (mesmo que ainda deem erro de aplicação — o importante é o domínio responder), me avise com:
