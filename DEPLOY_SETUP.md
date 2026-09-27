@@ -135,3 +135,47 @@ A partir daí eu assumo: rodar `prisma migrate deploy` contra cada banco, rodar 
 ## Por que dois projetos Vercel em vez de um com "preview"
 
 O Vercel já dá uma URL de preview para toda branch/PR, mas essas URLs podem mudar de formato e não são pensadas para serem links permanentes e memorizáveis. Dois projetos separados, cada um com sua branch de produção própria, dão duas URLs **igualmente estáveis e definitivas** — exatamente o "não depender de localhost, ambientes claramente separados" pedido.
+
+---
+
+## Snapshot, migração e restauração do banco (Ciclo 0, 26/09/2026)
+
+Regra: **nenhuma migração roda em nenhum banco sem um snapshot feito antes.** Toda migração nova segue o padrão expandir, trocar, limpar (só adiciona na primeira etapa).
+
+**Qual banco é qual.** A CLI do Prisma lê `DIRECT_URL` do `.env` (STAGING). O Next.js carrega o `.env.local`, que aponta para PRODUÇÃO. Por isso, para desenvolver, passe a URL de staging ao processo; e para qualquer operação de produção, passe a URL de produção só no processo, nunca gravando em arquivo.
+
+### 1. Snapshot (pg_dump)
+
+Use a conexão direta (porta 5432, modo sessão), nunca o pooler. A versão do `pg_dump` precisa ser igual ou maior que a do servidor.
+
+```bash
+mkdir -p backups
+# Staging (usa o DIRECT_URL do .env)
+pg_dump "$DIRECT_URL" --format=custom --no-owner --file="backups/staging-$(date +%Y%m%d-%H%M).dump"
+# Produção: URL só no processo
+DIRECT_URL="<url direta de produção>" pg_dump "$DIRECT_URL" --format=custom --no-owner --file="backups/producao-$(date +%Y%m%d-%H%M).dump"
+```
+
+A pasta `backups/` não entra no Git. O plano gratuito do Supabase não tem recuperação pontual; o snapshot manual acima é a única cópia até o plano pago.
+
+### 2. Restaurar em um banco descartável (teste do snapshot)
+
+```bash
+pg_restore --no-owner --clean --if-exists -d "<url do banco de destino>" backups/staging-AAAAMMDD-HHMM.dump
+```
+
+Nunca restaure sobre produção sem aprovação explícita.
+
+### 3. Migração segura
+
+```bash
+# Staging (lê o .env)
+npx prisma migrate deploy
+# Produção: passar a URL inline. O dotenv não sobrescreve variável já definida,
+# então não é preciso editar o .env.
+DIRECT_URL="<url direta de produção>" npx prisma migrate deploy
+```
+
+No PowerShell: `$env:DIRECT_URL="<url>"; npx prisma migrate deploy; Remove-Item Env:DIRECT_URL`.
+
+Depois de qualquer migração, rodar `npx prisma migrate status` no mesmo banco e conferir que não há pendências.

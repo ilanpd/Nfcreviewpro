@@ -54,3 +54,6 @@ next-env.d.ts
 
 .vercel
 .env*
+
+# Cópias de banco (pg_dump) — nunca versionar
+/backups/
