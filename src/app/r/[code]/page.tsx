@@ -6,7 +6,12 @@ import { buildDestinationPreview } from "@/lib/campaign-destination";
 import { rateLimit } from "@/lib/rate-limit";
 import { getRequestIp } from "@/lib/ip";
 import { parseUserAgent } from "@/lib/device";
-import { RatingFlow } from "./rating-flow";
+import { getInactiveCardContact } from "@/services/card.service";
+import { loadReturnContext } from "@/services/return-offer.service";
+import { decideCardExperience, pickPrimaryUrl } from "@/domain/return-offer/experience";
+import { buildCampaignWhatsAppUrl, normalizePhone } from "@/lib/whatsapp";
+import { CardScreen } from "./card-screen";
+import type { ResolutionDecision } from "@/lib/resolution-engine/types";
 
 export const dynamic = "force-dynamic";
 
@@ -22,18 +27,37 @@ export async function generateMetadata({ params }: { params: Promise<{ code: str
   const { code } = await params;
   const decision = await resolveDestination(code, await getDeviceType());
   const companyName = decision.outcome !== "NOT_FOUND" ? decision.company.name : null;
-  return { title: companyName ? `${companyName} — Avalie sua experiência` : "Cartão não encontrado" };
+  // Página de cartão não é para buscador: cada uma é o toque de um cliente.
+  return { title: companyName ?? "Cartão indisponível", robots: { index: false, follow: false } };
 }
 
-function UnavailableScreen() {
+/** Estado 16: cartão desativado ou inexistente, com o contato do negócio quando ele existe. */
+async function UnavailableScreen({ code }: { code: string }) {
+  const contact = await getInactiveCardContact(code);
+  const whatsapp = contact?.whatsapp && normalizePhone(contact.whatsapp).length >= 10 ? buildCampaignWhatsAppUrl(contact.whatsapp) : null;
   return (
     <main className="flex min-h-screen flex-col items-center justify-center gap-3 p-6 text-center">
       <p className="text-lg font-semibold">Cartão indisponível</p>
       <p className="max-w-xs text-sm text-muted-foreground">
-        Este cartão não existe ou foi desativado. Fale com o estabelecimento para mais informações.
+        {contact ? `Este cartão foi desativado. Fale com ${contact.name} para mais informações.` : "Este cartão não existe ou foi desativado. Fale com o estabelecimento para mais informações."}
       </p>
+      {whatsapp ? (
+        <a href={whatsapp} rel="noopener" className="text-sm font-medium text-brand-ink underline underline-offset-4">
+          Falar com {contact!.name} no WhatsApp
+        </a>
+      ) : null}
     </main>
   );
+}
+
+/** O destino do redirecionamento inicial do avulso, quando a campanha vencedora é a do sistema. */
+function directCampaignUrl(decision: Extract<ResolutionDecision, { outcome: "CAMPAIGN" }>, code: string): string | null {
+  const preview = buildDestinationPreview(decision.type, decision.config, {
+    campaignId: decision.campaignId,
+    campaignName: decision.campaignName,
+    cardCode: code,
+  });
+  return preview.kind === "url" || preview.kind === "whatsapp" ? preview.url : null;
 }
 
 export default async function CardPage({ params }: { params: Promise<{ code: string }> }) {
@@ -53,10 +77,25 @@ export default async function CardPage({ params }: { params: Promise<{ code: str
   const decision = await resolveDestination(code, await getDeviceType());
 
   if (decision.outcome === "NOT_FOUND") {
-    return <UnavailableScreen />;
+    return <UnavailableScreen code={code} />;
   }
 
-  if (decision.outcome === "CAMPAIGN") {
+  // O Retorno é um acréscimo: qualquer falha ao carregá-lo vira "sem Retorno" e o
+  // cartão segue como antes (estado 10). O caminho ao destino nunca depende dele.
+  let returnContext = null;
+  try {
+    returnContext = await loadReturnContext(decision.company.id);
+  } catch (err) {
+    console.error("[r/code] falha ao carregar o Retorno", err);
+  }
+
+  const experience = decideCardExperience({
+    outcome: decision.outcome,
+    campaignOrigin: decision.outcome === "CAMPAIGN" ? decision.origin : null,
+    availability: returnContext?.availability ?? { available: false, reason: "PLAN_NOT_ALLOWED" },
+  });
+
+  if (experience.kind === "CAMPAIGN" && decision.outcome === "CAMPAIGN") {
     // Same render function the Campaign Builder's live preview uses — the
     // engine and the dashboard preview can never silently disagree on what
     // a customer actually sees.
@@ -71,8 +110,8 @@ export default async function CardPage({ params }: { params: Promise<{ code: str
     }
 
     // COUPON / AI_MENU / an invalid config: a neutral placeholder,
-    // deliberately not the star flow — a misconfigured campaign must never
-    // silently masquerade as the legacy behavior.
+    // deliberately not a fake flow — a misconfigured campaign must never
+    // silently masquerade as something else.
     return (
       <main className="flex min-h-screen flex-col items-center justify-center gap-3 p-6 text-center">
         <p className="text-lg font-semibold">Em breve</p>
@@ -81,15 +120,20 @@ export default async function CardPage({ params }: { params: Promise<{ code: str
     );
   }
 
-  // outcome === "REVIEW_FLOW_FALLBACK" — zero campaigns matched, so this
-  // behaves exactly like the pre-campaign-engine MVP, unchanged.
+  // RETURN ou BUTTONS: a mesma tela; o brinde só aparece no primeiro.
+  const primaryUrl = pickPrimaryUrl({
+    offerPrimaryUrl: returnContext?.offer?.primaryUrl ?? null,
+    directCampaignUrl: decision.outcome === "CAMPAIGN" ? directCampaignUrl(decision, code) : null,
+    googleReviewUrl: decision.company.googleReviewUrl,
+  });
+
   return (
     <main className="flex min-h-screen flex-col items-center justify-center p-6">
-      <RatingFlow
+      <CardScreen
         code={code}
-        companyName={decision.company.name}
-        logoUrl={decision.company.logoUrl}
-        primaryColor={decision.company.primaryColor}
+        company={{ name: decision.company.name, logoUrl: decision.company.logoUrl, primaryColor: decision.company.primaryColor }}
+        mode={experience.kind === "RETURN" ? "RETURN" : "BUTTONS"}
+        primaryUrl={primaryUrl}
       />
     </main>
   );

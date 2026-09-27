@@ -4,6 +4,11 @@ import { prisma } from "@/lib/prisma";
 import { parseUserAgent } from "@/lib/device";
 import { getRequestIp, hashIp } from "@/lib/ip";
 
+/** Registra o primeiro clique no botão principal da visita. Idempotente: só grava se ainda não houver. */
+export async function markPrimaryClick(visitId: string) {
+  await prisma.visit.updateMany({ where: { id: visitId, primaryClickedAt: null }, data: { primaryClickedAt: new Date() } });
+}
+
 export async function recordVisit(cardId: string, companyId: string, userAgent: string | null, visitorId: string | null = null) {
   const { device, browser, os } = parseUserAgent(userAgent);
   const ip = await getRequestIp();

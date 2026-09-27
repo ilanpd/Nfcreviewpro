@@ -14,6 +14,20 @@ export function getActiveCardByCode(code: string) {
   });
 }
 
+/**
+ * Estado 16 da tela do cartão (ADR-080): um cartão que existe mas foi desativado
+ * mostra o nome e o WhatsApp do negócio, para o cliente ter a quem recorrer.
+ * Cartão que não existe devolve `null` e a tela fala de forma genérica.
+ */
+export async function getInactiveCardContact(code: string) {
+  const card = await prisma.nFCCard.findUnique({
+    where: { uniqueCode: code },
+    select: { active: true, company: { select: { name: true, whatsapp: true } } },
+  });
+  if (!card || card.active) return null;
+  return card.company;
+}
+
 export function listCards(companyId: string) {
   return prisma.nFCCard.findMany({
     where: { companyId },

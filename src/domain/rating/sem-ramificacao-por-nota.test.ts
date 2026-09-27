@@ -25,7 +25,13 @@ function walk(dir: string, out: string[] = []): string[] {
 const FLUXO_PUBLICO = [
   "src/services/rating.service.ts",
   "src/domain/rating/public-result.ts",
-  "src/app/r/[code]/rating-flow.tsx",
+  "src/app/r/[code]/page.tsx",
+  "src/app/r/[code]/card-screen.tsx",
+  "src/app/r/[code]/voucher-panel.tsx",
+  "src/app/r/[code]/redeem-panel.tsx",
+  "src/app/r/[code]/code-entry.tsx",
+  "src/domain/return-offer/experience.ts",
+  "src/domain/return-offer/public-screen.ts",
   "src/app/feedback/page.tsx",
   "src/app/feedback/feedback-form.tsx",
   "src/app/thank-you/page.tsx",
@@ -42,12 +48,21 @@ describe("fluxo público sem ramificação por nota (ADR-075)", () => {
     expect(source).not.toMatch(/outcome\s*[:=]+\s*["'](google|feedback)["']/);
   });
 
-  it("a tela pós-nota mostra os dois caminhos e não lê a nota", () => {
-    const source = read("src/app/r/[code]/rating-flow.tsx");
-    const choose = source.slice(source.indexOf('key="choose"'));
-    expect(choose).toContain("Avaliar no Google");
-    expect(choose).toContain("Falar com a gente");
-    expect(choose).not.toContain("selectedStars");
+  it("a tela do cartão mostra sempre os dois caminhos, na mesma ordem, e não pergunta nem lê nota", () => {
+    const source = read("src/app/r/[code]/card-screen.tsx");
+    const primary = source.indexOf("primaryButtonLabel(primaryUrl)");
+    const talk = source.indexOf("Falar com a gente", primary);
+    expect(primary).toBeGreaterThan(-1);
+    expect(talk).toBeGreaterThan(primary);
+    expect(source).not.toMatch(/stars|selectedStars|StarRating|Como foi sua experiência/);
+  });
+
+  it("os dois botões ficam fora de qualquer condicional do estado do brinde: aparecem em todos os estados", () => {
+    const source = read("src/app/r/[code]/card-screen.tsx");
+    const buttons = source.slice(source.indexOf('<div className="grid w-full gap-3">'), source.indexOf("{showEntry ?"));
+    expect(buttons).toContain("primaryButtonLabel(primaryUrl)");
+    expect(buttons).toContain("Falar com a gente");
+    expect(buttons).not.toMatch(/screen\.kind|status ===|redeemedTitle/);
   });
 });
 

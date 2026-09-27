@@ -729,22 +729,26 @@ model EventLog {
 }
 
 model Visit {
-  id        String   @id @default(cuid())
-  cardId    String
-  card      NFCCard  @relation(fields: [cardId], references: [id], onDelete: Cascade)
-  companyId String
-  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  device    String?
-  browser   String?
-  os        String?
-  ipHash    String
-  country   String?
-  city      String?
+  id               String    @id @default(cuid())
+  cardId           String
+  card             NFCCard   @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  companyId        String
+  company          Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  device           String?
+  browser          String?
+  os               String?
+  ipHash           String
+  country          String?
+  city             String?
   // Cookie `pv` do Retorno (ADR-078): identificador aleatório do aparelho,
   // definido pelo servidor. Serve só de atalho para reconhecer o celular; quem
   // dá direito ao brinde é o código. Nunca dado pessoal declarado.
-  visitorId String?
-  createdAt DateTime @default(now())
+  visitorId        String?
+  // Quando o cliente tocou no botão principal (o destino do dono) na tela do
+  // cartão. Registro de 1 clique por visita; substitui, para a tela sem
+  // estrelas, o que `RatingEvent.redirectedGoogle` contava (ADR-080).
+  primaryClickedAt DateTime?
+  createdAt        DateTime  @default(now())
 
   ratingEvent      RatingEvent?
   privateFeedbacks PrivateFeedback[]
