@@ -1,7 +1,9 @@
+import Link from "next/link";
 import { AlertTriangle } from "lucide-react";
 import { requireAuthContext } from "@/lib/auth";
 import { roleHasPermission } from "@/domain/rbac/roles";
 import { getOfferSettings, getReturnSummary, listVouchers } from "@/services/return-offer.service";
+import { listCards } from "@/services/card.service";
 import { ownerAvailabilityMessage } from "@/domain/return-offer/owner-copy";
 import { formatVoucherCode } from "@/domain/return-offer/code";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -9,6 +11,7 @@ import { SummaryCards } from "./summary-cards";
 import { OfferForm } from "./offer-form";
 import { PinForm } from "./pin-form";
 import { VoucherList, type VoucherRow } from "./voucher-list";
+import { PreviewCard } from "./preview-card";
 
 export const dynamic = "force-dynamic";
 
@@ -21,11 +24,13 @@ export default async function RetornoPage() {
   const ctx = await requireAuthContext();
   const canManage = roleHasPermission(ctx.role, "return:manage");
 
-  const [settings, summary, vouchers] = await Promise.all([
+  const [settings, summary, vouchers, cards] = await Promise.all([
     getOfferSettings(ctx.companyId),
     getReturnSummary(ctx.companyId, 30),
     listVouchers(ctx.companyId, { take: 50 }),
+    listCards(ctx.companyId),
   ]);
+  const previewCard = cards.find((c) => c.active) ?? cards[0] ?? null;
 
   const offerInitial = {
     title: settings.offer?.title ?? "",
@@ -51,11 +56,16 @@ export default async function RetornoPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Retorno</h1>
-        <p className="text-sm text-muted-foreground">
-          Um brinde para a próxima visita, do jeito que você escolher. {formatVoucherCode("K7X4QM")} é como o código aparece para o cliente.
-        </p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">Retorno</h1>
+          <p className="text-sm text-muted-foreground">
+            Um brinde para a próxima visita, do jeito que você escolher. {formatVoucherCode("K7X4QM")} é como o código aparece para o cliente.
+          </p>
+        </div>
+        <Link href="/dashboard/suporte" className="shrink-0 text-xs font-medium text-muted-foreground underline underline-offset-4 hover:text-foreground">
+          Precisa de ajuda?
+        </Link>
       </div>
 
       {!settings.availability.available ? (
@@ -92,6 +102,8 @@ export default async function RetornoPage() {
           </p>
         </div>
       </div>
+
+      <PreviewCard card={previewCard} />
 
       <VoucherList initial={voucherRows} canManage={canManage} />
     </div>

@@ -99,3 +99,14 @@ export function isCardUrlBlocked(kind: CardUrlKind, requireFinal: boolean): bool
 export function joinCardUrl(origin: string, code: string): string {
   return `${origin}/r/${code}`;
 }
+
+/**
+ * Caminho (relativo, sem origem) da página de teste do cartão — ADR-080. Não é
+ * o endereço gravado no chip/QR (esse é sempre \`joinCardUrl\`/\`cardPublicUrl\`);
+ * é só uma rota interna do próprio app, que soma o código à mesma família de
+ * caminho \`/r/[code]\`. Vive aqui, e não onde é usada, pela mesma regra do
+ * arquivo inteiro: só este módulo pode montar \`/r/<código>\` por texto.
+ */
+export function cardTestPath(code: string): string {
+  return `/r/${code}/teste`;
+}

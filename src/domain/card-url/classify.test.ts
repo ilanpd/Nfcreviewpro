@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { classifyCardBaseUrl, isCardUrlBlocked, joinCardUrl, resolveCardBaseInput } from "./classify";
+import { cardTestPath, classifyCardBaseUrl, isCardUrlBlocked, joinCardUrl, resolveCardBaseInput } from "./classify";
 
 describe("classifyCardBaseUrl", () => {
   it("aceita https em domínio próprio como definitivo e normaliza a origem", () => {
@@ -73,5 +73,11 @@ describe("isCardUrlBlocked", () => {
 describe("joinCardUrl", () => {
   it("monta origem + /r/ + código", () => {
     expect(joinCardUrl("https://pulse.com.br", "k7x4qm2a")).toBe("https://pulse.com.br/r/k7x4qm2a");
+  });
+});
+
+describe("cardTestPath", () => {
+  it("é um caminho relativo (sem origem), nunca o endereço gravado no chip", () => {
+    expect(cardTestPath("k7x4qm2a")).toBe("/r/k7x4qm2a/teste");
   });
 });

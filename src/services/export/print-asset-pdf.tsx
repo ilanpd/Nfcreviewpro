@@ -13,6 +13,11 @@ export interface PrintAssetData {
   onPrimary: "#000000" | "#FFFFFF";
   cardName: string;
   qrDataUrl: string;
+  /** ADR-082: o que a placa promete, derivado do que o toque realmente faz
+   * (\`domain/return-offer/print-plate-copy.ts\`) — nunca um texto fixo de
+   * "avalie sua experiência" para um cartão que leva a outro lugar. */
+  headline: string;
+  subheadline: string;
 }
 
 const styles = StyleSheet.create({
@@ -71,7 +76,7 @@ export function PrintAssetPdf({ data }: { data: PrintAssetData }) {
               <LogoOrInitial data={data} size={height * 0.32} />
               <View>
                 <Text style={{ fontSize: 9, fontWeight: 700, color: data.primaryColor }}>{data.companyName}</Text>
-                <Text style={{ fontSize: 7, color: "#6B7280", marginTop: 2 }}>Avalie sua experiência</Text>
+                <Text style={{ fontSize: 7, color: "#6B7280", marginTop: 2 }}>{data.subheadline}</Text>
                 <Text style={{ fontSize: 6, color: "#9CA3AF", marginTop: 1 }}>{data.cardName}</Text>
               </View>
             </View>
@@ -81,8 +86,9 @@ export function PrintAssetPdf({ data }: { data: PrintAssetData }) {
 
         {data.templateId === "table-tent" && (
           <>
-            <Text style={{ fontSize: width * 0.075, fontWeight: 700, color: data.primaryColor, textAlign: "center", marginBottom: 12 }}>
-              Avalie sua experiência
+            <Text style={{ fontSize: width * 0.09, fontWeight: 700, color: data.primaryColor, textAlign: "center" }}>{data.headline}</Text>
+            <Text style={{ fontSize: width * 0.055, color: "#374151", textAlign: "center", marginTop: 4, marginBottom: 12 }}>
+              {data.subheadline}
             </Text>
             <Image src={data.qrDataUrl} style={{ width: width * 0.72, height: width * 0.72, ...styles.qrImg }} />
             <View style={{ marginTop: 16, display: "flex", flexDirection: "row", alignItems: "center", gap: 8 }}>
@@ -96,14 +102,13 @@ export function PrintAssetPdf({ data }: { data: PrintAssetData }) {
         {data.templateId === "easel" && (
           <>
             <LogoOrInitial data={data} size={100} />
-            <Text style={{ fontSize: 34, fontWeight: 700, color: data.primaryColor, textAlign: "center", marginTop: 24, marginBottom: 8 }}>
-              {data.companyName}
+            <Text style={{ fontSize: 34, fontWeight: 700, color: data.primaryColor, textAlign: "center", marginTop: 24, marginBottom: 4 }}>
+              {data.headline}
             </Text>
-            <Text style={{ fontSize: 18, color: "#374151", textAlign: "center", marginBottom: 32 }}>
-              Adorou o atendimento? Escaneie e conte pra gente.
-            </Text>
-            <Image src={data.qrDataUrl} style={{ width: 320, height: 320, ...styles.qrImg }} />
-            <Text style={{ fontSize: 12, color: "#9CA3AF", marginTop: 24 }}>{data.cardName}</Text>
+            <Text style={{ fontSize: 18, color: "#374151", textAlign: "center", marginBottom: 24 }}>{data.subheadline}</Text>
+            <Image src={data.qrDataUrl} style={{ width: 300, height: 300, ...styles.qrImg }} />
+            <Text style={{ fontSize: 14, fontWeight: 700, color: "#111827", marginTop: 20 }}>{data.companyName}</Text>
+            <Text style={{ fontSize: 11, color: "#9CA3AF", marginTop: 2 }}>{data.cardName}</Text>
           </>
         )}
 
@@ -124,10 +129,11 @@ export function PrintAssetPdf({ data }: { data: PrintAssetData }) {
           >
             <LogoOrInitial data={data} size={width * 0.22} />
             <Image src={data.qrDataUrl} style={{ width: width * 0.55, height: width * 0.55, marginTop: 12, ...styles.qrImg }} />
-            <Text style={{ fontSize: width * 0.055, fontWeight: 700, color: data.primaryColor, marginTop: 10, textAlign: "center" }}>
-              Escaneie para avaliar
+            <Text style={{ fontSize: width * 0.06, fontWeight: 700, color: data.primaryColor, marginTop: 10, textAlign: "center" }}>
+              {data.headline}
             </Text>
-            <Text style={{ fontSize: width * 0.04, color: "#9CA3AF", marginTop: 2 }}>{data.companyName}</Text>
+            <Text style={{ fontSize: width * 0.045, color: "#374151", marginTop: 2, textAlign: "center" }}>{data.subheadline}</Text>
+            <Text style={{ fontSize: width * 0.035, color: "#9CA3AF", marginTop: 6 }}>{data.companyName}</Text>
           </View>
         )}
       </Page>

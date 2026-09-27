@@ -1,4 +1,5 @@
 import {
+  cardTestPath,
   classifyCardBaseUrl,
   isCardUrlBlocked,
   joinCardUrl,
@@ -6,6 +7,8 @@ import {
   type CardUrlKind,
   type CardUrlStatus,
 } from "@/domain/card-url/classify";
+
+export { cardTestPath };
 
 /**
  * Endereço do cartão (ADR-076). Seguro para o navegador: só lê variáveis
