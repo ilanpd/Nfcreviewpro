@@ -12,6 +12,13 @@ export default defineConfig({
   test: {
     environment: "node",
     include: ["src/**/*.test.ts"],
+    // Cobertura só do domínio puro (npm run test:coverage): é onde a regra de
+    // negócio mora, e o piso de 90% do Retorno é medido aqui.
+    coverage: {
+      provider: "v8",
+      include: ["src/domain/**"],
+      exclude: ["**/*.test.ts"],
+    },
   },
   resolve: {
     alias: {
