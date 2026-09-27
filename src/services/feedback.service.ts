@@ -4,6 +4,11 @@ import { prisma } from "@/lib/prisma";
 import { ForbiddenError } from "@/lib/auth";
 import { buildFeedbackWhatsappUrl } from "@/lib/whatsapp";
 import { publishEvent } from "@/lib/event-bus";
+import { sendEmail } from "@/lib/email";
+import { newFeedbackEmailHtml } from "@/lib/email-templates/feedback";
+import { appBaseUrl } from "@/lib/app-url";
+import { BRAND } from "@/lib/brand";
+import { getCompanyOwnerEmail } from "@/services/company.service";
 import type { CreateFeedbackInput } from "@/lib/validations/feedback";
 
 export class FeedbackError extends Error {
@@ -116,6 +121,15 @@ export async function createFeedback(input: CreateFeedbackInput) {
     ).catch((err) => console.error("[feedback] publish FeedbackRecebido failed", err));
   });
 
+  // E-mail "mensagem nova" (C9/F6) — quem não vive de olho no painel não
+  // pode perder um cliente tentando falar. Best-effort, nunca bloqueia a
+  // resposta ao cliente que está enviando a mensagem agora.
+  after(() => {
+    sendNewFeedbackEmail(target.companyId, target.cardName, input.message).catch((err) =>
+      console.error("[feedback] sendNewFeedbackEmail failed", err)
+    );
+  });
+
   return { feedback, whatsappUrl };
 }
 
@@ -178,4 +192,15 @@ export async function setFeedbackResolved(companyId: string, feedbackId: string,
   const feedback = await prisma.privateFeedback.findFirst({ where: { id: feedbackId, companyId } });
   if (!feedback) throw new ForbiddenError("Feedback não encontrado nesta empresa");
   return prisma.privateFeedback.update({ where: { id: feedbackId }, data: { resolved } });
+}
+
+/** Sem flag de idempotência: cada `PrivateFeedback` é um evento novo de verdade, nunca um reenvio do mesmo. */
+async function sendNewFeedbackEmail(companyId: string, cardName: string, message: string) {
+  const ownerEmail = await getCompanyOwnerEmail(companyId);
+  if (!ownerEmail) return;
+  await sendEmail({
+    to: ownerEmail,
+    subject: `Mensagem nova de um cliente — ${BRAND.name}`,
+    html: newFeedbackEmailHtml({ messagePreview: message, cardName, mensagensUrl: `${appBaseUrl()}/dashboard/mensagens` }),
+  });
 }

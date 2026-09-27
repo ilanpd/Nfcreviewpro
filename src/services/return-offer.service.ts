@@ -19,6 +19,13 @@ import { redeemVoucherAtomically } from "@/lib/return-offer/store";
 import { issueOrShowVoucher } from "@/lib/return-offer/touch";
 import type { OfferInput } from "@/lib/validations/return-offer";
 import type { RewardOffer, VoucherStatus } from "@/generated/prisma/client";
+import { sendEmail } from "@/lib/email";
+import { returnActivatedEmailHtml } from "@/lib/email-templates/return-offer";
+import { returnReengagementEmailHtml } from "@/lib/email-templates/reengagement";
+import { dueReengagementMilestone } from "@/domain/return-offer/reengagement";
+import { appBaseUrl } from "@/lib/app-url";
+import { BRAND } from "@/lib/brand";
+import { getCompanyOwnerEmail } from "@/services/company.service";
 
 /**
  * Serviço do Retorno (ADR-079): toque que emite brinde, consulta e resgate
@@ -336,6 +343,7 @@ export async function saveOffer(auth: AuthContext, input: OfferInput) {
   if (input.active && !ctx.offer?.pinHash) {
     throw new ReturnOfferError("Defina o PIN da loja antes de ativar o brinde.", 422);
   }
+  const wasActive = ctx.offer?.active ?? false;
 
   const data = {
     title: input.title,
@@ -355,7 +363,35 @@ export async function saveOffer(auth: AuthContext, input: OfferInput) {
     targetId: offer.id,
     metadata: { active: offer.active, windowDays: offer.windowDays, cooldownDays: offer.cooldownDays, dailyCap: offer.dailyCap },
   });
+
+  // E-mail "brinde ativado pela primeira vez" (C9/F6) — só na transição
+  // false→true, nunca a cada edição de um brinde que já estava ativo.
+  // Best-effort, fora do caminho crítico (padrão `after()` já usado neste
+  // arquivo em `redeemVoucher`/`voidVoucher`).
+  if (!wasActive && offer.active) {
+    after(() => {
+      sendReturnActivatedEmail(auth.companyId, ctx.company.name, offer.title).catch((err) =>
+        console.error("[return] sendReturnActivatedEmail failed", err)
+      );
+    });
+  }
   return offer;
+}
+
+async function sendReturnActivatedEmail(companyId: string, companyName: string, offerTitle: string) {
+  if (await prisma.company.findUnique({ where: { id: companyId }, select: { returnActivatedEmailSentAt: true } }).then((c) => c?.returnActivatedEmailSentAt)) {
+    return; // já mandado uma vez — nunca de novo, mesmo que o dono desative e reative depois.
+  }
+  const ownerEmail = await getCompanyOwnerEmail(companyId);
+  if (!ownerEmail) return;
+  const { sent } = await sendEmail({
+    to: ownerEmail,
+    subject: `Seu brinde de Retorno está no ar — ${BRAND.name}`,
+    html: returnActivatedEmailHtml({ companyName, offerTitle, dashboardUrl: `${appBaseUrl()}/dashboard/retorno` }),
+  });
+  if (sent) {
+    await prisma.company.update({ where: { id: companyId }, data: { returnActivatedEmailSentAt: new Date() } });
+  }
 }
 
 /** Troca o PIN. O valor nunca vai para o log de auditoria, só o fato da troca. */
@@ -472,5 +508,71 @@ export async function setReturnKillSwitch(adminEmail: string, enabled: boolean) 
     create: { id: "singleton", returnOfferEnabled: enabled, updatedByEmail: adminEmail },
     update: { returnOfferEnabled: enabled, updatedByEmail: adminEmail },
   });
+}
+
+// --- Reengajamento D+7/D+30 (C9/F6) ------------------------------------------
+
+/**
+ * Varredura diária (rota de cron `/api/return/reengagement`) — para cada
+ * empresa CUSTOMER, decide com `dueReengagementMilestone` (puro,
+ * `domain/return-offer/reengagement.ts`) se hoje é o dia de lembrar quem
+ * ainda não ativou o Retorno. `resolveAccess` decide `canWrite` com o mesmo
+ * cálculo usado em todo o resto do produto — nunca uma segunda lógica de
+ * acesso reimplementada aqui.
+ */
+export async function runReturnReengagementSweep(now = new Date()): Promise<{ evaluated: number; sent: number }> {
+  const companies = await prisma.company.findMany({
+    where: { accountType: "CUSTOMER" },
+    select: {
+      id: true,
+      name: true,
+      createdAt: true,
+      plan: true,
+      stripeSubscriptionStatus: true,
+      subscriptionStatusChangedAt: true,
+      reengagementD7EmailSentAt: true,
+      reengagementD30EmailSentAt: true,
+      rewardOffer: { select: { active: true } },
+    },
+  });
+
+  let sent = 0;
+  for (const company of companies) {
+    const access = resolveAccess({
+      accountType: "CUSTOMER",
+      plan: company.plan,
+      stripeSubscriptionStatus: company.stripeSubscriptionStatus,
+      subscriptionStatusChangedAt: company.subscriptionStatusChangedAt,
+      now,
+    });
+    const milestone = dueReengagementMilestone(
+      {
+        createdAt: company.createdAt,
+        returnOfferActive: company.rewardOffer?.active ?? false,
+        canWrite: access.canWrite,
+        reengagementD7EmailSentAt: company.reengagementD7EmailSentAt,
+        reengagementD30EmailSentAt: company.reengagementD30EmailSentAt,
+      },
+      now
+    );
+    if (!milestone) continue;
+
+    const ownerEmail = await getCompanyOwnerEmail(company.id);
+    if (!ownerEmail) continue;
+
+    const field = milestone === "D7" ? "reengagementD7EmailSentAt" : "reengagementD30EmailSentAt";
+    const { sent: emailSent } = await sendEmail({
+      to: ownerEmail,
+      subject:
+        milestone === "D7" ? `Ainda dá tempo de ativar o Retorno — ${BRAND.name}` : `Seu Retorno continua desligado — ${BRAND.name}`,
+      html: returnReengagementEmailHtml({ companyName: company.name, milestone, retornoUrl: `${appBaseUrl()}/dashboard/retorno` }),
+    });
+    if (emailSent) {
+      await prisma.company.update({ where: { id: company.id }, data: { [field]: now } });
+      sent += 1;
+    }
+  }
+
+  return { evaluated: companies.length, sent };
 }
 

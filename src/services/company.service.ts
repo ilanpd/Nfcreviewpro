@@ -15,6 +15,25 @@ export async function getCompanyById(companyId: string) {
   return prisma.company.findUniqueOrThrow({ where: { id: companyId } });
 }
 
+/**
+ * E-mail para onde mandar avisos do sistema (mensagem nova, brinde ativado,
+ * cobrança) — C9/F6. Não existe um campo `Company.email` dedicado (só o
+ * e-mail de cada `User`), então isto pega o OWNER mais antigo da empresa,
+ * que é sempre quem fez o cadastro original (`createCompanyForNewUser`/
+ * `claimGuestCompany`, únicos lugares que criam um OWNER). `null` quando a
+ * empresa não tem nenhum usuário ainda (nunca deveria acontecer para uma
+ * CUSTOMER, mas uma GUEST legitimamente não tem — quem chama decide não
+ * enviar nada nesse caso, nunca inventa um destinatário).
+ */
+export async function getCompanyOwnerEmail(companyId: string): Promise<string | null> {
+  const owner = await prisma.user.findFirst({
+    where: { companyId, role: "OWNER" },
+    orderBy: { createdAt: "asc" },
+    select: { email: true },
+  });
+  return owner?.email ?? null;
+}
+
 function subdomainHost(slug: string): string {
   return `${slug}.${getRootDomain()}`;
 }

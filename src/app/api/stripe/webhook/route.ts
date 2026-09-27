@@ -1,11 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
+import { after } from "next/server";
 import Stripe from "stripe";
 import { stripe } from "@/lib/stripe";
 import { prisma } from "@/lib/prisma";
 import { log } from "@/lib/observability/logger";
 import { provisionStoreOrder } from "@/services/store-order.service";
-import { planForStripePriceId } from "@/lib/plans";
+import { getCompanyOwnerEmail } from "@/services/company.service";
+import { planForStripePriceId, PLANS } from "@/lib/plans";
 import { publishEvent } from "@/lib/event-bus/publish";
+import { sendEmail } from "@/lib/email";
+import { subscriptionWelcomeEmailHtml, billingPastDueEmailHtml, subscriptionCanceledEmailHtml } from "@/lib/email-templates/billing";
+import { appBaseUrl } from "@/lib/app-url";
+import { BRAND } from "@/lib/brand";
 import { Prisma, type PlanType } from "@/generated/prisma/client";
 
 export const runtime = "nodejs";
@@ -94,7 +100,10 @@ export async function POST(req: NextRequest) {
             log.error("stripe-webhook", "checkout.session.completed sem companyId/plan nos metadados", { sessionId: session.id });
             break;
           }
-          const companyBeforeCheckout = await prisma.company.findUnique({ where: { id: companyId }, select: { plan: true } });
+          const companyBeforeCheckout = await prisma.company.findUnique({
+            where: { id: companyId },
+            select: { plan: true, name: true, subscriptionWelcomeEmailSentAt: true },
+          });
           await prisma.company.update({
             where: { id: companyId },
             data: {
@@ -115,6 +124,17 @@ export async function POST(req: NextRequest) {
               { companyId }
             );
           }
+          // E-mail "boas-vindas ao assinar" (C9/F6) — só na primeira vez que
+          // esta empresa assina (nunca de novo numa troca de plano ou num
+          // segundo checkout depois de reativar). `after()`: nunca atrasa a
+          // resposta 200 que o Stripe espera rápido.
+          if (companyBeforeCheckout && !companyBeforeCheckout.subscriptionWelcomeEmailSentAt) {
+            after(() => {
+              sendSubscriptionWelcomeEmail(companyId, companyBeforeCheckout.name, plan).catch((err) =>
+                log.error("stripe-webhook", "Falha ao enviar e-mail de boas-vindas", { error: String(err), companyId })
+              );
+            });
+          }
           log.info("stripe-webhook", `Empresa ${companyId} confirmada no plano ${plan}`, { companyId, plan });
         }
         break;
@@ -128,16 +148,28 @@ export async function POST(req: NextRequest) {
 
         const companyBeforeUpdate = await prisma.company.findUnique({
           where: { id: companyId },
-          select: { plan: true, stripeSubscriptionStatus: true },
+          select: {
+            plan: true,
+            name: true,
+            stripeSubscriptionStatus: true,
+            billingPastDueEmailSentAt: true,
+            subscriptionCanceledEmailSentAt: true,
+          },
         });
         if (!companyBeforeUpdate) break;
 
-        const data: { stripeSubscriptionStatus: string; subscriptionStatusChangedAt?: Date; plan?: PlanType } = {
+        const data: {
+          stripeSubscriptionStatus: string;
+          subscriptionStatusChangedAt?: Date;
+          plan?: PlanType;
+          billingPastDueEmailSentAt?: Date | null;
+        } = {
           stripeSubscriptionStatus: subscription.status,
         };
+        const statusChanged = subscription.status !== companyBeforeUpdate.stripeSubscriptionStatus;
         // Só quando o status de fato mudou: uma troca de plano com a assinatura
         // continuando "active" não pode reiniciar o relógio de uma cobrança atrasada.
-        if (subscription.status !== companyBeforeUpdate.stripeSubscriptionStatus) {
+        if (statusChanged) {
           data.subscriptionStatusChangedAt = new Date();
         }
         // Downgrade automático para Starter quando a assinatura é cancelada
@@ -157,9 +189,38 @@ export async function POST(req: NextRequest) {
           const newPlan = priceId ? planForStripePriceId(priceId) : null;
           if (newPlan) data.plan = newPlan;
         }
+        // Recuperou de um atraso (voltou a "active"/"trialing"): destrava o
+        // aviso de cobrança atrasada para um atraso FUTURO poder avisar de
+        // novo — sem isto, o segundo atraso nunca seria notificado.
+        if (statusChanged && (subscription.status === "active" || subscription.status === "trialing")) {
+          data.billingPastDueEmailSentAt = null;
+        }
         await prisma.company.update({ where: { id: companyId }, data }).catch(() => {
           // Empresa pode já ter sido removida — não é um erro de webhook.
         });
+
+        // E-mails de cobrança (C9/F6) — só na transição de verdade, nunca a
+        // cada entrega/retry do mesmo evento do Stripe com o status igual ao
+        // que já estava gravado. `after()`: nunca atrasa a resposta 200.
+        if (statusChanged && subscription.status === "past_due" && !companyBeforeUpdate.billingPastDueEmailSentAt) {
+          after(() => {
+            sendBillingPastDueEmail(companyId, companyBeforeUpdate.name).catch((err) =>
+              log.error("stripe-webhook", "Falha ao enviar e-mail de cobrança atrasada", { error: String(err), companyId })
+            );
+          });
+        }
+        if (
+          statusChanged &&
+          (subscription.status === "canceled" || subscription.status === "unpaid") &&
+          !companyBeforeUpdate.subscriptionCanceledEmailSentAt
+        ) {
+          after(() => {
+            sendSubscriptionCanceledEmail(companyId, companyBeforeUpdate.name).catch((err) =>
+              log.error("stripe-webhook", "Falha ao enviar e-mail de cancelamento", { error: String(err), companyId })
+            );
+          });
+        }
+
         if (data.plan && data.plan !== companyBeforeUpdate.plan) {
           await publishEvent(
             "PlanoAlterado",
@@ -251,4 +312,49 @@ export async function POST(req: NextRequest) {
   }
 
   return NextResponse.json({ received: true });
+}
+
+// --- e-mails transacionais de assinatura (C9/F6) -----------------------------
+// Cada uma repete o mesmo padrão idempotente de `services/store-order.service.ts`
+// (`sendOrderEmail`): só marca o timestamp depois de um envio confirmado
+// (`sent: true`), nunca antes — uma falha de envio pode tentar de novo no
+// próximo evento, um envio bem-sucedido nunca duplica.
+
+async function sendSubscriptionWelcomeEmail(companyId: string, companyName: string, plan: PlanType) {
+  const ownerEmail = await getCompanyOwnerEmail(companyId);
+  if (!ownerEmail) return;
+  const { sent } = await sendEmail({
+    to: ownerEmail,
+    subject: `Bem-vindo(a) ao ${BRAND.name} — assinatura confirmada`,
+    html: subscriptionWelcomeEmailHtml({ companyName, planLabel: PLANS[plan].name, dashboardUrl: `${appBaseUrl()}/dashboard` }),
+  });
+  if (sent) {
+    await prisma.company.update({ where: { id: companyId }, data: { subscriptionWelcomeEmailSentAt: new Date() } });
+  }
+}
+
+async function sendBillingPastDueEmail(companyId: string, companyName: string) {
+  const ownerEmail = await getCompanyOwnerEmail(companyId);
+  if (!ownerEmail) return;
+  const { sent } = await sendEmail({
+    to: ownerEmail,
+    subject: `Não conseguimos confirmar sua cobrança — ${BRAND.name}`,
+    html: billingPastDueEmailHtml({ companyName, settingsUrl: `${appBaseUrl()}/dashboard/settings` }),
+  });
+  if (sent) {
+    await prisma.company.update({ where: { id: companyId }, data: { billingPastDueEmailSentAt: new Date() } });
+  }
+}
+
+async function sendSubscriptionCanceledEmail(companyId: string, companyName: string) {
+  const ownerEmail = await getCompanyOwnerEmail(companyId);
+  if (!ownerEmail) return;
+  const { sent } = await sendEmail({
+    to: ownerEmail,
+    subject: `Sua assinatura foi cancelada — ${BRAND.name}`,
+    html: subscriptionCanceledEmailHtml({ companyName, dashboardUrl: `${appBaseUrl()}/dashboard/settings` }),
+  });
+  if (sent) {
+    await prisma.company.update({ where: { id: companyId }, data: { subscriptionCanceledEmailSentAt: new Date() } });
+  }
 }

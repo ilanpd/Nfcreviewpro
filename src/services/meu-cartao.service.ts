@@ -4,6 +4,7 @@ import { createCampaign, updateCampaign, assignCampaign } from "@/services/campa
 import { buildSyntheticAuthContext } from "@/lib/api-v1/auth";
 import { sendEmail } from "@/lib/email";
 import { personalLinkRecoveryEmailHtml } from "@/lib/email-templates/meu-cartao";
+import { appBaseUrl } from "@/lib/app-url";
 import { BRAND } from "@/lib/brand";
 import type { NFCCard, Company } from "@/generated/prisma/client";
 
@@ -104,7 +105,6 @@ export async function sendPersonalLinkRecoveryEmail(email: string): Promise<void
   });
   if (cards.length === 0) return;
 
-  const base = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
-  const links = cards.map((c) => ({ name: c.name, url: `${base}/meu-cartao/${c.editToken}` }));
+  const links = cards.map((c) => ({ name: c.name, url: `${appBaseUrl()}/meu-cartao/${c.editToken}` }));
   await sendEmail({ to: email, subject: `Seus links de cartão — ${BRAND.name}`, html: personalLinkRecoveryEmailHtml(links) });
 }
