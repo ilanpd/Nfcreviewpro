@@ -15,7 +15,7 @@ export default async function FeedbackPage({ searchParams }: { searchParams: Pro
       <main className="flex min-h-screen flex-col items-center justify-center gap-3 p-6 text-center">
         <p className="text-lg font-semibold">Link inválido</p>
         <p className="max-w-xs text-sm text-muted-foreground">
-          Não encontramos essa avaliação. Aproxime o cartão novamente para tentar de novo.
+          Não encontramos essa visita. Aproxime o cartão novamente para tentar de novo.
         </p>
       </main>
     );
@@ -24,8 +24,8 @@ export default async function FeedbackPage({ searchParams }: { searchParams: Pro
   if (ratingEvent.alreadyHasFeedback) {
     return (
       <main className="flex min-h-screen flex-col items-center justify-center gap-3 p-6 text-center">
-        <p className="text-lg font-semibold">Feedback já enviado</p>
-        <p className="max-w-xs text-sm text-muted-foreground">Obrigado! Já recebemos seu comentário sobre essa visita.</p>
+        <p className="text-lg font-semibold">Mensagem já enviada</p>
+        <p className="max-w-xs text-sm text-muted-foreground">Obrigado! Já recebemos sua mensagem sobre essa visita.</p>
       </main>
     );
   }
@@ -36,9 +36,9 @@ export default async function FeedbackPage({ searchParams }: { searchParams: Pro
         <div className="flex flex-col items-center gap-4">
           <BrandHeader name={ratingEvent.company.name} logoUrl={ratingEvent.company.logoUrl} />
           <div className="space-y-1 text-center">
-            <p className="text-xl font-semibold">Sentimos muito por isso</p>
+            <p className="text-xl font-semibold">Fale com a gente</p>
             <p className="text-sm text-muted-foreground">
-              Conte o que aconteceu para que possamos melhorar diretamente com você.
+              Um elogio, uma sugestão ou um problema: a mensagem vai direto para o responsável.
             </p>
           </div>
         </div>

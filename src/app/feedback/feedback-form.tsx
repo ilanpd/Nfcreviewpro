@@ -21,7 +21,7 @@ export function FeedbackForm({ ratingEventId, primaryColor }: FeedbackFormProps)
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (form.message.trim().length < 3) {
-      toast.error("Conte um pouco mais para nos ajudar a melhorar.");
+      toast.error("Escreva um pouco mais para podermos entender.");
       return;
     }
     setSubmitting(true);
@@ -33,7 +33,7 @@ export function FeedbackForm({ ratingEventId, primaryColor }: FeedbackFormProps)
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        throw new Error(data.error ?? "Não foi possível enviar seu feedback");
+        throw new Error(data.error ?? "Não foi possível enviar sua mensagem");
       }
       const { whatsappUrl } = await res.json();
       router.push(`/thank-you?type=feedback&wa=${encodeURIComponent(whatsappUrl)}`);
@@ -54,7 +54,7 @@ export function FeedbackForm({ ratingEventId, primaryColor }: FeedbackFormProps)
         <Input id="phone" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="message">O que aconteceu?</Label>
+        <Label htmlFor="message">Sua mensagem</Label>
         <Textarea
           id="message"
           required
@@ -62,11 +62,11 @@ export function FeedbackForm({ ratingEventId, primaryColor }: FeedbackFormProps)
           rows={4}
           value={form.message}
           onChange={(e) => setForm({ ...form, message: e.target.value })}
-          placeholder="Conte com detalhes o que podemos melhorar…"
+          placeholder="Escreva aqui…"
         />
       </div>
       <Button type="submit" className="w-full" style={{ backgroundColor: primaryColor }} disabled={submitting}>
-        {submitting ? "Enviando…" : "Enviar Feedback"}
+        {submitting ? "Enviando…" : "Enviar mensagem"}
       </Button>
     </form>
   );

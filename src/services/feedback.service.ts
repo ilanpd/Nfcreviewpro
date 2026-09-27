@@ -37,7 +37,7 @@ export async function createFeedback(input: CreateFeedbackInput) {
 
   // Event Bus (Fase 8) — mesmo padrão best-effort do rating.service/
   // resolution-engine: publicar não pode atrasar a resposta a um cliente
-  // insatisfeito preenchendo o formulário de feedback privado.
+  // enviando uma mensagem em "Falar com a gente".
   after(() => {
     publishEvent(
       "FeedbackRecebido",

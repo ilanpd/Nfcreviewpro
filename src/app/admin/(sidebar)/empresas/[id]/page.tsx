@@ -250,7 +250,7 @@ export default async function AdminCompanyDetailPage({ params }: { params: Promi
               )}
             </AnalyticsCard>
 
-            <AnalyticsCard title={`Feedback privado (${feedback.length})`} description="Avaliações de 1 a 3 estrelas que nunca foram ao Google — mesmo toggle de resolvido do Dashboard.">
+            <AnalyticsCard title={`Feedback privado (${feedback.length})`} description="Mensagens enviadas pelos clientes desta empresa em “Falar com a gente” — mesmo toggle de resolvido do painel.">
               {feedback.length === 0 ? (
                 <EmptyState icon={<MessageSquareWarning />} title="Nenhum feedback privado por enquanto" />
               ) : (

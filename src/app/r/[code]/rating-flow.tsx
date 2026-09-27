@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
-import { ExternalLink } from "lucide-react";
+import { ExternalLink, MessageCircle } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { BrandHeader } from "@/components/public/brand-header";
@@ -17,8 +17,13 @@ interface RatingFlowProps {
   primaryColor: string;
 }
 
-type Stage = { name: "rate" } | { name: "thanks-google"; ratingEventId: string; googleReviewUrl: string };
+type Stage = { name: "rate" } | { name: "choose"; ratingEventId: string; googleReviewUrl: string };
 
+/**
+ * ADR-075 — depois da nota, TODO cliente vê exatamente a mesma tela: os mesmos
+ * dois caminhos, na mesma ordem, com o mesmo texto, qualquer que seja a nota.
+ * A nota é só dado interno; nada aqui pode ramificar por ela.
+ */
 export function RatingFlow({ code, companyName, logoUrl, primaryColor }: RatingFlowProps) {
   const router = useRouter();
   const [visitId, setVisitId] = useState<string | null>(null);
@@ -53,24 +58,25 @@ export function RatingFlow({ code, companyName, logoUrl, primaryColor }: RatingF
     })
       .then((res) => (res.ok ? res.json() : Promise.reject(new Error("failed"))))
       .then((result: PublicRatingResult) => {
-        if (result.outcome === "google") {
-          setStage({ name: "thanks-google", ratingEventId: result.ratingEventId, googleReviewUrl: result.googleReviewUrl });
-        } else {
-          router.push(`/feedback?event=${result.ratingEventId}`);
-        }
+        setStage({ name: "choose", ratingEventId: result.ratingEventId, googleReviewUrl: result.googleReviewUrl });
       })
       .catch(() => {
-        toast.error("Não foi possível registrar sua avaliação. Tente novamente.");
+        toast.error("Não foi possível registrar sua resposta. Tente novamente.");
         submittedRef.current = false;
         setSelectedStars(null);
       })
       .finally(() => setSubmitting(false));
-  }, [visitId, selectedStars, router]);
+  }, [visitId, selectedStars]);
 
-  async function handleGoogleClick() {
-    if (stage.name !== "thanks-google") return;
+  function handleGoogleClick() {
+    if (stage.name !== "choose") return;
     fetch(`/api/ratings/${stage.ratingEventId}/redirect`, { method: "POST" }).catch(() => {});
     window.location.href = stage.googleReviewUrl;
+  }
+
+  function handleTalkClick() {
+    if (stage.name !== "choose") return;
+    router.push(`/feedback?event=${stage.ratingEventId}`);
   }
 
   return (
@@ -91,7 +97,7 @@ export function RatingFlow({ code, companyName, logoUrl, primaryColor }: RatingF
           </motion.div>
         ) : (
           <motion.div
-            key="thanks"
+            key="choose"
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
@@ -100,15 +106,21 @@ export function RatingFlow({ code, companyName, logoUrl, primaryColor }: RatingF
           >
             <BrandHeader name={companyName} logoUrl={logoUrl} />
             <div className="space-y-2">
-              <p className="text-xl font-semibold">Que ótimo! 🎉</p>
+              <p className="text-xl font-semibold">Obrigado!</p>
               <p className="text-muted-foreground">
-                Ficamos muito felizes com sua avaliação. Poderia compartilhá-la publicamente no Google?
+                Se quiser, conte sua experiência no Google ou fale direto com a gente.
               </p>
             </div>
-            <Button size="lg" className="gap-2" style={{ backgroundColor: primaryColor }} onClick={handleGoogleClick}>
-              Avaliar no Google
-              <ExternalLink className="size-4" />
-            </Button>
+            <div className="grid w-full gap-3">
+              <Button size="lg" className="gap-2" style={{ backgroundColor: primaryColor }} onClick={handleGoogleClick}>
+                Avaliar no Google
+                <ExternalLink className="size-4" />
+              </Button>
+              <Button size="lg" variant="outline" className="gap-2" onClick={handleTalkClick}>
+                <MessageCircle className="size-4" />
+                Falar com a gente
+              </Button>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>

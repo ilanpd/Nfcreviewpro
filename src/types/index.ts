@@ -46,6 +46,4 @@ export interface BreakdownItem {
   count: number;
 }
 
-export type PublicRatingResult =
-  | { outcome: "google"; ratingEventId: string; googleReviewUrl: string }
-  | { outcome: "feedback"; ratingEventId: string };
+export type { PublicRatingResult } from "@/domain/rating/public-result";

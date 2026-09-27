@@ -12,12 +12,12 @@ export default async function ThankYouPage({
     <main className="flex min-h-screen flex-col items-center justify-center gap-4 p-6 text-center">
       <div className="text-4xl">🙏</div>
       <h1 className="text-xl font-semibold">
-        {isFeedback ? "Obrigado pelo seu feedback." : "Obrigado pela sua avaliação!"}
+        {isFeedback ? "Mensagem enviada." : "Obrigado pela visita!"}
       </h1>
       <p className="max-w-xs text-sm text-muted-foreground">
         {isFeedback
           ? "Vamos abrir o WhatsApp para você confirmar o envio ao responsável pelo atendimento."
-          : "Sua opinião ajuda o estabelecimento a melhorar cada vez mais."}
+          : "Esperamos ver você de novo."}
       </p>
       {isFeedback && wa ? <ThankYouRedirect whatsappUrl={wa} /> : null}
     </main>

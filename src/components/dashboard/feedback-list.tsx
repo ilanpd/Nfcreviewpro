@@ -57,7 +57,7 @@ export function FeedbackList({
         <EmptyState
           icon={<MessageSquareWarning />}
           title="Nenhum feedback privado por enquanto"
-          description="Quando um cliente avaliar com 1 a 3 estrelas, o feedback aparece aqui em vez de ir para o Google."
+          description="As mensagens que seus clientes enviarem em “Falar com a gente” aparecem aqui."
         />
       ) : (
         <div className="overflow-x-auto rounded-lg border">
