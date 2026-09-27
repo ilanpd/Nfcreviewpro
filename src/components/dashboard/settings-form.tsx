@@ -70,6 +70,10 @@ export function SettingsForm({ company }: { company: Company }) {
               onChange={(e) => setForm({ ...form, googleReviewUrl: e.target.value })}
               required
             />
+            <p className="text-xs text-muted-foreground">
+              O destino de partida do seu cartão. Em Retorno você pode escolher outro botão principal (Instagram, WhatsApp, cardápio…) — este link
+              continua sendo o padrão quando nenhum outro estiver configurado.
+            </p>
           </div>
 
           <Button type="submit" disabled={saving}>

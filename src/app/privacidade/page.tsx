@@ -21,7 +21,8 @@ const SECTIONS: LegalSection[] = [
       "Conta e empresa: nome, e-mail, papel na equipe, nome da empresa, WhatsApp do gerente, link de destino e identidade visual. Base legal: execução do contrato.",
       "Compras: nome, e-mail, CPF ou CNPJ, telefone e endereços de cobrança e entrega. O pagamento é processado pelo Stripe, e nós não armazenamos dados de cartão de crédito. Base legal: execução do contrato e obrigações legais, como a emissão de nota fiscal.",
       "Uso do cartão: tipo de aparelho, navegador e sistema, localização aproximada (país e cidade, quando disponível) e um identificador irreversível derivado do endereço IP, sem guardar o IP em texto. Base legal: legítimo interesse, para segurança, prevenção a fraude e estatísticas de uso.",
-      "Notas e mensagens: a nota rápida que o cliente escolhe e as mensagens enviadas em “Falar com a gente”, com nome e telefone opcionais informados pelo próprio cliente. Base legal: execução do serviço contratado pelo estabelecimento.",
+      "Brinde de retorno: quando o estabelecimento usa essa função, um código curto identifica o brinde (não a pessoa) e um cookie no seu aparelho lembra que aquele código é seu, para você não precisar anotá-lo. O PIN que confirma o resgate é do estabelecimento, nunca do cliente, e fica guardado de forma que não pode ser lido de volta, nem por nós. Base legal: execução do serviço contratado pelo estabelecimento.",
+      "Notas e mensagens: as mensagens enviadas em “Falar com a gente”, com nome e telefone opcionais informados pelo próprio cliente. Base legal: execução do serviço contratado pelo estabelecimento.",
     ],
   },
   {
@@ -47,7 +48,9 @@ const SECTIONS: LegalSection[] = [
   {
     title: "Cookies",
     paragraphs: [
-      "Usamos apenas cookies e armazenamento local necessários para manter você conectado, proteger o acesso e lembrar a sua preferência de tema. Não usamos cookies de publicidade. Se passarmos a usar outros, esta política será atualizada antes.",
+      "Usamos apenas cookies e armazenamento local necessários para manter você conectado, proteger o acesso e lembrar a sua preferência de tema.",
+      "No cartão de um estabelecimento com o brinde de retorno ativo, um cookie próprio (chamado \"pv\") guarda um código aleatório que não identifica você — serve só para o cartão reconhecer que aquele brinde é do seu aparelho, sem precisar de nome, e-mail ou telefone. Recusar ou apagar esse cookie não impede o uso do cartão: ele passa a pedir o código do brinde.",
+      "Não usamos cookies de publicidade. Se passarmos a usar outros, esta política será atualizada antes.",
     ],
   },
   {
