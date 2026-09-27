@@ -1,12 +1,23 @@
 import { ImageResponse } from "next/og";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
+import { readFileSync } from "node:fs";
+import path from "node:path";
 import { resolveBrandByHost } from "@/lib/white-label/resolve-brand";
 import { buildBrandColorSet } from "@/domain/white-label/color";
 import { DEFAULT_PRIMARY_COLOR } from "@/domain/white-label/types";
 import { BRAND } from "@/lib/brand";
 
 export const runtime = "nodejs";
+
+// C12 (ADR-087) — logo oficial (glifo "P" metálico, `public/brand/`), lido
+// uma vez no escopo do módulo (reaproveitado entre invocações a quente da
+// function) e embutido como data URI — o único jeito de um asset estático
+// aparecer dentro de um `ImageResponse` (satori não busca URL relativa do
+// próprio deploy). Só usado quando NENHUMA empresa com marca própria está
+// por trás do Host (branch `!brand` abaixo) — white-label continua 100% a
+// cor/inicial da empresa cliente, nunca o glifo do produto.
+const LOGO_MARK_DATA_URI = `data:image/png;base64,${readFileSync(path.join(process.cwd(), "public/brand/logo-mark.png")).toString("base64")}`;
 
 /**
  * Assets Inteligentes (Fase 10) — favicon dinâmico, resolvido por Host a
@@ -49,9 +60,14 @@ export async function GET(req: NextRequest) {
           background,
         }}
       >
-        <span style={{ color: glyph, fontSize: Math.round(size * 0.55), fontWeight: 700, fontFamily: "sans-serif" }}>
-          {initial}
-        </span>
+        {brand ? (
+          <span style={{ color: glyph, fontSize: Math.round(size * 0.55), fontWeight: 700, fontFamily: "sans-serif" }}>
+            {initial}
+          </span>
+        ) : (
+          // eslint-disable-next-line @next/next/no-img-element -- ImageResponse (satori) exige <img>, nunca next/image.
+          <img src={LOGO_MARK_DATA_URI} width={Math.round(size * 0.72)} height={Math.round(size * 0.72)} alt="" />
+        )}
       </div>
     ),
     { width: size, height: size }

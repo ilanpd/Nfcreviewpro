@@ -32,7 +32,7 @@ export function Hero({ heroVideoUrl }: { heroVideoUrl?: string | null }) {
   const hasRealVideo = !!embedUrl || isDirectVideo;
 
   return (
-    <section className="relative overflow-hidden px-6 pt-20 pb-24 sm:pt-28">
+    <section className="relative overflow-hidden px-6 pt-16 pb-20 sm:pt-28">
       <AuroraBackground variant="vivid" />
       <CursorGlow className="mx-auto grid max-w-6xl items-center gap-16 lg:grid-cols-[1.05fr_1fr]" color="var(--brand)">
         <div className="text-center lg:text-left">

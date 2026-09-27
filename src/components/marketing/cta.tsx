@@ -9,7 +9,7 @@ import { BlurFade } from "@/components/ui/blur-fade";
  * Sem partículas, feixes nem varredura de cor no título (ADR-077). */
 export function Cta() {
   return (
-    <section className="mx-auto max-w-6xl px-6 pb-24">
+    <section className="mx-auto max-w-6xl px-6 pb-20">
       <BlurFade inView offset={16}>
         <div className="rounded-2xl bg-noc-surface px-8 py-20 text-center text-white sm:px-16">
           <h2 className="text-3xl font-semibold tracking-tight text-balance sm:text-4xl">

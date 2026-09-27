@@ -16,7 +16,7 @@ const MIN_CARD_UNIT_PRICE_CENTS = Math.min(...STORE_PRODUCTS.map((p) => p.unitPr
 
 export function Pricing() {
   return (
-    <section id="planos" className="bg-muted/30 py-24">
+    <section id="planos" className="bg-muted/30 py-20">
       <div className="mx-auto max-w-6xl px-6">
         <BlurFade inView>
           <div className="mx-auto max-w-2xl text-center">
