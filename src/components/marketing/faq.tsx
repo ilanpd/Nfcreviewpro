@@ -10,7 +10,8 @@ const FAQS = [
   },
   {
     question: "O que o cliente vê depois de tocar no cartão?",
-    answer: "Duas opções, iguais para todo mundo: avaliar no Google ou falar direto com o negócio. O produto não filtra, não esconde e não escolhe quem pode avaliar.",
+    answer:
+      "Duas opções, iguais para todo mundo: avaliar no Google ou falar direto com o negócio. O produto não filtra, não esconde e não escolhe quem pode avaliar. No plano Starter, o cliente também ganha um brinde para a próxima visita.",
   },
   {
     question: "Posso trocar o link do Google ou o WhatsApp depois?",

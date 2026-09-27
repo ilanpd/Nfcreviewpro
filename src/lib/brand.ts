@@ -13,12 +13,14 @@
  */
 export const BRAND = {
   name: "Pulse",
-  /** Frase-âncora: só afirma o que o produto faz HOJE. Trocar por "Faça cada
-   * cliente voltar" quando o Retorno estiver no ar (F6): prometer antes seria
-   * anunciar recurso que não existe. */
-  tagline: "Um toque leva o cliente até a avaliação no Google",
+  /** Frase-âncora. Trocada no C8 (F6, ADR-083): o Retorno está no ar desde o
+   * C5, então "Faça cada cliente voltar" deixou de ser uma promessa vazia —
+   * é literalmente o que o produto faz. Antes disso, era
+   * "Um toque leva o cliente até a avaliação no Google" (nunca falar do que
+   * não existe ainda). */
+  tagline: "Faça cada cliente voltar",
   description:
-    "Cartões NFC que levam o cliente direto para avaliar no Google ou falar com o seu negócio, sem aplicativo e sem cadastro.",
+    "Um cartão que o cliente encosta no celular para avaliar no Google ou falar com você, e um brinde para ele voltar. Sem aplicativo e sem cadastro.",
   /** Cores como hex puro, para quem não enxerga o CSS (OG, ícones, e-mail, PDF). Espelham `globals.css` (verificado em teste). */
   colors: {
     ink: "#16191C",

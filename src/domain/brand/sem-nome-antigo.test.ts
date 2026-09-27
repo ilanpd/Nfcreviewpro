@@ -45,7 +45,7 @@ describe("marca Pulse (ADR-077)", () => {
     expect(pageTitle("Loja")).toBe("Loja — Pulse");
   });
 
-  it("a frase-âncora não promete o que o produto ainda não faz", () => {
-    expect(BRAND.tagline).not.toMatch(/voltar|brinde|retorno|ganhe/i);
+  it("a frase-âncora fala do Retorno (C8/F6) — deixou de ser promessa vazia porque o produto existe desde o C5", () => {
+    expect(BRAND.tagline).toBe("Faça cada cliente voltar");
   });
 });

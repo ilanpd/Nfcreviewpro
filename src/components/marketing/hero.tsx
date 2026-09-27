@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ArrowRight, PlayCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { BlurFade } from "@/components/ui/blur-fade";
+import { BRAND } from "@/lib/brand";
 
 function toEmbedUrl(url: string): string | null {
   const youtubeMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([\w-]+)/);
@@ -27,15 +28,13 @@ export function Hero({ heroVideoUrl }: { heroVideoUrl?: string | null }) {
         </BlurFade>
 
         <BlurFade delay={0.05}>
-          <h1 className="text-4xl font-semibold tracking-tight text-balance sm:text-6xl">
-            Um toque leva seu cliente até a avaliação no Google.
-          </h1>
+          <h1 className="text-4xl font-semibold tracking-tight text-balance sm:text-6xl">{BRAND.tagline}.</h1>
         </BlurFade>
 
         <BlurFade delay={0.1}>
           <p className="mt-6 max-w-2xl text-lg text-muted-foreground text-balance">
-            O cliente encosta o celular no cartão e escolhe: avaliar no Google ou falar direto com você. Sem aplicativo,
-            sem cadastro, e os mesmos caminhos para todo mundo.
+            O cliente encosta o celular no cartão, avalia no Google ou fala com você, e ganha um brinde para a próxima
+            visita. Sem aplicativo, sem cadastro, e os mesmos caminhos para todo mundo.
           </p>
         </BlurFade>
 
