@@ -1,9 +1,7 @@
 import { LineChart } from "lucide-react";
 import { requireAuthContext } from "@/lib/auth";
-import { roleHasPermission } from "@/domain/rbac/roles";
 import { planHasFeature, minimumPlanForFeature } from "@/lib/plans";
 import { getAnalytics } from "@/services/analytics.service";
-import { listFeedback } from "@/services/feedback.service";
 import {
   getExecutiveKpis,
   getFunnel,
@@ -19,39 +17,35 @@ import { PlanUpsell } from "@/components/dashboard/plan-upsell";
 import { VisitsChart } from "@/components/dashboard/visits-chart";
 import { HourlyChart } from "@/components/dashboard/hourly-chart";
 import { BreakdownList } from "@/components/dashboard/breakdown-list";
-import { FeedbackList } from "@/components/dashboard/feedback-list";
 import { AnalyticsEnterpriseView } from "@/components/dashboard/analytics/analytics-enterprise-view";
 
 // Confirmado em produção (vercel logs): esta página já levou 22.8s pra
 // renderizar pra uma empresa com bastante histórico, perto o bastante do
 // timeout padrão da função serverless pra derrubar a página
 // intermitentemente ("Não foi possível carregar esta página") mesmo sem
-// nenhum erro real de código. A causa raiz (listFeedback sem limite de
-// tempo/quantidade, abaixo) já foi corrigida — este teto mais alto fica
-// como rede de segurança, não como a correção principal.
+// nenhum erro real de código. A causa raiz era \`listFeedback\` sem limite de
+// tempo/quantidade — o feedback saiu daqui de vez no C7 (\`/dashboard/mensagens\`,
+// que já nasce com o limite de 90 dias). Este teto mais alto fica como rede
+// de segurança das 7 queries do Enterprise, não como a correção principal.
 export const maxDuration = 60;
 
 const DEFAULT_DAYS = 30;
 
 /**
- * Fase 20 — só a aba "Enterprise" (KPIs executivos, funil, ROI, rankings)
- * é Pro+ (`planHasFeature`, `lib/plans.ts`). "Visão geral" e "Feedbacks
- * privados" continuam disponíveis no Starter — negar isso removeria valor
- * já entregue hoje a quem já paga, sem ganho nenhum de clareza comercial.
- * As 7 queries do Enterprise nem rodam quando o plano não inclui a
- * feature — nunca busca dado só pra jogar fora atrás de um upsell.
+ * Fase 20 — só a aba "Enterprise" (KPIs executivos, funil, ROI, rankings) é
+ * Pro+ (`planHasFeature`, `lib/plans.ts`). "Visão geral" continua disponível
+ * no Starter — negar isso removeria valor já entregue hoje a quem já paga,
+ * sem ganho nenhum de clareza comercial. As 7 queries do Enterprise nem
+ * rodam quando o plano não inclui a feature — nunca busca dado só pra jogar
+ * fora atrás de um upsell. "Feedbacks privados" saiu para \`/dashboard/mensagens\`
+ * no C7 (F5 do plano da Fase 22).
  */
 export default async function AnalyticsPage() {
   const ctx = await requireAuthContext();
   const hasEnterpriseAnalytics = planHasFeature(ctx.plan, "analytics_full");
 
-  const [analytics, feedback, enterpriseData] = await Promise.all([
+  const [analytics, enterpriseData] = await Promise.all([
     getAnalytics(ctx.companyId, 30),
-    // Sem limite de data/quantidade aqui, isto varria o histórico de
-    // feedback INTEIRO da empresa em toda visita a esta página — a causa
-    // raiz medida dos 22.8s (ver `maxDuration` acima). Os mesmos 30 dias do
-    // resto da página, com um teto de 200 linhas por segurança.
-    listFeedback(ctx.companyId, undefined, { since: new Date(Date.now() - DEFAULT_DAYS * 24 * 60 * 60 * 1000), take: 200 }),
     hasEnterpriseAnalytics
       ? Promise.all([
           getExecutiveKpis(ctx.companyId, DEFAULT_DAYS),
@@ -77,7 +71,6 @@ export default async function AnalyticsPage() {
         <TabsList>
           <TabsTrigger value="enterprise">Enterprise</TabsTrigger>
           <TabsTrigger value="overview">Visão geral</TabsTrigger>
-          <TabsTrigger value="feedback">Feedbacks privados</TabsTrigger>
         </TabsList>
 
         <TabsContent value="enterprise">
@@ -124,14 +117,6 @@ export default async function AnalyticsPage() {
               <BreakdownList items={analytics.byBrowser} />
             </AnalyticsCard>
           </div>
-        </TabsContent>
-
-        <TabsContent value="feedback">
-          <FeedbackList
-            initialFeedback={feedback}
-            canManage={roleHasPermission(ctx.role, "feedback:resolve")}
-            showExport={planHasFeature(ctx.plan, "csv_export")}
-          />
         </TabsContent>
       </Tabs>
     </div>
