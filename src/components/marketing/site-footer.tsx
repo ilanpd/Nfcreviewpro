@@ -9,6 +9,14 @@ export function SiteFooter() {
           <Nfc className="size-4" />
           NFC Review Pro
         </Link>
+        <nav aria-label="Legal" className="flex items-center gap-4">
+          <Link href="/termos" className="hover:text-foreground">
+            Termos de Uso
+          </Link>
+          <Link href="/privacidade" className="hover:text-foreground">
+            Privacidade
+          </Link>
+        </nav>
         <p>© {new Date().getFullYear()} NFC Review Pro. Todos os direitos reservados.</p>
       </div>
     </footer>

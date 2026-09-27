@@ -27,9 +27,9 @@ const geistMono = Geist_Mono({
 // genérico em vez do dinâmico por marca.
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"),
-  title: "NFC Review Pro — Transforme clientes satisfeitos em avaliações",
+  title: "NFC Review Pro — Um toque leva o cliente até a avaliação no Google",
   description:
-    "Cartões NFC inteligentes que captam avaliações, atendimento e reputação para restaurantes, clínicas, academias e mais.",
+    "Cartões NFC que levam o cliente direto para avaliar no Google ou falar com o seu negócio, sem aplicativo e sem cadastro.",
   icons: {
     icon: "/api/brand/icon",
     apple: "/api/brand/icon?size=180",

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, PlayCircle, Star } from "lucide-react";
+import { ArrowRight, PlayCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { BlurFade } from "@/components/ui/blur-fade";
 import { BorderBeam } from "@/components/ui/border-beam";
@@ -32,14 +32,14 @@ export function Hero({ heroVideoUrl }: { heroVideoUrl?: string | null }) {
       <CursorGlow className="mx-auto flex max-w-4xl flex-col items-center text-center" size={560}>
         <BlurFade delay={0}>
           <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-border/60 bg-muted/60 px-4 py-1.5 text-xs font-medium text-muted-foreground">
-            Cartões NFC inteligentes para gestão de reputação
+            Cartões NFC para o seu negócio
           </div>
         </BlurFade>
 
         <BlurFade delay={0.05}>
           <h1 className="text-4xl font-semibold tracking-tight text-balance sm:text-6xl">
             <DiaTextReveal
-              text="Transforme cada cliente satisfeito em uma nova avaliação."
+              text="Um toque leva seu cliente até a avaliação no Google."
               colors={HEADLINE_SWEEP_COLORS}
               duration={1.8}
               delay={0.3}
@@ -49,8 +49,8 @@ export function Hero({ heroVideoUrl }: { heroVideoUrl?: string | null }) {
 
         <BlurFade delay={0.1}>
           <p className="mt-6 max-w-2xl text-lg text-muted-foreground text-balance">
-            Um toque no cartão NFC leva o cliente direto para avaliar seu negócio no Google — e captura os problemas
-            antes que virem uma avaliação ruim.
+            O cliente encosta o celular no cartão e escolhe: avaliar no Google ou falar direto com você. Sem aplicativo,
+            sem cadastro, e os mesmos caminhos para todo mundo.
           </p>
         </BlurFade>
 
@@ -91,11 +91,6 @@ export function Hero({ heroVideoUrl }: { heroVideoUrl?: string | null }) {
                 <div className="flex h-full flex-col items-center justify-center gap-4 bg-gradient-to-br from-muted/40 to-muted/10">
                   <div className="flex items-center justify-center rounded-full bg-background/80 p-5 shadow-sm">
                     <PlayCircle className="size-10 text-brand" />
-                  </div>
-                  <div className="flex items-center gap-1">
-                    {Array.from({ length: 5 }).map((_, i) => (
-                      <Star key={i} className="size-5 fill-amber-400 text-amber-400" />
-                    ))}
                   </div>
                   <p className="text-sm text-muted-foreground">Vídeo demonstrativo em breve</p>
                 </div>

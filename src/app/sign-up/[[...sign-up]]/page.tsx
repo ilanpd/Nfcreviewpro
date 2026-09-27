@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { headers } from "next/headers";
 import { SignUp } from "@clerk/nextjs";
 import { resolveBrandByHost } from "@/lib/white-label/resolve-brand";
@@ -37,6 +38,17 @@ export default async function SignUpPage({
   return (
     <BrandedAuthScreen brand={brand}>
       <SignUp signInUrl="/sign-in" fallbackRedirectUrl={fallbackRedirectUrl} appearance={clerkAppearanceFor(brand)} />
+      <p className="mt-4 max-w-sm text-center text-xs text-muted-foreground">
+        Ao criar sua conta, você concorda com os{" "}
+        <Link href="/termos" className="underline">
+          Termos de Uso
+        </Link>{" "}
+        e a{" "}
+        <Link href="/privacidade" className="underline">
+          Política de Privacidade
+        </Link>
+        .
+      </p>
     </BrandedAuthScreen>
   );
 }

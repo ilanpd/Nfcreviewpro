@@ -9,8 +9,8 @@ const FAQS = [
     answer: "Não. O cliente só aproxima o celular do cartão NFC (ou escaneia o QR Code) e a página abre no navegador, sem app e sem cadastro.",
   },
   {
-    question: "O que acontece com avaliações ruins?",
-    answer: "Avaliações de 1 a 3 estrelas nunca chegam ao Google. Elas abrem um formulário de feedback privado que é enviado direto para o WhatsApp do responsável.",
+    question: "O que o cliente vê depois de tocar no cartão?",
+    answer: "Duas opções, iguais para todo mundo: avaliar no Google ou falar direto com o negócio. O produto não filtra, não esconde e não escolhe quem pode avaliar.",
   },
   {
     question: "Posso trocar o link do Google ou o WhatsApp depois?",

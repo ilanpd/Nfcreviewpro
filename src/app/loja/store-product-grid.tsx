@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowRight, Check, CreditCard, Star } from "lucide-react";
+import Link from "next/link";
+import { ArrowRight, Check, CreditCard } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -35,12 +36,7 @@ export function StoreProductGrid({ products }: { products: StoreProduct[] }) {
       <div className="mx-auto max-w-6xl px-6">
         <BlurFade inView>
           <div className="mx-auto max-w-2xl text-center">
-            <div className="mb-3 flex items-center justify-center gap-1 text-amber-500">
-              {Array.from({ length: 5 }).map((_, i) => (
-                <Star key={i} className="size-4 fill-current" />
-              ))}
-              <span className="ml-2 text-sm font-medium text-muted-foreground">Cartão NFC OS — o mesmo produto, em 3 tamanhos de pacote</span>
-            </div>
+            <p className="mb-3 text-sm font-medium text-muted-foreground">Cartão NFC — o mesmo produto, em 3 tamanhos de pacote</p>
             <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">Escolha o tamanho do seu pacote</h2>
             <p className="mt-4 text-muted-foreground">Quanto maior o volume, menor o preço por cartão.</p>
           </div>
@@ -211,6 +207,17 @@ function PurchaseDialog({ product, onOpenChange }: { product: StoreProduct | nul
             </div>
           </div>
           <DestinationPicker value={destinationUrl} onChange={setDestinationUrl} />
+          <p className="text-xs text-muted-foreground">
+            Ao pagar, você concorda com os{" "}
+            <Link href="/termos" className="underline">
+              Termos de Uso
+            </Link>{" "}
+            e a{" "}
+            <Link href="/privacidade" className="underline">
+              Política de Privacidade
+            </Link>
+            .
+          </p>
         </div>
       </form>
       {product ? (

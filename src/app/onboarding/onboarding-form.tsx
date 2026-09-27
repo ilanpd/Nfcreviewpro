@@ -88,7 +88,7 @@ export function OnboardingForm({
               minLength={10}
             />
             <p className="text-xs text-muted-foreground">
-              Feedbacks de 1 a 3 estrelas chegam por aqui, com DDI e DDD, apenas números.
+              As mensagens que os clientes enviarem em “Falar com a gente” chegam por aqui. Use DDI e DDD, apenas números.
             </p>
           </div>
 
