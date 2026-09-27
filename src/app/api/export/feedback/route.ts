@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireAuthContext } from "@/lib/auth";
+import { requireAuthContext, requirePlanFeature } from "@/lib/auth";
 import { listFeedback } from "@/services/feedback.service";
 import { toCsv } from "@/lib/csv";
 import { handleApiError } from "@/lib/api-error";
@@ -7,6 +7,7 @@ import { handleApiError } from "@/lib/api-error";
 export async function GET() {
   try {
     const ctx = await requireAuthContext();
+    requirePlanFeature(ctx, "csv_export");
     const feedback = await listFeedback(ctx.companyId);
 
     const rows = feedback.map((f) => ({

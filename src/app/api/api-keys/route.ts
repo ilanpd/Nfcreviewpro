@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { requireAuthContext, requirePermission } from "@/lib/auth";
+import { requireAuthContext, requirePermission, requirePlanFeature } from "@/lib/auth";
 import { listApiKeys, createApiKey } from "@/services/api-key.service";
 import { API_SCOPES } from "@/domain/api-v1/scopes";
 import { handleApiError } from "@/lib/api-error";
@@ -26,6 +26,7 @@ export async function POST(req: NextRequest) {
   try {
     const ctx = await requireAuthContext();
     requirePermission(ctx, "developers:manage");
+    requirePlanFeature(ctx, "api_access");
     const input = createApiKeySchema.parse(await req.json());
     const { apiKey, fullKey } = await createApiKey(ctx.companyId, ctx.userId, input);
     // fullKey só existe nesta resposta — nunca é recuperável depois.

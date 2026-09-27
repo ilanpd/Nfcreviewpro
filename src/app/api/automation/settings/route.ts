@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAuthContext, requirePermission } from "@/lib/auth";
+import { requireAuthContext, requirePermission, requirePlanFeature } from "@/lib/auth";
 import { getAutoPilotSetting, setAutoPilotLevel } from "@/services/automation-engine.service";
 import { setAutoPilotLevelSchema } from "@/lib/validations/playbook";
 import { handleApiError } from "@/lib/api-error";
@@ -22,6 +22,7 @@ export async function PATCH(req: NextRequest) {
   try {
     const ctx = await requireAuthContext();
     requirePermission(ctx, "automation:manage");
+    requirePlanFeature(ctx, "automation");
     const { level } = setAutoPilotLevelSchema.parse(await req.json());
     await setAutoPilotLevel(ctx, level);
     return NextResponse.json({ level });

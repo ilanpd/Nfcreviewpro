@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAuthContext, requirePermission } from "@/lib/auth";
+import { requireAuthContext, requirePermission, requirePlanFeature } from "@/lib/auth";
 import { createCampaignSchema } from "@/lib/validations/campaign";
 import { createCampaign, listCampaigns } from "@/services/campaign.service";
 import { recordAudit } from "@/services/audit.service";
@@ -30,6 +30,7 @@ export async function POST(req: NextRequest) {
   try {
     const ctx = await requireAuthContext();
     requirePermission(ctx, "campaign:write");
+    requirePlanFeature(ctx, "campaigns");
     const input = createCampaignSchema.parse(await req.json());
     const campaign = await createCampaign(ctx.companyId, input);
     await recordAudit(ctx, "CAMPAIGN_CREATED", { targetId: campaign.id, metadata: { name: campaign.name } });

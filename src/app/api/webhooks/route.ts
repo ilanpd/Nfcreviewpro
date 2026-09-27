@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { requireAuthContext, requirePermission } from "@/lib/auth";
+import { requireAuthContext, requirePermission, requirePlanFeature } from "@/lib/auth";
 import { listWebhookEndpoints, createWebhookEndpoint } from "@/services/webhook-endpoint.service";
 import { PUBLIC_WEBHOOK_EVENT_TYPES } from "@/domain/api-v1/webhook-events";
 import { handleApiError } from "@/lib/api-error";
@@ -26,6 +26,7 @@ export async function POST(req: NextRequest) {
   try {
     const ctx = await requireAuthContext();
     requirePermission(ctx, "developers:manage");
+    requirePlanFeature(ctx, "api_access");
     const input = createWebhookSchema.parse(await req.json());
     const endpoint = await createWebhookEndpoint(ctx.companyId, input);
     return NextResponse.json({ endpoint }, { status: 201 });

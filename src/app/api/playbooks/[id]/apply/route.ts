@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAuthContext, requirePermission } from "@/lib/auth";
+import { requireAuthContext, requirePermission, requirePlanFeature } from "@/lib/auth";
 import { applyRecommendation } from "@/services/recommendation-engine.service";
 import { applyRecommendationSchema } from "@/lib/validations/playbook";
 import { recordAudit } from "@/services/audit.service";
@@ -13,6 +13,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   try {
     const ctx = await requireAuthContext();
     requirePermission(ctx, "campaign:assign");
+    requirePlanFeature(ctx, "automation");
     const { id } = await params;
     const body = await req.json().catch(() => ({}));
     const input = applyRecommendationSchema.parse(body);

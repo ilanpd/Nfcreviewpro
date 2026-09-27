@@ -3,7 +3,7 @@ import { auth, currentUser } from "@clerk/nextjs/server";
 import { getAuthContext } from "@/lib/auth";
 import { isDevRuntimeEnabled } from "@/lib/dev-runtime/config";
 import { onboardingSchema } from "@/lib/validations/company";
-import { createCompanyForNewUser } from "@/services/company.service";
+import { createCompanyForNewUser, claimGuestCompany } from "@/services/company.service";
 import { handleApiError } from "@/lib/api-error";
 
 export async function POST(req: NextRequest) {
@@ -30,8 +30,13 @@ export async function POST(req: NextRequest) {
     if (!email) return NextResponse.json({ error: "E-mail não encontrado na conta" }, { status: 400 });
 
     const input = onboardingSchema.parse(await req.json());
-    const company = await createCompanyForNewUser({ clerkId, email, input });
-    return NextResponse.json({ company }, { status: 201 });
+    // Motor de Ativação (Fase 18) — se este e-mail já comprou um cartão
+    // físico avulso antes (e ganhou uma Company GUEST automática no
+    // provisionamento), o cadastro promove essa MESMA empresa em vez de
+    // criar uma segunda do zero — nunca duplica os cartões já existentes.
+    const claimed = await claimGuestCompany({ clerkId, email, input });
+    const company = claimed ?? (await createCompanyForNewUser({ clerkId, email, input }));
+    return NextResponse.json({ company, claimedExistingCards: !!claimed }, { status: 201 });
   } catch (error) {
     return handleApiError(error);
   }
