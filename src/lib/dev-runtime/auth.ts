@@ -1,6 +1,7 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
 import type { AuthContext } from "@/lib/auth";
+import { resolveAccess } from "@/domain/billing/effective-tier";
 import { devRuntimeUserEmail } from "./config";
 
 /**
@@ -24,7 +25,7 @@ export async function getDevRuntimeAuthContext(): Promise<AuthContext | null> {
       companyId: true,
       role: true,
       email: true,
-      company: { select: { organizationId: true, plan: true } },
+      company: { select: { organizationId: true, plan: true, accountType: true } },
       accessScopes: { select: { branchId: true, zoneId: true } },
     },
   });
@@ -37,6 +38,15 @@ export async function getDevRuntimeAuthContext(): Promise<AuthContext | null> {
     role: user.role,
     email: user.email,
     plan: user.company.plan,
+    // Sessão de desenvolvimento: sempre com assinatura em dia, para testar o
+    // painel sem depender do estado de cobrança do banco.
+    access: resolveAccess({
+      accountType: "CUSTOMER",
+      plan: user.company.plan,
+      stripeSubscriptionStatus: "active",
+      subscriptionStatusChangedAt: null,
+      now: new Date(),
+    }),
     accessScopes: user.accessScopes,
   };
 }

@@ -1,5 +1,6 @@
 import "server-only";
 import { createHash, randomBytes } from "node:crypto";
+import { resolveAccess } from "@/domain/billing/effective-tier";
 import { after } from "next/server";
 import type { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
@@ -101,7 +102,10 @@ export async function requireApiKey(req: NextRequest, requiredScopes: ApiScope[]
  * contra ele.
  */
 export async function buildSyntheticAuthContext(companyId: string): Promise<AuthContext> {
-  const company = await prisma.company.findUniqueOrThrow({ where: { id: companyId }, select: { organizationId: true, plan: true } });
+  const company = await prisma.company.findUniqueOrThrow({
+    where: { id: companyId },
+    select: { organizationId: true, plan: true, accountType: true, stripeSubscriptionStatus: true, subscriptionStatusChangedAt: true },
+  });
   return {
     userId: "api-key",
     companyId,
@@ -109,6 +113,13 @@ export async function buildSyntheticAuthContext(companyId: string): Promise<Auth
     role: "OWNER",
     email: "api@nfcos.internal",
     plan: company.plan,
+    access: resolveAccess({
+      accountType: company.accountType,
+      plan: company.plan,
+      stripeSubscriptionStatus: company.stripeSubscriptionStatus,
+      subscriptionStatusChangedAt: company.subscriptionStatusChangedAt,
+      now: new Date(),
+    }),
     accessScopes: [],
   };
 }

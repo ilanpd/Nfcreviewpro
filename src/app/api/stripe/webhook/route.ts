@@ -103,6 +103,9 @@ export async function POST(req: NextRequest) {
               stripeSubscriptionId:
                 typeof session.subscription === "string" ? session.subscription : (session.subscription?.id ?? undefined),
               stripeSubscriptionStatus: "active",
+              // Marca quando o estado da assinatura mudou: é o relógio da
+              // tolerância e do período de leitura (domain/billing, ADR-079).
+              subscriptionStatusChangedAt: new Date(),
             },
           });
           if (companyBeforeCheckout && companyBeforeCheckout.plan !== plan) {
@@ -123,10 +126,20 @@ export async function POST(req: NextRequest) {
         const companyId = subscription.metadata?.companyId;
         if (!companyId) break;
 
-        const companyBeforeUpdate = await prisma.company.findUnique({ where: { id: companyId }, select: { plan: true } });
+        const companyBeforeUpdate = await prisma.company.findUnique({
+          where: { id: companyId },
+          select: { plan: true, stripeSubscriptionStatus: true },
+        });
         if (!companyBeforeUpdate) break;
 
-        const data: { stripeSubscriptionStatus: string; plan?: PlanType } = { stripeSubscriptionStatus: subscription.status };
+        const data: { stripeSubscriptionStatus: string; subscriptionStatusChangedAt?: Date; plan?: PlanType } = {
+          stripeSubscriptionStatus: subscription.status,
+        };
+        // Só quando o status de fato mudou: uma troca de plano com a assinatura
+        // continuando "active" não pode reiniciar o relógio de uma cobrança atrasada.
+        if (subscription.status !== companyBeforeUpdate.stripeSubscriptionStatus) {
+          data.subscriptionStatusChangedAt = new Date();
+        }
         // Downgrade automático para Starter quando a assinatura é cancelada
         // ou fica definitivamente inadimplente — nunca deixa a empresa presa
         // num plano pago sem cobrança ativa por trás.

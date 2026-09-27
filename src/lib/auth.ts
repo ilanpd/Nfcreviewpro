@@ -5,6 +5,7 @@ import { resolveOrClaimUser } from "@/services/team.service";
 import { roleHasPermission, type Permission } from "@/domain/rbac/roles";
 import { isWithinScope, type ScopeRestriction, type ScopeTargetCheck } from "@/domain/rbac/scope";
 import { planHasFeature, type PlanFeature } from "@/lib/plans";
+import { resolveAccess, type AccessDecision } from "@/domain/billing/effective-tier";
 import { isDevRuntimeEnabled } from "@/lib/dev-runtime/config";
 import { getDevRuntimeAuthContext } from "@/lib/dev-runtime/auth";
 import type { Role, PlanType } from "@/generated/prisma/client";
@@ -34,6 +35,9 @@ export interface AuthContext {
    * abaixo; nunca buscado de novo em cada rota que precisa checar um recurso
    * pago. */
   plan: PlanType;
+  /** Acesso efetivo da empresa agora (ADR-079): assinatura em dia, tolerância,
+   * só leitura ou sem acesso. Vem dos mesmos campos da mesma query. */
+  access: AccessDecision;
   /** Empty = unrestricted (default). One or more rows = allow-listed to
    * only those branches/zones — see domain/rbac/scope.ts. */
   accessScopes: ScopeRestriction[];
@@ -49,7 +53,15 @@ const AUTH_USER_SELECT = {
   companyId: true,
   role: true,
   email: true,
-  company: { select: { organizationId: true, plan: true } },
+  company: {
+    select: {
+      organizationId: true,
+      plan: true,
+      accountType: true,
+      stripeSubscriptionStatus: true,
+      subscriptionStatusChangedAt: true,
+    },
+  },
   accessScopes: { select: { branchId: true, zoneId: true } },
 } as const;
 
@@ -58,7 +70,13 @@ function toAuthContext(user: {
   companyId: string;
   role: Role;
   email: string;
-  company: { organizationId: string | null; plan: PlanType };
+  company: {
+    organizationId: string | null;
+    plan: PlanType;
+    accountType: "GUEST" | "CUSTOMER";
+    stripeSubscriptionStatus: string | null;
+    subscriptionStatusChangedAt: Date | null;
+  };
   accessScopes: { branchId: string | null; zoneId: string | null }[];
 }): AuthContext {
   return {
@@ -68,6 +86,13 @@ function toAuthContext(user: {
     role: user.role,
     email: user.email,
     plan: user.company.plan,
+    access: resolveAccess({
+      accountType: user.company.accountType,
+      plan: user.company.plan,
+      stripeSubscriptionStatus: user.company.stripeSubscriptionStatus,
+      subscriptionStatusChangedAt: user.company.subscriptionStatusChangedAt,
+      now: new Date(),
+    }),
     accessScopes: user.accessScopes,
   };
 }
