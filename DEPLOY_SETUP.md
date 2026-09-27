@@ -122,6 +122,21 @@ Dois bancos separados = você pode brincar à vontade no Staging (criar empresas
 4. Clique **Deploy** nos dois projetos. Cada um vai te dar uma URL estável do tipo `https://nfc-os-production.vercel.app` e `https://nfc-os-staging.vercel.app` (ou o nome que você escolheu) — essas URLs **nunca mudam** enquanto o projeto existir.
 5. Volte em **Environment Variables** e preencha `NEXT_PUBLIC_APP_URL` com a URL real de cada projeto (necessário para o White Label/Assets Inteligentes gerarem links absolutos corretos) — depois disso, um "Redeploy" (sem precisar de um novo commit) já aplica.
 
+## Endereço do cartão (ADR-076) — decida ANTES do primeiro lote de chips
+
+A URL que fica gravada no chip NFC e impressa no QR é permanente: cartão entregue não volta para ser regravado. Por isso ela tem variável própria, separada de `NEXT_PUBLIC_APP_URL`:
+
+```
+NEXT_PUBLIC_CARD_BASE_URL=https://<dominio-definitivo>
+CARD_URL_REQUIRE_FINAL=1
+```
+
+- Sem `NEXT_PUBLIC_CARD_BASE_URL`, o sistema usa `NEXT_PUBLIC_APP_URL` (comportamento anterior).
+- Com `CARD_URL_REQUIRE_FINAL=1` em produção, se o endereço ainda for provisório (`*.vercel.app`, `http://`, localhost, valor inválido), o sistema **recusa** liberar a URL de chip no Admin, gerar o QR (`/api/qr/[code]`) e gerar o PDF de impressão. O Admin também mostra um alerta no radar enquanto houver pedido em produção.
+- Pedidos pagos continuam sendo provisionados normalmente (o cliente não é penalizado); só a gravação/impressão física fica travada até o domínio ser definido.
+- **Depois do primeiro lote, nunca remova o domínio antigo da Vercel**: ele continua respondendo aos chips já entregues.
+- Mudança de domínio a qualquer momento: o QR e as listas do Admin passam a usar o novo endereço em até um dia (cache do QR); chips já gravados continuam no domínio antigo, que precisa seguir ativo e apontando para o app.
+
 ## Passo 6 — De volta para mim
 
 Quando os dois ambientes estiverem no ar (mesmo que ainda deem erro de aplicação — o importante é o domínio responder), me avise com:

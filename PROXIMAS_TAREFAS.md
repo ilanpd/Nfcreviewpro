@@ -271,7 +271,11 @@ Encontradas durante os ciclos C0 e C1 e não corrigidas na hora (fora do escopo 
 - [ ] **Contador de toques do link pessoal do avulso tende a mostrar zero** — `meu-cartao/[editToken]/page.tsx` conta `Visit`, e o toque direto só grava `RedirectLog`. Corrigir no C6.
 - [ ] **Campanha direta do avulso venceria o Retorno ao assinar** — é escopo CARD (o mais específico). Conversão no lugar prevista no C5.
 - [ ] **Painel abre sem checar assinatura e cancelamento cai no plano Starter** — billing gate e tier efetivo no C5.
-- [ ] **URL do chip e do QR nascem do domínio do ambiente e o QR fica salvo no banco** — C2 (base de URL desacoplada, QR sob demanda).
+- [x] ~~URL do chip e do QR nascem do domínio do ambiente e o QR fica salvo no banco~~ — resolvido no C2 (ADR-076).
+- [ ] **Remover a coluna legada `NFCCard.qrCodeUrl`** — deixou de ser gravada no C2; migração de contração na F10, depois do deploy que para de escrevê-la.
+- [ ] **Definir o domínio final do cartão e ligar `NEXT_PUBLIC_CARD_BASE_URL` + `CARD_URL_REQUIRE_FINAL=1` em produção** — ação humana, antes do primeiro lote de chips; nunca remover o domínio antigo da Vercel depois disso.
+- [ ] **QR na identidade Pulse** — o QR padrão ainda usa o azul-escuro genérico (`#0F172A`); ajustar junto com o sistema de design no C3.
+- [ ] **Decodificar o QR com leitor real e gravar um chip de teste** — não verificado no C2; fazer com o primeiro chip do fornecedor.
 - [ ] **Texto legal preliminar** — falta razão social, CNPJ, encarregado (DPO), foro e revisão jurídica; atualizar a política quando o cookie `pv` do Retorno existir.
 - [ ] **Marca ainda "NFC Review Pro"/"NFC OS" nas telas** — C3 (`lib/brand.ts`).
 - [ ] **Aviso de depreciação do Prisma 8 (RC)** — sem ação agora; reavaliar depois do lançamento.
