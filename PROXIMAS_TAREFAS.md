@@ -265,11 +265,11 @@ Checklist granular da fase em andamento, mais um backlog do que vem a seguir. Ve
 
 Encontradas durante os ciclos C0 e C1 e não corrigidas na hora (fora do escopo do ciclo ou dependentes de outro).
 
-- [ ] **Rastreio de visita frágil no fluxo de estrelas** — `rating-flow.tsx` só grava a nota depois que `POST /api/visits` responde; se essa chamada falhar, tocar nas estrelas não faz nada e o cliente não vê erro. Deixa de existir quando o Retorno substituir a tela (C6); enquanto isso, é um risco pequeno.
+- [x] ~~Rastreio de visita frágil no fluxo de estrelas~~ — `rating-flow.tsx` saiu no C6; a tela nova (`card-screen.tsx`) nunca condiciona o botão principal ao toque ter sido registrado.
 - [ ] **Saúde da conta e radar do admin usam nota** — `domain/company/health-score.ts` (estrelas 4 e 5) e `domain/admin/attention-radar.ts` (avaliações de 1 e 2 estrelas). Migrar no C9.
 - [ ] **Serviços de análise dependem de `RatingEvent.redirectedGoogle`** — ranking, insights, heatmap, previsão, funil, playbooks e a Visão geral. Migrar para o dicionário de métricas no C9.
-- [ ] **Contador de toques do link pessoal do avulso tende a mostrar zero** — `meu-cartao/[editToken]/page.tsx` conta `Visit`, e o toque direto só grava `RedirectLog`. Corrigir no C6.
-- [ ] **Campanha direta do avulso venceria o Retorno ao assinar** — é escopo CARD (o mais específico). Conversão no lugar prevista no C5.
+- [x] ~~Contador de toques do link pessoal do avulso tende a mostrar zero~~ — resolvido no C6: agora conta `RedirectLog` (`services/meu-cartao.service.ts`).
+- [x] ~~Campanha direta do avulso venceria o Retorno ao assinar~~ — resolvido no C6: `decideCardExperience` reconhece `origin: SYSTEM_DIRECT` e o Retorno assume no lugar (ADR-080).
 - [ ] **Painel abre sem checar assinatura e cancelamento cai no plano Starter** — billing gate e tier efetivo no C5.
 - [x] ~~URL do chip e do QR nascem do domínio do ambiente e o QR fica salvo no banco~~ — resolvido no C2 (ADR-076).
 - [ ] **Remover a coluna legada `NFCCard.qrCodeUrl`** — deixou de ser gravada no C2; migração de contração na F10, depois do deploy que para de escrevê-la.
@@ -299,6 +299,12 @@ Encontradas durante os ciclos C0 e C1 e não corrigidas na hora (fora do escopo 
 - [ ] **"Toques" do painel conta toda visita** — inclui visitas antigas da tela de estrelas; o dicionário de métricas (C9) define toque = registro de redirecionamento ou visita ao Retorno, sem contar dois.
 - [ ] **Validar o cookie `pv` em iPhone real** — Safari limita cookies; o servidor define o cookie (o caminho melhor), mas não foi testado em aparelho.
 - [ ] **Teste de integração do Retorno fora do repositório** — o roteiro que rodou contra o Staging vive em `scratch/c5-integration.ts` (ignorado pelo Git). Transformar em suíte executável em CI quando houver banco descartável (C11).
+
+- [x] ~~Portal antigo virava 404 depois de assinar~~ — resolvido no C6: `findGuestCard` devolve `GRADUATED` e a página redireciona a `/dashboard`.
+- [ ] **`/api/ratings` e `/api/ratings/[id]/redirect` sem chamador** — `rating-flow.tsx` era o único cliente e saiu no C6. Mantidos por segurança (risco de uma aba antiga em cache); apagar na F10 junto da limpeza dos componentes de efeito.
+- [ ] **Página de teste do cartão e "Falar com a gente" não testados ao vivo** — `/r/[code]/teste` e o envio de mensagem só foram conferidos por leitura de código e teste unitário no C6; testar no Staging antes do piloto.
+- [ ] **Envio real de e-mail nunca testado** — nem a confirmação de pedido nem a recuperação de link pessoal foram enviados de verdade em nenhum ambiente (Resend não configurado). Testar assim que o domínio do remetente estiver pronto.
+- [ ] **Dicionário de métricas ainda não existe** — `health-score.ts`, `attention-radar.ts`, ranking/insights/heatmap/previsão/funil/playbooks e a Visão geral continuam lendo `RatingEvent`/`redirectedGoogle`, que só têm dado de antes do C6 (cartões com o Retorno ativo não geram `RatingEvent` novo). Migrar no C9 — até lá, esses números ficam parados para empresas no Retorno.
 
 ## Backlog (não iniciado)
 
