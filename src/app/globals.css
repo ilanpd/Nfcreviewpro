@@ -169,6 +169,13 @@
   --brand-foreground: oklch(0.98 0.005 279);
   --brand-subtle: oklch(0.965 0.02 279);
 
+  /* Consistência de design tokens (Auditoria Nível Bilionário, 11/09/2026) —
+     um dourado decorativo usado só para diferenciar visualmente o pacote
+     "premium" da loja de cartões (StoreProductGrid) de um valor cru
+     (`#D4AF37`) misturado no meio de um array que também usava `var(--brand)`
+     — nunca uma cor semântica de marca, só uma variação de tier. */
+  --accent-premium: oklch(0.77 0.13 85);
+
   /* Superfície sempre-escura para telas de operação/NOC (Mission Control,
      Command Center) — deliberadamente independente de `--background`
      (que hoje é sempre clara, `forcedTheme="light"` em layout.tsx). Um

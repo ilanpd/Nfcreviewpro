@@ -7,10 +7,19 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PremiumCardShell } from "@nfc-os/ui";
+import type { PlanType } from "@/generated/prisma/client";
 
 const PRESET_COLORS = ["#0F172A", "#1D4ED8", "#059669", "#B91C1C", "#7C3AED", "#EA580C"];
 
-export function OnboardingForm() {
+/** Fase 21 — só repassa `plan`/`cardProductId` adiante pro próximo salto
+ * (`/onboarding/plan`); esta tela nunca decide nada sobre eles. */
+export function OnboardingForm({
+  initialPlan,
+  initialCardProductId,
+}: {
+  initialPlan?: PlanType;
+  initialCardProductId?: string;
+}) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({
@@ -33,8 +42,17 @@ export function OnboardingForm() {
         const data = await res.json().catch(() => ({}));
         throw new Error(data.error ?? "Não foi possível concluir o cadastro");
       }
-      toast.success("Empresa criada com sucesso!");
-      router.push("/dashboard");
+      const data = await res.json();
+      toast.success(
+        data.claimedExistingCards
+          ? "Empresa criada — encontramos cartão(ões) já comprados com este e-mail e vinculamos à sua conta automaticamente."
+          : "Empresa criada com sucesso!"
+      );
+      const nextParams = new URLSearchParams();
+      if (initialPlan) nextParams.set("plan", initialPlan);
+      if (initialCardProductId) nextParams.set("cardProductId", initialCardProductId);
+      const query = nextParams.toString();
+      router.push(query ? `/onboarding/plan?${query}` : "/onboarding/plan");
       router.refresh();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Erro inesperado");

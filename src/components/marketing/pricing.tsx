@@ -7,6 +7,13 @@ import { BorderBeam } from "@/components/ui/border-beam";
 import { BlurFade } from "@/components/ui/blur-fade";
 import { cn } from "@/lib/utils";
 import { PLANS } from "@/lib/plans";
+import { STORE_PRODUCTS, formatCentsToBRL } from "@/lib/store-products";
+
+// Fase 21 — todo plano precisa de pelo menos 1 cartão físico pra ser usado;
+// isso nunca era dito na home (achado da auditoria do funil, 13/09/2026).
+// Derivado de STORE_PRODUCTS, nunca hardcoded — nunca dessincroniza se o
+// preço do cartão mudar.
+const MIN_CARD_UNIT_PRICE_CENTS = Math.min(...STORE_PRODUCTS.map((p) => p.unitPriceCents));
 
 export function Pricing() {
   return (
@@ -38,6 +45,9 @@ export function Pricing() {
                 ) : null}
                 <h3 className="text-lg font-semibold">{plan.name}</h3>
                 <p className="mt-2 text-3xl font-semibold tracking-tight">{plan.priceLabel}</p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  + cartão NFC físico (a partir de {formatCentsToBRL(MIN_CARD_UNIT_PRICE_CENTS)}/un.) — escolha no checkout
+                </p>
                 <ul className="mt-6 flex-1 space-y-3 text-sm">
                   {plan.features.map((feature) => (
                     <li key={feature} className="flex items-start gap-2">
@@ -46,7 +56,7 @@ export function Pricing() {
                     </li>
                   ))}
                 </ul>
-                <Link href="/sign-up" className="mt-8">
+                <Link href={`/sign-up?plan=${plan.id}`} className="mt-8">
                   <Button className="w-full" variant={plan.highlighted ? "default" : "outline"}>
                     Assinar {plan.name}
                   </Button>

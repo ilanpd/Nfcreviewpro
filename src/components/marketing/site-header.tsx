@@ -7,10 +7,17 @@ import { Button } from "@/components/ui/button";
 import { GlassNavbar, PremiumDrawer } from "@nfc-os/ui";
 import { ThemeToggle } from "@/components/theme-toggle";
 
+// Âncoras (`#...`) sempre resolvem contra a home (`/#como-funciona`), nunca
+// soltas (`#como-funciona`) — uma âncora solta só funciona se o visitante já
+// estiver na home; em qualquer outra página (`/loja`, `/developers`) ela não
+// navega a lugar nenhum, porque o elemento com aquele id não existe ali.
+// Achado real: clicar em "Como funciona" a partir de `/loja` não fazia nada
+// — parecia a mesma navegação travada do bug do `/developers`.
 const NAV_LINKS = [
-  { href: "#como-funciona", label: "Como funciona" },
-  { href: "#planos", label: "Planos" },
-  { href: "#faq", label: "FAQ" },
+  { href: "/#como-funciona", label: "Como funciona" },
+  { href: "/#planos", label: "Planos" },
+  { href: "/loja", label: "Loja" },
+  { href: "/#faq", label: "FAQ" },
   { href: "/developers", label: "Desenvolvedores" },
 ] as const;
 
@@ -25,17 +32,11 @@ export function SiteHeader() {
           NFC Review Pro
         </Link>
         <nav className="hidden items-center gap-8 text-sm text-muted-foreground md:flex">
-          {NAV_LINKS.map((link) =>
-            link.href.startsWith("#") ? (
-              <a key={link.href} href={link.href} className="hover:text-foreground">
-                {link.label}
-              </a>
-            ) : (
-              <Link key={link.href} href={link.href} className="hover:text-foreground">
-                {link.label}
-              </Link>
-            )
-          )}
+          {NAV_LINKS.map((link) => (
+            <Link key={link.href} href={link.href} className="hover:text-foreground">
+              {link.label}
+            </Link>
+          ))}
         </nav>
         <div className="hidden items-center gap-2 sm:flex">
           <ThemeToggle />
@@ -61,27 +62,16 @@ export function SiteHeader() {
 
       <PremiumDrawer open={mobileOpen} onOpenChange={setMobileOpen} icon={Nfc} title="NFC Review Pro" glass={false}>
         <nav className="flex flex-col gap-1 text-sm">
-          {NAV_LINKS.map((link) =>
-            link.href.startsWith("#") ? (
-              <a
-                key={link.href}
-                href={link.href}
-                onClick={() => setMobileOpen(false)}
-                className="rounded-lg px-3 py-2.5 font-medium text-foreground hover:bg-muted"
-              >
-                {link.label}
-              </a>
-            ) : (
-              <Link
-                key={link.href}
-                href={link.href}
-                onClick={() => setMobileOpen(false)}
-                className="rounded-lg px-3 py-2.5 font-medium text-foreground hover:bg-muted"
-              >
-                {link.label}
-              </Link>
-            )
-          )}
+          {NAV_LINKS.map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              onClick={() => setMobileOpen(false)}
+              className="rounded-lg px-3 py-2.5 font-medium text-foreground hover:bg-muted"
+            >
+              {link.label}
+            </Link>
+          ))}
         </nav>
         <div className="mt-4 flex flex-col gap-2 border-t border-border/60 pt-4">
           <Link href="/sign-in" onClick={() => setMobileOpen(false)}>

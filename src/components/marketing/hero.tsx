@@ -13,7 +13,18 @@ import { DiaTextReveal } from "@/components/ui/dia-text-reveal";
  * template original do Magic UI). Ver ADR-059. */
 const HEADLINE_SWEEP_COLORS = ["var(--brand)", "var(--chart-2)", "var(--brand)"];
 
-export function Hero() {
+function toEmbedUrl(url: string): string | null {
+  const youtubeMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([\w-]+)/);
+  if (youtubeMatch) return `https://www.youtube.com/embed/${youtubeMatch[1]}`;
+  const vimeoMatch = url.match(/vimeo\.com\/(\d+)/);
+  if (vimeoMatch) return `https://player.vimeo.com/video/${vimeoMatch[1]}`;
+  return null;
+}
+
+export function Hero({ heroVideoUrl }: { heroVideoUrl?: string | null }) {
+  const embedUrl = heroVideoUrl ? toEmbedUrl(heroVideoUrl) : null;
+  const isDirectVideo = !!heroVideoUrl && !embedUrl;
+
   return (
     <section className="relative overflow-hidden px-6 pt-20 pb-24 sm:pt-28">
       <AuroraBackground variant="vivid" />
@@ -54,29 +65,41 @@ export function Hero() {
                 <BorderBeam colorFrom="var(--brand)" colorTo="var(--chart-2)" size={60} duration={5} />
               </div>
             </Link>
-            <a href="#como-funciona">
+            <Link href="/#como-funciona">
               <Button size="lg" variant="outline" className="gap-2">
                 <PlayCircle className="size-4" />
                 Ver como funciona
               </Button>
-            </a>
+            </Link>
           </div>
         </BlurFade>
 
         <BlurFade delay={0.25} offset={16}>
           <div className="relative mt-16 w-full max-w-3xl">
             <GlassPremiumCard className="aspect-video overflow-hidden shadow-premium" glass>
-              <div className="flex h-full flex-col items-center justify-center gap-4 bg-gradient-to-br from-muted/40 to-muted/10">
-                <div className="flex items-center justify-center rounded-full bg-background/80 p-5 shadow-sm">
-                  <PlayCircle className="size-10 text-brand" />
+              {embedUrl ? (
+                <iframe
+                  src={embedUrl}
+                  className="size-full"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                  title="Vídeo demonstrativo"
+                />
+              ) : isDirectVideo ? (
+                <video src={heroVideoUrl!} className="size-full object-cover" controls playsInline />
+              ) : (
+                <div className="flex h-full flex-col items-center justify-center gap-4 bg-gradient-to-br from-muted/40 to-muted/10">
+                  <div className="flex items-center justify-center rounded-full bg-background/80 p-5 shadow-sm">
+                    <PlayCircle className="size-10 text-brand" />
+                  </div>
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <Star key={i} className="size-5 fill-amber-400 text-amber-400" />
+                    ))}
+                  </div>
+                  <p className="text-sm text-muted-foreground">Vídeo demonstrativo em breve</p>
                 </div>
-                <div className="flex items-center gap-1">
-                  {Array.from({ length: 5 }).map((_, i) => (
-                    <Star key={i} className="size-5 fill-amber-400 text-amber-400" />
-                  ))}
-                </div>
-                <p className="text-sm text-muted-foreground">Vídeo demonstrativo em breve</p>
-              </div>
+              )}
             </GlassPremiumCard>
           </div>
         </BlurFade>

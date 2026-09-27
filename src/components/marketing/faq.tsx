@@ -18,7 +18,7 @@ const FAQS = [
   },
   {
     question: "Como funciona a gravação do cartão NFC?",
-    answer: "Hoje enviamos cartões pré-gravados com seu código exclusivo. A gravação própria via app estará disponível em breve.",
+    answer: "Enviamos os cartões pré-gravados com seu código exclusivo, prontos pra usar assim que chegam — você nunca precisa gravar nada.",
   },
   {
     question: "Consigo trocar de plano depois?",
