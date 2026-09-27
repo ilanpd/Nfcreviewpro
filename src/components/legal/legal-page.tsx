@@ -27,7 +27,7 @@ export function LegalPage({
   return (
     <div className="flex min-h-screen flex-col">
       <SiteHeader />
-      <main className="flex-1 px-6 py-16 sm:py-24">
+      <main className="flex-1 px-6 py-16 sm:py-20">
         <article className="mx-auto max-w-2xl">
           <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             Versão preliminar, em revisão jurídica · atualizada em {updatedAt}

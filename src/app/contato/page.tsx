@@ -22,7 +22,7 @@ export default function ContatoPage() {
   return (
     <div className="flex min-h-screen flex-col">
       <SiteHeader />
-      <main className="flex-1 px-6 py-16 sm:py-24">
+      <main className="flex-1 px-6 py-16 sm:py-20">
         <div className="mx-auto grid max-w-4xl gap-12 sm:grid-cols-2">
           <div>
             <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">Fale com a gente</h1>

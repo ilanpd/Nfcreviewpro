@@ -33,7 +33,7 @@ export function StoreProductGrid({ products }: { products: StoreProduct[] }) {
   const [selected, setSelected] = useState<StoreProduct | null>(null);
 
   return (
-    <section id="produtos" className="bg-muted/30 py-24">
+    <section id="produtos" className="bg-muted/30 py-20">
       <div className="mx-auto max-w-6xl px-6">
         <BlurFade inView>
           <div className="mx-auto max-w-2xl text-center">
@@ -52,7 +52,7 @@ export function StoreProductGrid({ products }: { products: StoreProduct[] }) {
                   product.highlighted ? "border-brand shadow-premium" : "border-border/60"
                 )}
               >
-                <div className="relative bg-gradient-to-br from-slate-900 to-slate-800 p-6">
+                <div className="relative bg-gradient-to-br from-[#0A0A0C] to-[#17171A] p-6">
                   {product.badge ? (
                     <span
                       className={cn(

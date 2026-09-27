@@ -20,7 +20,7 @@ export default function AjudaPage() {
   return (
     <div className="flex min-h-screen flex-col">
       <SiteHeader />
-      <main className="flex-1 px-6 py-16 sm:py-24">
+      <main className="flex-1 px-6 py-16 sm:py-20">
         <div className="mx-auto max-w-3xl text-center">
           <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">Central de Ajuda</h1>
           <p className="mt-4 text-muted-foreground">

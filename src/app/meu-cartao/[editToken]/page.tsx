@@ -25,7 +25,7 @@ export default async function MeuCartaoPage({ params }: { params: Promise<{ edit
   return (
     <div className="flex min-h-screen flex-col">
       <SiteHeader />
-      <main className="flex flex-1 items-center justify-center px-6 py-24">
+      <main className="flex flex-1 items-center justify-center px-6 py-20">
         <MeuCartaoForm
           editToken={editToken}
           cardName={card.name}

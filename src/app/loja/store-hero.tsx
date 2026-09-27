@@ -10,6 +10,14 @@ const TRUST_ITEMS = [
   { icon: Truck, label: "Envio para todo o Brasil" },
 ];
 
+/**
+ * Copy do funil (C13, ADR-088) — a versão antiga vendia só "cartão premium",
+ * sem responder a pergunta real de quem chega aqui ("o que ele faz de
+ * verdade?") nem reduzir a objeção óbvia ("preciso assinar algo?"). Reescrito
+ * pra responder as duas coisas na primeira dobra, e mencionar o Retorno como
+ * upgrade disponível — nunca prometido pro avulso, honesto sobre o que só o
+ * Starter entrega.
+ */
 export function StoreHero() {
   return (
     <section className="relative overflow-hidden px-6 pt-20 pb-16 sm:pt-28">
@@ -22,14 +30,15 @@ export function StoreHero() {
 
         <BlurFade delay={0.05}>
           <h1 className="text-4xl font-semibold tracking-tight text-balance sm:text-6xl">
-            Cartões NFC premium, prontos para o seu negócio
+            Um cartão, qualquer destino — pronto em minutos
           </h1>
         </BlurFade>
 
         <BlurFade delay={0.1}>
           <p className="mt-6 max-w-2xl text-lg text-muted-foreground text-balance">
-            Escolha para onde o cartão redireciona na hora da compra — Google Reviews, Instagram, WhatsApp, o que você
-            quiser. Sem precisar assinar o software: só o cartão físico, configurado e pronto para usar.
+            Escolha para onde ele leva — Google, Instagram, WhatsApp — direto no checkout. Sem assinar nada agora: é
+            só o cartão físico, configurado e pronto pra usar. Quando fizer sentido, ative o Retorno (o brinde que
+            traz o cliente de volta) assinando o Starter, sem comprar cartão de novo.
           </p>
         </BlurFade>
 

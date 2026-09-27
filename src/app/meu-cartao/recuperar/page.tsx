@@ -9,7 +9,7 @@ export default function RecoverPersonalLinkPage() {
   return (
     <div className="flex min-h-screen flex-col">
       <SiteHeader />
-      <main className="flex flex-1 items-center justify-center px-6 py-24">
+      <main className="flex flex-1 items-center justify-center px-6 py-20">
         <RecoveryForm />
       </main>
       <SiteFooter />
