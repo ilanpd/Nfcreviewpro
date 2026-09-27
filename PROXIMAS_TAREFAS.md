@@ -277,7 +277,14 @@ Encontradas durante os ciclos C0 e C1 e não corrigidas na hora (fora do escopo 
 - [ ] **QR na identidade Pulse** — o QR padrão ainda usa o azul-escuro genérico (`#0F172A`); ajustar junto com o sistema de design no C3.
 - [ ] **Decodificar o QR com leitor real e gravar um chip de teste** — não verificado no C2; fazer com o primeiro chip do fornecedor.
 - [ ] **Texto legal preliminar** — falta razão social, CNPJ, encarregado (DPO), foro e revisão jurídica; atualizar a política quando o cookie `pv` do Retorno existir.
-- [ ] **Marca ainda "NFC Review Pro"/"NFC OS" nas telas** — C3 (`lib/brand.ts`).
+- [x] ~~Marca ainda "NFC Review Pro"/"NFC OS" nas telas~~ — resolvido no C3 (ADR-077).
+- [ ] **Logo final em SVG, favicon, ícone do app e imagem social definitivos** — ação humana (Ilan): enviar o arquivo do logo; `BrandWordmark` é provisório e as rotas `/api/brand/icon` e `/api/brand/og` usam a inicial e o nome em texto.
+- [ ] **Acessibilidade das páginas públicas** — rodar o Lighthouse e testar leitor de tela, iPhone Safari, Android Chrome e navegador do Instagram/WhatsApp; a meta de 95 do plano não foi medida. Contraste de bordas e campos (WCAG 1.4.11) também não é coberto pelo teste de tokens.
+- [ ] **Componentes de efeito sem uso** — `DiaTextReveal`, `Particles`, `Meteors`, `NoiseTexture`, `AuroraBackground`, `CursorGlow`, `MagneticButton`, `GlassPremiumCard` e as animações `aurora-drift-*` e `meteor` em `globals.css`. Apagar na F10, a menos que o Admin adote; `dia-text-reveal.tsx` carrega 2 avisos do ESLint.
+- [ ] **Nome público da API e do SDK** — `NfcOsClient`, prefixo das chaves e textos de `/developers` ainda são do nome antigo; são contratos externos, mudar com versionamento junto da API pública (F6/F7).
+- [ ] **Domínio do remetente de e-mail** — o padrão ainda é `pedidos@nfcreviewpro.com.br` (só o nome de exibição virou Pulse); definir e verificar o domínio no Resend (SPF, DKIM, DMARC) e setar `RESEND_FROM_EMAIL`.
+- [ ] **Home com texto e estrutura antigos** — o bento (Analytics, Heatmap, ROI) e o vídeo "em breve" seguem até a F6; os números do bento já estão rotulados como exemplo.
+- [ ] **Telas de entrada** — `/sign-in` e `/sign-up` não renderizam no Dev Runtime; conferir o visual no ambiente com Clerk (staging na Vercel) antes de publicar.
 - [ ] **Aviso de depreciação do Prisma 8 (RC)** — sem ação agora; reavaliar depois do lançamento.
 
 ## Backlog (não iniciado)
