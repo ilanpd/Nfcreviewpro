@@ -1,18 +1,17 @@
 import QRCode from "qrcode";
 import { ensureScannableDark } from "@/domain/white-label/color";
 
-/** Generates a PNG QR code as a data URL, ready to store or drop into an <img src>. */
-export async function generateQrCodeDataUrl(targetUrl: string): Promise<string> {
-  return QRCode.toDataURL(targetUrl, {
-    margin: 2,
-    width: 512,
-    color: { dark: "#0F172A", light: "#FFFFFF" },
-  });
+// QR padrão do cartão (ADR-076): gerado sob demanda por /api/qr/[code], nunca
+// guardado no banco. Um PNG em data URL pesa ~8 KB por cartão e amarra o QR ao
+// domínio de quando foi criado; gerar na hora custa alguns milissegundos.
+const DEFAULT_QR_COLORS = { dark: "#0F172A", light: "#FFFFFF" };
+
+export async function generateQrPngBuffer(targetUrl: string, size = 512): Promise<Buffer> {
+  return QRCode.toBuffer(targetUrl, { type: "png", margin: 2, width: size, color: DEFAULT_QR_COLORS });
 }
 
-export function cardPublicUrl(code: string): string {
-  const base = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
-  return `${base}/r/${code}`;
+export async function generateQrSvg(targetUrl: string, size = 512): Promise<string> {
+  return QRCode.toString(targetUrl, { type: "svg", margin: 2, width: size, color: DEFAULT_QR_COLORS });
 }
 
 export interface BrandedQrOptions {

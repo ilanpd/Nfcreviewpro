@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAuthContext } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { generateBrandedQrPngDataUrl, cardPublicUrl } from "@/lib/qrcode";
+import { generateBrandedQrPngDataUrl } from "@/lib/qrcode";
+import { cardPublicUrl } from "@/lib/card-url";
 import { buildBrandColorSet } from "@/domain/white-label/color";
 import { handleApiError } from "@/lib/api-error";
 

@@ -12,7 +12,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { CardFormDialog } from "@/components/dashboard/card-form-dialog";
-import { cardPublicUrl } from "@/lib/qrcode";
+import { cardPublicUrl, cardQrPath } from "@/lib/card-url";
 import type { BranchListItem, CardWithStats, ZoneListItem } from "@/types";
 import type { NFCCard } from "@/generated/prisma/client";
 import { PremiumCardShell, SmartBadge } from "@nfc-os/ui";
@@ -28,6 +28,7 @@ interface CardItemProps {
 
 export function CardItem({ card, branches, zones, onUpdated, onDeleted, canManage }: CardItemProps) {
   const [busy, setBusy] = useState(false);
+  const [qrFailed, setQrFailed] = useState(false);
   const publicUrl = cardPublicUrl(card.uniqueCode);
 
   async function toggleActive() {
@@ -120,13 +121,24 @@ export function CardItem({ card, branches, zones, onUpdated, onDeleted, canManag
         </DropdownMenu>
       </div>
       <div className="flex items-center justify-center p-5">
-        {card.qrCodeUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={card.qrCodeUrl} alt={`QR Code — ${card.name}`} className="size-32 rounded-lg" />
-        ) : (
-          <div className="flex size-32 items-center justify-center rounded-lg bg-muted text-xs text-muted-foreground">
-            Sem QR
+        {/* QR gerado sob demanda (ADR-076) — nada é guardado no banco. Se a rota
+            recusar (endereço do cartão ainda provisório), mostra o aviso em vez de
+            uma imagem quebrada. */}
+        {qrFailed ? (
+          <div className="flex size-32 items-center justify-center rounded-lg bg-muted p-2 text-center text-xs text-muted-foreground">
+            QR indisponível no momento
           </div>
+        ) : (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={cardQrPath(card.uniqueCode, { size: 256 })}
+            alt={`QR Code — ${card.name}`}
+            width={128}
+            height={128}
+            loading="lazy"
+            onError={() => setQrFailed(true)}
+            className="size-32 rounded-lg"
+          />
         )}
       </div>
       <div className="flex items-center justify-between border-t border-border/60 p-5 pt-4">
@@ -150,13 +162,11 @@ export function CardItem({ card, branches, zones, onUpdated, onDeleted, canManag
               <SmartBadge key={tag} label={tag} tone="neutral" />
             ))}
         </div>
-        {card.qrCodeUrl ? (
-          <a href={card.qrCodeUrl} download={`qrcode-${card.uniqueCode}.png`}>
-            <Button variant="ghost" size="icon" className="size-8">
-              <Download className="size-4" />
-            </Button>
-          </a>
-        ) : null}
+        <a href={cardQrPath(card.uniqueCode, { size: 1024, download: true })} aria-label="Baixar QR Code">
+          <Button variant="ghost" size="icon" className="size-8" tabIndex={-1}>
+            <Download className="size-4" />
+          </Button>
+        </a>
       </div>
     </PremiumCardShell>
   );

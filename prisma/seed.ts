@@ -8,7 +8,6 @@ import {
   type PlaybookActionType,
 } from "../src/generated/prisma/client";
 import { generateCardCode } from "../src/lib/codes";
-import { cardPublicUrl, generateQrCodeDataUrl } from "../src/lib/qrcode";
 import { DEMO_API_KEY } from "../src/domain/api-v1/demo-key";
 
 // Hash de chave de API duplicado deliberadamente aqui, em vez de importado
@@ -87,12 +86,10 @@ async function main() {
     let card = await prisma.nFCCard.findFirst({ where: { companyId: company.id, name: data.name } });
     if (!card) {
       const uniqueCode = generateCardCode();
-      const qrCodeUrl = await generateQrCodeDataUrl(cardPublicUrl(uniqueCode));
       card = await prisma.nFCCard.create({
         data: {
           companyId: company.id,
           uniqueCode,
-          qrCodeUrl,
           name: data.name,
           tags: data.tags,
           zoneId: data.zone ? zonesByName.get(data.zone)!.id : null,
@@ -157,12 +154,10 @@ async function main() {
       }
       const pos = gridPosition(zoneSlotUsed[zoneName]++, layout.cols, layout.originX, layout.originY);
       const uniqueCode = generateCardCode();
-      const qrCodeUrl = await generateQrCodeDataUrl(cardPublicUrl(uniqueCode));
       await prisma.nFCCard.create({
         data: {
           companyId: company.id,
           uniqueCode,
-          qrCodeUrl,
           name,
           zoneId: zonesByName.get(zoneName)!.id,
           layoutX: pos.x,
@@ -383,12 +378,10 @@ async function main() {
   let shoppingCard = await prisma.nFCCard.findFirst({ where: { companyId: shoppingUnit.id, name: "Mesa 1" } });
   if (!shoppingCard) {
     const uniqueCode = generateCardCode();
-    const qrCodeUrl = await generateQrCodeDataUrl(cardPublicUrl(uniqueCode));
     shoppingCard = await prisma.nFCCard.create({
       data: {
         companyId: shoppingUnit.id,
         uniqueCode,
-        qrCodeUrl,
         name: "Mesa 1",
         tags: ["salão"],
         branchId: shoppingBranch.id,

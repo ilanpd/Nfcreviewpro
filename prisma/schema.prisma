@@ -519,6 +519,9 @@ model NFCCard {
   editToken      String?    @unique
   name           String
   tags           String[]   @default([])
+  // LEGADO (ADR-076) — deixou de ser gravado: o QR sai sob demanda de
+  // /api/qr/[code]. Continua na tabela só porque remover coluna é migração de
+  // contração; sai na F10, depois do deploy que para de escrevê-la.
   qrCodeUrl      String?
   active         Boolean    @default(true)
   // Both nullable and independent (a card can belong to a Branch without a

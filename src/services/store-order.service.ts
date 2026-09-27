@@ -1,7 +1,7 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
 import { generateCardCode } from "@/lib/codes";
-import { cardPublicUrl, generateQrCodeDataUrl } from "@/lib/qrcode";
+import { cardPublicUrl } from "@/lib/card-url";
 import { createGuestCompany } from "@/services/company.service";
 import { decrementBlankChipStock } from "@/lib/site-settings";
 import { createCampaign, updateCampaign, assignCampaign } from "@/services/campaign.service";
@@ -29,8 +29,9 @@ export class StoreOrderProvisionError extends Error {
  * se o cartão de número 7 de 20 falhasse (colisão de código, erro de rede),
  * os 6 anteriores já estavam gravados no banco mas o pedido nunca era
  * marcado como provisionado — cartões órfãos, e uma nova tentativa criaria
- * outros 20 do zero. Geração de código/QR não depende do client de
- * transação (são funções puras), só a escrita em si usa `tx`.
+ * outros 20 do zero. Geração de código não depende do client de
+ * transação (é função pura), só a escrita em si usa `tx`. O QR não é gravado:
+ * sai sob demanda de /api/qr/[code] (ADR-076).
  */
 async function createCardsInTransaction(
   tx: Prisma.TransactionClient,
@@ -56,9 +57,8 @@ async function createCardsInTransaction(
         editToken = generateCardCode(20);
       }
     }
-    const qrCodeUrl = await generateQrCodeDataUrl(cardPublicUrl(uniqueCode));
     const card = await tx.nFCCard.create({
-      data: { companyId, uniqueCode, editToken, qrCodeUrl, name: `${namePrefix} #${i}`, tags: [] },
+      data: { companyId, uniqueCode, editToken, name: `${namePrefix} #${i}`, tags: [] },
     });
     cards.push(card);
   }

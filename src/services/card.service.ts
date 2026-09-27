@@ -2,7 +2,6 @@ import "server-only";
 import { prisma } from "@/lib/prisma";
 import { ForbiddenError } from "@/lib/auth";
 import { generateCardCode } from "@/lib/codes";
-import { cardPublicUrl, generateQrCodeDataUrl } from "@/lib/qrcode";
 import { canCreateCard } from "@/lib/plans";
 import { invalidateCard } from "@/lib/resolution-engine/cache";
 import type { CreateCardInput, UpdateCardInput, UpdateCardLayoutInput, BulkUpdateCardLayoutInput } from "@/lib/validations/card";
@@ -49,10 +48,8 @@ export async function createCard(companyId: string, input: CreateCardInput) {
     uniqueCode = generateCardCode();
   }
 
-  const qrCodeUrl = await generateQrCodeDataUrl(cardPublicUrl(uniqueCode));
-
   return prisma.nFCCard.create({
-    data: { companyId, uniqueCode, qrCodeUrl, ...input },
+    data: { companyId, uniqueCode, ...input },
   });
 }
 
@@ -132,13 +129,11 @@ export async function duplicateCard(companyId: string, cardId: string) {
   while (await prisma.nFCCard.findUnique({ where: { uniqueCode } })) {
     uniqueCode = generateCardCode();
   }
-  const qrCodeUrl = await generateQrCodeDataUrl(cardPublicUrl(uniqueCode));
 
   return prisma.nFCCard.create({
     data: {
       companyId,
       uniqueCode,
-      qrCodeUrl,
       name: `${original.name} (cópia)`,
       tags: original.tags,
       branchId: original.branchId,
