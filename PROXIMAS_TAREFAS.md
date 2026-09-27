@@ -261,6 +261,21 @@ Checklist granular da fase em andamento, mais um backlog do que vem a seguir. Ve
 - [x] Verificação interativa via o NOVO Dev Runtime (`DEV_RUNTIME=1` no `.env.local` temporário, `middleware.ts`/`layout.tsx` NUNCA editados) — confirmou `/api/demo/scenarios` funcionando sem banco, e `/demo`/`/dev/command-center` falhando na MESMA camada já conhecida (Postgres indisponível neste sandbox), nunca uma classe nova de erro
 - [x] `RELATORIO_FASE_12.md` entregue, incluindo as nove reviews obrigatórias e as sete regras permanentes de engenharia
 
+## Pontas de engenharia registradas (Pulse Starter First)
+
+Encontradas durante os ciclos C0 e C1 e não corrigidas na hora (fora do escopo do ciclo ou dependentes de outro).
+
+- [ ] **Rastreio de visita frágil no fluxo de estrelas** — `rating-flow.tsx` só grava a nota depois que `POST /api/visits` responde; se essa chamada falhar, tocar nas estrelas não faz nada e o cliente não vê erro. Deixa de existir quando o Retorno substituir a tela (C6); enquanto isso, é um risco pequeno.
+- [ ] **Saúde da conta e radar do admin usam nota** — `domain/company/health-score.ts` (estrelas 4 e 5) e `domain/admin/attention-radar.ts` (avaliações de 1 e 2 estrelas). Migrar no C9.
+- [ ] **Serviços de análise dependem de `RatingEvent.redirectedGoogle`** — ranking, insights, heatmap, previsão, funil, playbooks e a Visão geral. Migrar para o dicionário de métricas no C9.
+- [ ] **Contador de toques do link pessoal do avulso tende a mostrar zero** — `meu-cartao/[editToken]/page.tsx` conta `Visit`, e o toque direto só grava `RedirectLog`. Corrigir no C6.
+- [ ] **Campanha direta do avulso venceria o Retorno ao assinar** — é escopo CARD (o mais específico). Conversão no lugar prevista no C5.
+- [ ] **Painel abre sem checar assinatura e cancelamento cai no plano Starter** — billing gate e tier efetivo no C5.
+- [ ] **URL do chip e do QR nascem do domínio do ambiente e o QR fica salvo no banco** — C2 (base de URL desacoplada, QR sob demanda).
+- [ ] **Texto legal preliminar** — falta razão social, CNPJ, encarregado (DPO), foro e revisão jurídica; atualizar a política quando o cookie `pv` do Retorno existir.
+- [ ] **Marca ainda "NFC Review Pro"/"NFC OS" nas telas** — C3 (`lib/brand.ts`).
+- [ ] **Aviso de depreciação do Prisma 8 (RC)** — sem ação agora; reavaliar depois do lançamento.
+
 ## Backlog (não iniciado)
 
 - Fase 9.5 — Marketplace & Integrações (registrada em `ROADMAP.md`, não projetada)

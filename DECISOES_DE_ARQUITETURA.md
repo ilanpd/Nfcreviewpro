@@ -1007,3 +1007,23 @@ Dado buscado por `getCompanyOperationsSnapshot()` (`services/company.service.ts`
 **Verificado ao vivo em Staging via Dev Runtime**: `/onboarding/plan` com `?plan=BUSINESS&cardProductId=pack-20` mostrou o pacote certo pré-selecionado e o badge "Recomendado para você" no Business (não no Pro, que é o `highlighted` padrão — confirma que o override funciona independente do destaque estático); sem parâmetro nenhum, uma empresa com 51 cartões reais mostrou "Nenhum" pré-selecionado e a contagem certa; o link `/loja` (antes texto solto) confirmado como link de verdade; o link de upsell dentro do `PurchaseDialog` da Loja gerou a URL exata esperada (`/sign-up?plan=STARTER&cardProductId=pack-20`); `/loja/sucesso` e `/meu-cartao/[editToken]` testados com um pedido `GUEST` real semeado propositalmente (removido depois do teste) — o bloco de upgrade renderizou com o e-mail certo e o link certo nos dois. `/sign-up` em si não é testável via Dev Runtime (o `<ClerkProvider>` nunca monta nesse modo, `useSession` exige — limitação preexistente, não uma regressão desta fase); a correção de string aplicada ali é simples o bastante para confiar na verificação de tipo (`tsc`).
 
 **Consequências:** Nenhuma migração de schema, nenhum checkout novo. Toda a mudança é fiação de UI/parâmetros sobre infraestrutura que já existia e já funcionava.
+
+## ADR-075: Remoção da decisão por nota e do que o site prometia sobre isso (Pulse, C1)
+
+**Status:** Aceita · **Fase:** 22 (Pulse Starter First, ciclo C1)
+
+**Contexto:** A auditoria de 25/09/2026 encontrou que o fluxo público de avaliação ramificava por sentimento: `services/rating.service.ts` entregava o link do Google só para 4 ou 5 estrelas (`GOOGLE_REDIRECT_THRESHOLD = 4`) e mandava as demais para um formulário privado, sem link do Google. O site anunciava isso ("Avaliações de 1 a 3 estrelas nunca chegam ao Google"), o texto do onboarding repetia a faixa, e havia depoimentos com nome e resultado sem prova de cliente real. A política do Google para avaliações proíbe selecionar quem pode avaliar ou criar obstáculos para avaliações negativas; um SaaS que repete o mesmo padrão em todos os seus clientes é o caso mais fácil de detectar.
+
+**Decisão:**
+- **Mesmo caminho para todos.** `createRating` devolve sempre `{ ratingEventId, googleReviewUrl }`, qualquer que seja a nota. A tela pós-nota (`rating-flow.tsx`) mostra os mesmos dois botões, na mesma ordem e com o mesmo texto: "Avaliar no Google" e "Falar com a gente". A nota vira dado interno.
+- **Impossível ramificar por construção.** `domain/rating/public-result.ts` não recebe a nota como argumento.
+- **Guarda automática.** `domain/rating/sem-ramificacao-por-nota.test.ts` lê o código do fluxo público e falha se aparecer limiar, comparação relacional com a nota, ou os resultados `outcome: "google" | "feedback"`; e lê o site e falha se voltar a promessa de filtro ("nunca chegam ao Google", "1 a 3 estrelas", "só as boas", "avalie e ganhe"). Verificado com controle negativo: as expressões pegam o código e os textos antigos.
+- **"Falar com a gente" aberto a todos.** A página `/feedback` deixa de ser "Sentimos muito por isso" (só fazia sentido para nota baixa) e passa a um texto neutro.
+- **Copy e depoimentos.** Hero, FAQ, título do site, texto do onboarding e descrições internas reescritos para descrever o que o produto faz hoje. A seção de depoimentos foi removida até existir depoimento real com autorização; o componente sai do repositório (o histórico do Git preserva o texto).
+- **Páginas legais.** `/termos` e `/privacidade` em versão preliminar (aviso explícito no topo), descrevendo os dados que o produto realmente trata; o texto das regras de uso proíbe filtrar avaliações e oferecer benefício por avaliação. Links no rodapé, no cadastro e na compra.
+
+**Escopo deliberadamente fora:** a pergunta de estrelas em si continua nesta fase (decisão D1 já assumida: remover no ciclo C6, junto com o Retorno, porque a mensagem "Falar com a gente" ainda depende de `RatingEvent` até o schema ganhar `PrivateFeedback.visitId`); as métricas que dependem de estrelas (saúde da conta, radar do admin, funil, insights) só são migradas no ciclo C9; o texto legal ainda precisa de razão social, CNPJ, encarregado e revisão jurídica.
+
+**Verificado:** `tsc`, `eslint` e `vitest` (98 testes) limpos; em Staging via Dev Runtime, o fluxo `/r/[code]` com 1 e com 5 estrelas mostra texto e botões idênticos; "Avaliar no Google" registra o clique e "Falar com a gente" leva ao formulário e ao envio (cartão de teste criado e removido do Staging).
+
+**Consequências:** A interface pública passa a ser compatível com a política. As análises internas continuam usando a nota como dado (não como decisão).
