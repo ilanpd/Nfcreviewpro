@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BarChart3, CreditCard, LayoutDashboard, LayoutGrid, Megaphone, Settings, Users, Code2, Palette, Sparkles, MapPin, Lock, LifeBuoy } from "lucide-react";
+import { BarChart3, CreditCard, Gift, LayoutDashboard, LayoutGrid, Megaphone, Settings, Users, Code2, Palette, Sparkles, MapPin, Lock, LifeBuoy } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -19,6 +19,7 @@ import type { PlanType } from "@/generated/prisma/client";
 const NAV_ITEMS = [
   { href: "/dashboard", label: "Visão geral", icon: LayoutDashboard },
   { href: "/dashboard/cards", label: "Cartões", icon: CreditCard },
+  { href: "/dashboard/retorno", label: "Retorno", icon: Gift },
   { href: "/dashboard/table-map", label: "Mapa de Mesas", icon: LayoutGrid, feature: "table_map" },
   { href: "/dashboard/unidades", label: "Unidades e zonas", icon: MapPin, feature: "multi_branch" },
   { href: "/dashboard/campaigns", label: "Campanhas", icon: Megaphone, feature: "campaigns" },
