@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { AnalyticsCard } from "@nfc-os/ui";
+import { REWARD_SUGGESTIONS } from "@/domain/return-offer/segment-suggestions";
 
 export interface OfferFormValues {
   title: string;
@@ -79,6 +80,23 @@ export function OfferForm({
   return (
     <AnalyticsCard title="O brinde" description="O que o cliente ganha ao tocar o cartão, e por quanto tempo.">
       <form onSubmit={handleSubmit} className="space-y-5">
+        {canManage && !form.title ? (
+          <div className="space-y-2">
+            <Label className="text-xs text-muted-foreground">Sugestões por segmento (um toque para preencher)</Label>
+            <div className="flex flex-wrap gap-2">
+              {REWARD_SUGGESTIONS.map((s) => (
+                <button
+                  key={s.segment}
+                  type="button"
+                  onClick={() => setForm({ ...form, title: s.title, description: s.description })}
+                  className="rounded-full border border-border px-3 py-1.5 text-xs font-medium hover:bg-muted"
+                >
+                  {s.segment}: {s.title}
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : null}
         <div className="space-y-2">
           <Label htmlFor="title">O que o cliente ganha</Label>
           <Input
