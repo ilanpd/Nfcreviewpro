@@ -13,7 +13,7 @@ export type ConfidenceLevel = "baixa" | "média" | "alta";
 
 const CONFIDENCE_COLOR: Record<ConfidenceLevel, string> = {
   baixa: "#F59E0B",
-  média: "#6366F1",
+  média: "#4F6D8A",
   alta: "#22C55E",
 };
 
@@ -58,7 +58,7 @@ export function RecommendationCard({ recommendation, onApply, onExplain, onIgnor
             do Manifesto): comunica "isto está processando agora". */}
         {applying ? <BorderBeam colorFrom="var(--brand)" colorTo={color} size={60} duration={3} /> : null}
         <div className="flex items-start justify-between gap-3">
-          <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-brand-subtle text-brand [&_svg]:size-4">
+          <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-brand-subtle text-brand-ink [&_svg]:size-4">
             <Sparkles />
           </span>
           <div className="flex items-center gap-1.5">

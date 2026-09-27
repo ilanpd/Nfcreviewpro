@@ -70,7 +70,7 @@ export function DocsPanel() {
       <AnalyticsCard title="Referência completa">
         <p className="text-sm text-muted-foreground">
           A documentação completa de todo endpoint, com exemplos ao vivo e um explorador de API, está no{" "}
-          <Link href="/developers" target="_blank" className="text-brand underline">
+          <Link href="/developers" target="_blank" className="text-brand-ink underline">
             Playground de Desenvolvedores
           </Link>
           .

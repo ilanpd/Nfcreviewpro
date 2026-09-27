@@ -71,7 +71,7 @@ export function AdminSidebar({ pendingOrders = 0, adminEmail }: { pendingOrders?
     <Sidebar collapsible="icon">
       <SidebarHeader>
         <div className="flex items-center gap-2 px-2 py-1.5">
-          <ShieldCheck className="size-5 text-brand" />
+          <ShieldCheck className="size-5 text-brand-ink" />
           <span className="font-semibold tracking-tight">Painel Admin</span>
         </div>
       </SidebarHeader>
@@ -103,7 +103,7 @@ export function AdminSidebar({ pendingOrders = 0, adminEmail }: { pendingOrders?
       {adminEmail ? (
         <SidebarFooter>
           <div className="flex items-center gap-2 px-2 py-1.5 text-xs text-muted-foreground group-data-[collapsible=icon]:hidden">
-            <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-brand-subtle text-[11px] font-semibold text-brand">
+            <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-brand-subtle text-[11px] font-semibold text-brand-ink">
               {adminEmail.slice(0, 1).toUpperCase()}
             </span>
             <span className="truncate">{adminEmail}</span>

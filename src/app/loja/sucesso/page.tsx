@@ -53,7 +53,7 @@ export default async function StoreSuccessPage({
       <main className="flex flex-1 items-center justify-center px-6 py-24">
         <div className="mx-auto w-full max-w-xl">
           <div className="text-center">
-            <CheckCircle2 className="mx-auto size-14 text-brand" />
+            <CheckCircle2 className="mx-auto size-14 text-brand-ink" />
             <h1 className="mt-6 text-3xl font-semibold tracking-tight">Pedido confirmado!</h1>
             {order ? (
               <p className="mt-4 text-muted-foreground">
@@ -73,7 +73,7 @@ export default async function StoreSuccessPage({
                 {checklist.map((step) => (
                   <li key={step.key} className="flex items-center gap-2.5 text-sm">
                     {step.done ? (
-                      <CheckCircle2 className="size-4 shrink-0 text-brand" />
+                      <CheckCircle2 className="size-4 shrink-0 text-brand-ink" />
                     ) : (
                       <Circle className="size-4 shrink-0 text-muted-foreground/40" />
                     )}
@@ -116,7 +116,7 @@ export default async function StoreSuccessPage({
 
           <p className="mt-8 text-center text-sm text-muted-foreground">
             Alguma dúvida? Fale com a gente por{" "}
-            <a href="mailto:contato@nfcos.com" className="text-brand underline">
+            <a href="mailto:contato@nfcos.com" className="text-brand-ink underline">
               contato@nfcos.com
             </a>
             .

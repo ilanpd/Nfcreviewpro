@@ -7,9 +7,9 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-sans);
+  --font-sans: var(--font-instrument-sans);
+  --font-mono: var(--font-plex-mono);
+  --font-heading: var(--font-bricolage);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -47,11 +47,12 @@
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
 
-  /* NFC OS Design Language — tokens da Fase 4.5. Cor/radius/sombra vivem
+  /* Design Language — tokens da Fase 4.5, remarcados para Pulse (ADR-077). Cor/radius/sombra vivem
      aqui (fonte da verdade em CSS); ver packages/design-tokens/src/index.ts
      para os equivalentes que só existem em JS (motion do Framer, z-index). */
   --color-brand: var(--brand);
   --color-brand-foreground: var(--brand-foreground);
+  --color-brand-ink: var(--brand-ink);
   --color-brand-subtle: var(--brand-subtle);
   --color-noc-surface: var(--noc-surface);
   --color-noc-border: var(--noc-border);
@@ -162,96 +163,97 @@
 }
 
 :root {
-  /* NFC OS — cor de marca: um violeta-índigo refinado, a única mudança que
-     por si só dá identidade visual a cada botão/link/foco/badge existente,
-     já que todos já apontavam para --primary/--ring. Ver ADR-023. */
-  --brand: oklch(0.549 0.214 279);
-  --brand-foreground: oklch(0.98 0.005 279);
-  --brand-subtle: oklch(0.965 0.02 279);
+  /* Pulse (ADR-077) — grafite para texto e estrutura, âmbar como único
+     acento (o brilho do batimento da marca). Cores em hex de propósito:
+     `domain/brand/tokens.test.ts` lê este arquivo e confere o contraste AA
+     de cada par de texto, nos dois modos.
+     --brand: preenchimento e ícone. --brand-ink: âmbar escurecido para
+     TEXTO sobre fundo claro (o âmbar puro dá só 3,5:1 sobre branco). */
+  --brand: #C9741A;
+  --brand-foreground: #16191C;
+  --brand-ink: #93520D;
+  --brand-subtle: #FBF0E3;
 
   /* Consistência de design tokens (Auditoria Nível Bilionário, 11/09/2026) —
      um dourado decorativo usado só para diferenciar visualmente o pacote
-     "premium" da loja de cartões (StoreProductGrid) de um valor cru
-     (`#D4AF37`) misturado no meio de um array que também usava `var(--brand)`
-     — nunca uma cor semântica de marca, só uma variação de tier. */
+     "premium" da loja de cartões (StoreProductGrid) — nunca uma cor semântica
+     de marca, só uma variação de tier. */
   --accent-premium: oklch(0.77 0.13 85);
 
   /* Superfície sempre-escura para telas de operação/NOC (Mission Control,
-     Command Center) — deliberadamente independente de `--background`
-     (que hoje é sempre clara, `forcedTheme="light"` em layout.tsx). Um
-     único token em vez de `bg-[#0B0F17]` repetido cru em cada seção da
-     tela — achado da auditoria da Fase A. */
-  --noc-surface: oklch(0.145 0.02 265);
+     Command Center) — deliberadamente independente de `--background`. */
+  --noc-surface: #101214;
   --noc-border: oklch(1 0 0 / 8%);
 
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
+  --background: #FFFFFF;
+  --foreground: #16191C;
+  --card: #FFFFFF;
+  --card-foreground: #16191C;
+  --popover: #FFFFFF;
+  --popover-foreground: #16191C;
   --primary: var(--brand);
   --primary-foreground: var(--brand-foreground);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
+  --secondary: #EDEEF0;
+  --secondary-foreground: #16191C;
+  --muted: #F3F4F5;
+  --muted-foreground: #4A4F55;
   --accent: var(--brand-subtle);
-  --accent-foreground: oklch(0.35 0.14 279);
+  --accent-foreground: #16191C;
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.649 0.19 279);
+  --border: #E3E5E8;
+  --input: #D5D8DC;
+  --ring: var(--brand);
   --chart-1: var(--brand);
-  --chart-2: oklch(0.7 0.16 200);
-  --chart-3: oklch(0.75 0.18 145);
-  --chart-4: oklch(0.78 0.17 80);
-  --chart-5: oklch(0.65 0.22 20);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.99 0.002 279);
-  --sidebar-foreground: oklch(0.145 0 0);
+  --chart-2: #4F6D8A;
+  --chart-3: #3F8F6B;
+  --chart-4: #D9A441;
+  --chart-5: #B5483A;
+  --radius: 0.5rem;
+  --sidebar: #F7F8F8;
+  --sidebar-foreground: #16191C;
   --sidebar-primary: var(--brand);
   --sidebar-primary-foreground: var(--brand-foreground);
   --sidebar-accent: var(--brand-subtle);
-  --sidebar-accent-foreground: oklch(0.35 0.14 279);
-  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-accent-foreground: #16191C;
+  --sidebar-border: #E3E5E8;
   --sidebar-ring: var(--ring);
 }
 
 .dark {
-  --brand: oklch(0.685 0.19 279);
-  --brand-foreground: oklch(0.145 0.02 279);
-  --brand-subtle: oklch(0.28 0.06 279);
+  --brand: #F2A04D;
+  --brand-foreground: #16191C;
+  --brand-ink: #F2A04D;
+  --brand-subtle: #3A2A14;
 
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
+  --background: #111315;
+  --foreground: #F3F4F5;
+  --card: #181B1E;
+  --card-foreground: #F3F4F5;
+  --popover: #181B1E;
+  --popover-foreground: #F3F4F5;
   --primary: var(--brand);
   --primary-foreground: var(--brand-foreground);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
+  --secondary: #23272B;
+  --secondary-foreground: #F3F4F5;
+  --muted: #23272B;
+  --muted-foreground: #A6ACB3;
   --accent: var(--brand-subtle);
-  --accent-foreground: oklch(0.9 0.04 279);
+  --accent-foreground: #F3F4F5;
   --destructive: oklch(0.704 0.191 22.216);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
   --ring: var(--brand);
   --chart-1: var(--brand);
-  --chart-2: oklch(0.7 0.16 200);
-  --chart-3: oklch(0.75 0.18 145);
-  --chart-4: oklch(0.78 0.17 80);
-  --chart-5: oklch(0.65 0.22 20);
-  --sidebar: oklch(0.19 0.006 279);
-  --sidebar-foreground: oklch(0.985 0 0);
+  --chart-2: #7FA0BF;
+  --chart-3: #6FBF98;
+  --chart-4: #E6BE6A;
+  --chart-5: #D9776A;
+  --sidebar: #15181A;
+  --sidebar-foreground: #F3F4F5;
   --sidebar-primary: var(--brand);
   --sidebar-primary-foreground: var(--brand-foreground);
   --sidebar-accent: var(--brand-subtle);
-  --sidebar-accent-foreground: oklch(0.9 0.04 279);
+  --sidebar-accent-foreground: #F3F4F5;
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: var(--brand);
 }
@@ -265,6 +267,11 @@
   }
   html {
     @apply font-sans;
+  }
+  h1,
+  h2,
+  h3 {
+    @apply font-heading;
   }
 }
 

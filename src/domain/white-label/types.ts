@@ -1,3 +1,4 @@
+import { BRAND } from "@/lib/brand";
 /** White Label (Fase 10) — a forma completa de "marca de uma empresa,"
  * lida por `BrandProvider`, pelo Theme Studio, pelas rotas de favicon/OG/
  * manifest, e pela tela de login. Um único formato, nunca cada consumidor
@@ -16,7 +17,7 @@ export interface BrandConfig {
   loginBackgroundUrl: string | null;
 }
 
-export const DEFAULT_BRAND_NAME = "NFC OS";
+export const DEFAULT_BRAND_NAME = BRAND.name;
 export const DEFAULT_PRIMARY_COLOR = "#0F172A";
 
 interface BrandableCompany {

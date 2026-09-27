@@ -1,8 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import { BRAND } from "@/lib/brand";
 import Link from "next/link";
 import { Menu, Nfc } from "lucide-react";
+import { BrandWordmark } from "@/components/brand/brand-wordmark";
 import { Button } from "@/components/ui/button";
 import { GlassNavbar, PremiumDrawer } from "@nfc-os/ui";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -28,8 +30,7 @@ export function SiteHeader() {
     <GlassNavbar>
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
         <Link href="/" className="flex shrink-0 items-center gap-2 font-semibold tracking-tight whitespace-nowrap">
-          <Nfc className="size-5" />
-          NFC Review Pro
+          <BrandWordmark className="text-lg" />
         </Link>
         <nav className="hidden items-center gap-8 text-sm text-muted-foreground md:flex">
           {NAV_LINKS.map((link) => (
@@ -60,7 +61,7 @@ export function SiteHeader() {
         </div>
       </div>
 
-      <PremiumDrawer open={mobileOpen} onOpenChange={setMobileOpen} icon={Nfc} title="NFC Review Pro" glass={false}>
+      <PremiumDrawer open={mobileOpen} onOpenChange={setMobileOpen} icon={Nfc} title={BRAND.name} glass={false}>
         <nav className="flex flex-col gap-1 text-sm">
           {NAV_LINKS.map((link) => (
             <Link

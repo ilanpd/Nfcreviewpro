@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { BorderBeam } from "@/components/ui/border-beam";
 import { BlurFade } from "@/components/ui/blur-fade";
 import { cn } from "@/lib/utils";
 import { PLANS } from "@/lib/plans";
@@ -37,7 +36,6 @@ export function Pricing() {
               >
                 {plan.highlighted ? (
                   <>
-                    <BorderBeam colorFrom="var(--brand)" colorTo="var(--chart-2)" size={70} duration={5} />
                     <span className="mb-4 w-fit rounded-full bg-brand px-3 py-1 text-xs font-medium text-brand-foreground">
                       Mais popular
                     </span>
@@ -51,7 +49,7 @@ export function Pricing() {
                 <ul className="mt-6 flex-1 space-y-3 text-sm">
                   {plan.features.map((feature) => (
                     <li key={feature} className="flex items-start gap-2">
-                      <Check className="mt-0.5 size-4 shrink-0 text-brand" />
+                      <Check className="mt-0.5 size-4 shrink-0 text-brand-ink" />
                       <span className="text-muted-foreground">{feature}</span>
                     </li>
                   ))}

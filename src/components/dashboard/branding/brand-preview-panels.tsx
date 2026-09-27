@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { BRAND } from "@/lib/brand";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { readableTextColor } from "@/domain/white-label/color";
 
@@ -215,7 +216,7 @@ export function BrandPreviewPanels(props: PreviewProps) {
         <TabsContent value="dashboard" className="space-y-2">
           <DashboardMockup {...props} />
           <p className="text-xs text-muted-foreground">
-            Ilustrativo — o painel interno do NFC OS mantém a mesma aparência para todas as empresas. O que muda de
+            Ilustrativo — o painel interno do {BRAND.name} mantém a mesma aparência para todas as empresas. O que muda de
             verdade ao salvar são as telas que seus clientes veem: Login, QR Code e Impressão.
           </p>
         </TabsContent>

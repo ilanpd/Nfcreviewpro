@@ -48,7 +48,7 @@ export function PermissionMatrix<TRole extends string, TPermission extends strin
                 return (
                   <td key={role} className="px-3 py-2 text-center">
                     {allowed ? (
-                      <Check className="mx-auto size-4 text-brand" />
+                      <Check className="mx-auto size-4 text-brand-ink" />
                     ) : (
                       <Minus className="mx-auto size-4 text-muted-foreground/40" />
                     )}

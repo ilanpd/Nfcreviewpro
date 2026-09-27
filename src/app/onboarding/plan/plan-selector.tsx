@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { DestinationPicker } from "@/components/destination-picker";
-import { BorderBeam } from "@/components/ui/border-beam";
 import { cn } from "@/lib/utils";
 import { PLANS } from "@/lib/plans";
 import { STORE_PRODUCTS, formatCentsToBRL } from "@/lib/store-products";
@@ -68,7 +67,7 @@ export function PlanSelector({ initialPlan, initialCardProductId, hasExistingCar
     <div className="space-y-6">
       <div className="rounded-2xl border border-brand/40 bg-brand-subtle/20 p-6">
         <div className="flex items-center gap-2">
-          <CreditCard className="size-4 text-brand" />
+          <CreditCard className="size-4 text-brand-ink" />
           <h3 className="text-sm font-semibold">Cartões físicos para usar seu plano</h3>
         </div>
         <p className="mt-1 text-xs text-muted-foreground">
@@ -131,7 +130,7 @@ export function PlanSelector({ initialPlan, initialCardProductId, hasExistingCar
         ) : (
           <p className="mt-4 text-xs text-muted-foreground">
             Prefere decidir depois? Você pode comprar cartões a qualquer momento na{" "}
-            <Link href="/loja" className="font-medium text-brand hover:underline">
+            <Link href="/loja" className="font-medium text-brand-ink hover:underline">
               Loja
             </Link>
             .
@@ -150,7 +149,6 @@ export function PlanSelector({ initialPlan, initialCardProductId, hasExistingCar
         >
           {plan.id === initialPlan || plan.highlighted ? (
             <>
-              <BorderBeam colorFrom="var(--brand)" colorTo="var(--chart-2)" size={70} duration={5} />
               <span className="mb-4 w-fit rounded-full bg-brand px-3 py-1 text-xs font-medium text-brand-foreground">
                 {plan.id === initialPlan ? "Recomendado para você" : "Mais popular"}
               </span>
@@ -161,7 +159,7 @@ export function PlanSelector({ initialPlan, initialCardProductId, hasExistingCar
           <ul className="mt-6 flex-1 space-y-3 text-sm">
             {plan.features.map((feature) => (
               <li key={feature} className="flex items-start gap-2">
-                <Check className="mt-0.5 size-4 shrink-0 text-brand" />
+                <Check className="mt-0.5 size-4 shrink-0 text-brand-ink" />
                 <span className="text-muted-foreground">{feature}</span>
               </li>
             ))}

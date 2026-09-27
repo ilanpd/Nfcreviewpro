@@ -40,7 +40,7 @@ export function Timeline({ items, className }: { items: TimelineItem[]; classNam
               className={cn(
                 "z-10 flex size-7 shrink-0 items-center justify-center rounded-full border-2 text-xs font-semibold [&_svg]:size-3.5",
                 item.status === "done" && "border-brand bg-brand text-brand-foreground",
-                item.status === "current" && "border-brand bg-background text-brand animate-pulse",
+                item.status === "current" && "border-brand bg-background text-brand-ink animate-pulse",
                 item.status === "upcoming" && "border-border bg-background text-muted-foreground"
               )}
             >

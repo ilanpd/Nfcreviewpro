@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { BRAND } from "@/lib/brand";
 import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles, Play, Rocket, Radio } from "lucide-react";
 import { EmptyState, KpiCard, RecommendationCard, SmartBadge } from "@nfc-os/ui";
@@ -160,7 +161,7 @@ export function DemoOSView({
             <span className="flex size-8 items-center justify-center rounded-lg bg-brand text-brand-foreground shadow-elevated [&_svg]:size-4">
               <Sparkles />
             </span>
-            <span className="text-sm font-semibold text-foreground">NFC OS — Demo</span>
+            <span className="text-sm font-semibold text-foreground">{BRAND.name} — Demo</span>
           </div>
           <div className="flex items-center gap-2">
             {!autoPlay ? (
@@ -183,7 +184,7 @@ export function DemoOSView({
             {brand?.name ?? "Bella Vista"} está funcionando agora.
           </motion.h1>
           <motion.p initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.1 }} className="mx-auto mt-3 max-w-xl text-sm text-muted-foreground sm:text-base">
-            Sem cadastro. Sem imaginar como seria em produção. Cada número abaixo nasce dos mesmos motores reais do NFC OS.
+            Sem cadastro. Sem imaginar como seria em produção. Cada número abaixo nasce dos mesmos motores reais do {BRAND.name}.
           </motion.p>
           {!running ? (
             <motion.button
@@ -301,7 +302,7 @@ export function DemoOSView({
                 <button
                   key={b.companyId}
                   onClick={() => setBrandIndex(i)}
-                  className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${i === brandIndex ? "border-brand bg-brand-subtle text-brand" : "border-border/60 text-muted-foreground hover:bg-muted"}`}
+                  className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${i === brandIndex ? "border-brand bg-brand-subtle text-brand-ink" : "border-border/60 text-muted-foreground hover:bg-muted"}`}
                 >
                   {b.name}
                 </button>

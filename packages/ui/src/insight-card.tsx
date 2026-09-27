@@ -10,7 +10,7 @@ export type InsightSeverity = "positive" | "neutral" | "attention";
 
 const SEVERITY_COLOR: Record<InsightSeverity, string> = {
   positive: "#22C55E",
-  neutral: "#6366F1",
+  neutral: "#4F6D8A",
   attention: "#F59E0B",
 };
 

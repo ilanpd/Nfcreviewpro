@@ -1,4 +1,5 @@
 import { requireAuthContext } from "@/lib/auth";
+import { BRAND } from "@/lib/brand";
 import { getCompanyById } from "@/services/company.service";
 import { getOrganization } from "@/services/organization.service";
 import { listAuditLogs } from "@/services/audit.service";
@@ -50,7 +51,7 @@ export default async function SettingsPage() {
 
       <AnalyticsCard
         title="Papéis e permissões"
-        description="O que cada papel pode fazer no NFC OS — referência rápida para quem convida a equipe."
+        description={`O que cada papel pode fazer no ${BRAND.name} — referência rápida para quem convida a equipe.`}
         className="max-w-2xl"
       >
         <PermissionMatrix

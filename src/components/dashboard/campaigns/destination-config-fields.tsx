@@ -76,13 +76,13 @@ export function DestinationConfigFields({ type, campaignName, config, onChange }
               href={preview.url}
               target="_blank"
               rel="noreferrer"
-              className="flex items-center gap-1.5 truncate text-sm text-primary hover:underline"
+              className="flex items-center gap-1.5 truncate text-sm text-brand-ink hover:underline"
             >
               <ExternalLink className="size-3.5 shrink-0" />
               <span className="truncate">{preview.url}</span>
             </a>
           ) : preview.kind === "whatsapp" ? (
-            <div className="flex items-center gap-1.5 text-sm text-primary">
+            <div className="flex items-center gap-1.5 text-sm text-brand-ink">
               <MessageCircle className="size-3.5 shrink-0" />
               <span className="truncate">{preview.url}</span>
             </div>

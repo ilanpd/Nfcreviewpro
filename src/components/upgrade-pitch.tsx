@@ -1,4 +1,5 @@
 import { ArrowRight, Check } from "lucide-react";
+import { BRAND } from "@/lib/brand";
 import { UPGRADE_PITCH_HEADLINE, getUpgradePitchFeatures } from "@/lib/upgrade-pitch";
 import { cn } from "@/lib/utils";
 
@@ -17,13 +18,13 @@ export function UpgradePitchCard({ href, className }: { href: string; className?
       <ul className="mt-3 space-y-1.5">
         {features.map((feature) => (
           <li key={feature} className="flex items-start gap-2 text-sm text-muted-foreground">
-            <Check className="mt-0.5 size-3.5 shrink-0 text-brand" />
+            <Check className="mt-0.5 size-3.5 shrink-0 text-brand-ink" />
             {feature}
           </li>
         ))}
       </ul>
-      <a href={href} className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-brand hover:underline">
-        Assine o NFC OS <ArrowRight className="size-3.5" />
+      <a href={href} className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-brand-ink hover:underline">
+        Assine o {BRAND.name} <ArrowRight className="size-3.5" />
       </a>
     </div>
   );

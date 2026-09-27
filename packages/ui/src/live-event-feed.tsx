@@ -51,7 +51,7 @@ export function LiveEventFeed({ entries }: { entries: LiveFeedEntry[] }) {
             variants={slideInFromRight}
             className="flex items-start gap-3 rounded-lg px-2 py-2 hover:bg-accent/50"
           >
-            <span className="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full bg-brand-subtle text-brand">
+            <span className="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full bg-brand-subtle text-brand-ink">
               {KIND_ICON[entry.kind]}
             </span>
             <div className="min-w-0 flex-1">

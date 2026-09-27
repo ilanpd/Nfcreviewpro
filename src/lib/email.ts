@@ -1,5 +1,6 @@
 import "server-only";
 import { Resend } from "resend";
+import { BRAND } from "@/lib/brand";
 import { log } from "@/lib/observability/logger";
 
 /**
@@ -34,7 +35,7 @@ if (process.env.NODE_ENV !== "production") {
   globalThis.resendGlobal = resend ?? undefined;
 }
 
-const FROM_EMAIL = process.env.RESEND_FROM_EMAIL ?? "pedidos@nfcreviewpro.com.br";
+const FROM_EMAIL = process.env.RESEND_FROM_EMAIL ?? `${BRAND.name} <pedidos@nfcreviewpro.com.br>`;
 
 export interface SendEmailInput {
   to: string;

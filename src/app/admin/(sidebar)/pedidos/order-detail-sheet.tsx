@@ -267,7 +267,7 @@ export function OrderDetailSheet({ orderId, onClose, onOrderChanged }: { orderId
                         href={detail.stripeDashboardUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 text-brand hover:underline"
+                        className="inline-flex items-center gap-1 text-brand-ink hover:underline"
                       >
                         Ver pagamento no Stripe <ExternalLink className="size-3" />
                       </a>

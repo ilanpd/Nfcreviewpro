@@ -3,6 +3,7 @@ import type { NextRequest } from "next/server";
 import { resolveBrandByHost } from "@/lib/white-label/resolve-brand";
 import { buildBrandColorSet } from "@/domain/white-label/color";
 import { DEFAULT_PRIMARY_COLOR } from "@/domain/white-label/types";
+import { BRAND } from "@/lib/brand";
 
 export const runtime = "nodejs";
 
@@ -13,7 +14,13 @@ export const runtime = "nodejs";
 export async function GET(req: NextRequest) {
   const brand = await resolveBrandByHost(req.headers.get("host"));
   const colors = buildBrandColorSet(brand?.primaryColor ?? DEFAULT_PRIMARY_COLOR, brand?.secondaryColor);
-  const name = brand?.name ?? "NFC OS";
+  const name = brand?.name ?? BRAND.name;
+  // Domínio raiz: identidade do produto (grafite + âmbar). Empresa com marca
+  // própria continua 100% com as cores dela.
+  const background = brand ? colors.secondary : BRAND.colors.ink;
+  const tileBackground = brand ? colors.primary : BRAND.colors.amber;
+  const tileColor = brand ? colors.onPrimary : BRAND.colors.ink;
+  const nameColor = brand ? colors.primary : BRAND.colors.paper;
 
   return new ImageResponse(
     (
@@ -26,7 +33,7 @@ export async function GET(req: NextRequest) {
           alignItems: "center",
           justifyContent: "center",
           gap: 24,
-          background: colors.secondary,
+          background,
         }}
       >
         {brand?.logoUrl ? (
@@ -41,8 +48,8 @@ export async function GET(req: NextRequest) {
               borderRadius: 24,
               alignItems: "center",
               justifyContent: "center",
-              background: colors.primary,
-              color: colors.onPrimary,
+              background: tileBackground,
+              color: tileColor,
               fontSize: 56,
               fontWeight: 700,
               fontFamily: "sans-serif",
@@ -51,7 +58,7 @@ export async function GET(req: NextRequest) {
             {name.trim().charAt(0).toUpperCase()}
           </div>
         )}
-        <span style={{ fontSize: 48, fontWeight: 700, color: colors.primary, fontFamily: "sans-serif" }}>{name}</span>
+        <span style={{ fontSize: 48, fontWeight: 700, color: nameColor, fontFamily: "sans-serif" }}>{name}</span>
       </div>
     ),
     { width: 1200, height: 630 }

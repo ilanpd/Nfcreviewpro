@@ -50,7 +50,7 @@ export function DemoTimeline({ apiBase }: { apiBase: string }) {
             <button
               key={s}
               onClick={() => setSpeed(s)}
-              className={`rounded-full px-2 py-1 font-medium ${speed === s ? "bg-brand-subtle text-brand" : "hover:bg-muted"}`}
+              className={`rounded-full px-2 py-1 font-medium ${speed === s ? "bg-brand-subtle text-brand-ink" : "hover:bg-muted"}`}
             >
               {s}x
             </button>

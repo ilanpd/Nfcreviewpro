@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
+import { pageTitle } from "@/lib/brand";
 import { LegalPage, type LegalSection } from "@/components/legal/legal-page";
 
 export const metadata: Metadata = {
-  title: "Termos de Uso",
+  title: pageTitle("Termos de Uso"),
   description: "As regras de uso dos cartões NFC, do painel e da loja.",
 };
 

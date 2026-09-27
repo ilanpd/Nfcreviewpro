@@ -40,7 +40,7 @@ function FlowNode({
           ref={nodeRef}
           className="flex size-14 items-center justify-center rounded-2xl border border-border/60 bg-card shadow-elevated"
         >
-          <Icon className="size-6 text-brand" strokeWidth={1.5} />
+          <Icon className="size-6 text-brand-ink" strokeWidth={1.5} />
         </div>
         <p className="w-20 text-xs font-medium text-muted-foreground">{label}</p>
       </div>

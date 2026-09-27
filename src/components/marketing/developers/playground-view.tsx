@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { BRAND } from "@/lib/brand";
 import Link from "next/link";
 import { Copy, Terminal } from "lucide-react";
 import { toast } from "sonner";
@@ -61,8 +62,8 @@ export function PlaygroundView({ demoApiKey }: { demoApiKey: string }) {
   return (
     <div className="mx-auto max-w-5xl space-y-16 px-6 py-16">
       <section className="space-y-4 text-center">
-        <p className="text-sm font-medium uppercase tracking-wide text-brand">API pública v1</p>
-        <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl">Construa sobre o NFC OS</h1>
+        <p className="text-sm font-medium uppercase tracking-wide text-brand-ink">API pública v1</p>
+        <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl">Construa sobre o {BRAND.name}</h1>
         <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
           REST API versionada, SDK oficial em TypeScript, webhooks assinados e um explorador ao vivo — a mesma API que move o
           próprio produto.
@@ -99,7 +100,7 @@ export function PlaygroundView({ demoApiKey }: { demoApiKey: string }) {
 
       <section className="space-y-4">
         <div className="flex items-center gap-2">
-          <Terminal className="size-5 text-brand" />
+          <Terminal className="size-5 text-brand-ink" />
           <h2 className="text-xl font-semibold">Explorador de API — teste ao vivo</h2>
         </div>
         <p className="text-sm text-muted-foreground">

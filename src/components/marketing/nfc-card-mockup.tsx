@@ -1,3 +1,4 @@
+import { BRAND } from "@/lib/brand";
 /**
  * Loja (Fase 15) — mockup ilustrativo do produto físico, desenhado em SVG em
  * vez de uma foto real: o Painel Admin (Fase 16) é onde o dono da marca
@@ -10,8 +11,8 @@ export function NfcCardMockup({ accent = "var(--brand)", className }: { accent?:
     <svg viewBox="0 0 320 200" className={className} role="img" aria-label="Ilustração de um cartão NFC premium">
       <defs>
         <linearGradient id="card-gradient" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor="#0F172A" />
-          <stop offset="100%" stopColor="#1E293B" />
+          <stop offset="0%" stopColor="#16191C" />
+          <stop offset="100%" stopColor="#23272B" />
         </linearGradient>
         <radialGradient id="card-glow" cx="85%" cy="15%" r="60%">
           <stop offset="0%" stopColor={accent} stopOpacity="0.35" />
@@ -38,7 +39,7 @@ export function NfcCardMockup({ accent = "var(--brand)", className }: { accent?:
       </g>
 
       <text x="28" y="40" fill="white" fontSize="16" fontWeight="700" fontFamily="var(--font-serif, serif)">
-        NFC OS
+        {BRAND.name}
       </text>
       <text x="28" y="176" fill="rgba(255,255,255,0.55)" fontSize="9" letterSpacing="1.5" fontFamily="ui-monospace, monospace">
         TAP · SCAN · REDIRECT

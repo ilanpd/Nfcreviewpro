@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { BRAND } from "@/lib/brand";
 import Link from "next/link";
 import { ArrowLeft, Clock, FileText, Layers, TrendingUp, Radio, HeartPulse, Satellite, Sparkles, Gauge } from "lucide-react";
 import { KpiCard, AnalyticsCard, SmartBadge, Timeline } from "@nfc-os/ui";
@@ -39,7 +40,7 @@ export default function CeoModePage() {
         <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Modo CEO</p>
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight">NFC Review Pro</h1>
+            <h1 className="text-2xl font-semibold tracking-tight">{BRAND.name}</h1>
             <p className="text-sm text-muted-foreground">Sistema Operacional de Marketing Físico — visão executiva</p>
           </div>
           <div className="flex gap-2">
@@ -150,7 +151,7 @@ export default function CeoModePage() {
         <div className="space-y-3">
           {backlog.map((phase, index) => (
             <div key={phase.id} className="flex items-start gap-3 border-b border-border/40 pb-3 last:border-0 last:pb-0">
-              <span className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-brand-subtle text-xs font-medium text-brand">
+              <span className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-brand-subtle text-xs font-medium text-brand-ink">
                 {index + 1}
               </span>
               <div>

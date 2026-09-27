@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
+import { BRAND, pageTitle } from "@/lib/brand";
 import { SiteHeader } from "@/components/marketing/site-header";
 import { SiteFooter } from "@/components/marketing/site-footer";
 import { PlaygroundView } from "@/components/marketing/developers/playground-view";
 import { DEMO_API_KEY } from "@/domain/api-v1/demo-key";
 
 export const metadata: Metadata = {
-  title: "Desenvolvedores — API pública do NFC OS",
-  description: "Documentação, SDK e um explorador de API ao vivo para integrar com o NFC OS.",
+  title: pageTitle("Desenvolvedores: API pública"),
+  description: `Documentação, SDK e um explorador de API ao vivo para integrar com o ${BRAND.name}.`,
 };
 
 /**

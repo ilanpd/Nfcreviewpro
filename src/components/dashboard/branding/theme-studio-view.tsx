@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { BRAND } from "@/lib/brand";
 import { toast } from "sonner";
 import { Palette, Save } from "lucide-react";
 import { AnalyticsCard } from "@nfc-os/ui";
@@ -124,11 +125,11 @@ export function ThemeStudioView({
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight">
-            <Palette className="size-6 text-brand" /> Theme Studio
+            <Palette className="size-6 text-brand-ink" /> Theme Studio
           </h1>
           <p className="text-sm text-muted-foreground">
             Sua identidade completa — login, QR e impressão mudam juntos, ao vivo, antes de salvar. O preview de
-            Dashboard ao lado é ilustrativo: o painel interno do NFC OS mantém a mesma aparência para todas as
+            Dashboard ao lado é ilustrativo: o painel interno do {BRAND.name} mantém a mesma aparência para todas as
             empresas.
           </p>
         </div>

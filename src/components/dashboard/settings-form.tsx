@@ -86,7 +86,7 @@ export function SettingsForm({ company }: { company: Company }) {
       <PremiumCardShell className="border-dashed shadow-none">
         <div className="flex items-center justify-between gap-4 p-6">
           <div className="flex items-center gap-3">
-            <Palette className="size-5 text-brand" />
+            <Palette className="size-5 text-brand-ink" />
             <div>
               <p className="text-sm font-medium text-foreground">Marca, cores e domínio personalizado</p>
               <p className="text-xs text-muted-foreground">Logo, favicon, cores, tela de login e domínio próprio agora vivem no Theme Studio.</p>

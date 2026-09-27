@@ -1,4 +1,5 @@
 import { requireAuthContext } from "@/lib/auth";
+import { BRAND } from "@/lib/brand";
 import { roleHasPermission } from "@/domain/rbac/roles";
 import { planHasFeature, minimumPlanForFeature } from "@/lib/plans";
 import { PlanUpsell } from "@/components/dashboard/plan-upsell";
@@ -36,7 +37,7 @@ export default async function DevelopersPage() {
       <main className="space-y-6 p-6 sm:p-10">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Desenvolvedores</h1>
-          <p className="text-sm text-muted-foreground">Chaves de API e webhooks para integrar o NFC OS a outros sistemas.</p>
+          <p className="text-sm text-muted-foreground">Chaves de API e webhooks para integrar o {BRAND.name} a outros sistemas.</p>
         </div>
         <PlanUpsell
           icon={<Code2 />}

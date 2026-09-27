@@ -4,14 +4,6 @@ import Link from "next/link";
 import { ArrowRight, PlayCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { BlurFade } from "@/components/ui/blur-fade";
-import { BorderBeam } from "@/components/ui/border-beam";
-import { AuroraBackground, CursorGlow, GlassPremiumCard, MagneticButton } from "@nfc-os/ui";
-import { DiaTextReveal } from "@/components/ui/dia-text-reveal";
-
-/** Paleta da varredura do headline — sempre os tokens de marca do produto,
- * nunca a paleta padrão do componente (rosa/laranja/azul genéricos do
- * template original do Magic UI). Ver ADR-059. */
-const HEADLINE_SWEEP_COLORS = ["var(--brand)", "var(--chart-2)", "var(--brand)"];
 
 function toEmbedUrl(url: string): string | null {
   const youtubeMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([\w-]+)/);
@@ -27,9 +19,7 @@ export function Hero({ heroVideoUrl }: { heroVideoUrl?: string | null }) {
 
   return (
     <section className="relative overflow-hidden px-6 pt-20 pb-24 sm:pt-28">
-      <AuroraBackground variant="vivid" />
-
-      <CursorGlow className="mx-auto flex max-w-4xl flex-col items-center text-center" size={560}>
+      <div className="mx-auto flex max-w-4xl flex-col items-center text-center">
         <BlurFade delay={0}>
           <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-border/60 bg-muted/60 px-4 py-1.5 text-xs font-medium text-muted-foreground">
             Cartões NFC para o seu negócio
@@ -38,12 +28,7 @@ export function Hero({ heroVideoUrl }: { heroVideoUrl?: string | null }) {
 
         <BlurFade delay={0.05}>
           <h1 className="text-4xl font-semibold tracking-tight text-balance sm:text-6xl">
-            <DiaTextReveal
-              text="Um toque leva seu cliente até a avaliação no Google."
-              colors={HEADLINE_SWEEP_COLORS}
-              duration={1.8}
-              delay={0.3}
-            />
+            Um toque leva seu cliente até a avaliação no Google.
           </h1>
         </BlurFade>
 
@@ -57,13 +42,10 @@ export function Hero({ heroVideoUrl }: { heroVideoUrl?: string | null }) {
         <BlurFade delay={0.15}>
           <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
             <Link href="/sign-up">
-              <div className="relative rounded-lg">
-                <MagneticButton size="lg" className="gap-2">
-                  Começar grátis
-                  <ArrowRight className="size-4" />
-                </MagneticButton>
-                <BorderBeam colorFrom="var(--brand)" colorTo="var(--chart-2)" size={60} duration={5} />
-              </div>
+              <Button size="lg" className="gap-2">
+                Começar grátis
+                <ArrowRight className="size-4" />
+              </Button>
             </Link>
             <Link href="/#como-funciona">
               <Button size="lg" variant="outline" className="gap-2">
@@ -74,9 +56,9 @@ export function Hero({ heroVideoUrl }: { heroVideoUrl?: string | null }) {
           </div>
         </BlurFade>
 
-        <BlurFade delay={0.25} offset={16}>
-          <div className="relative mt-16 w-full max-w-3xl">
-            <GlassPremiumCard className="aspect-video overflow-hidden shadow-premium" glass>
+        <BlurFade delay={0.25} offset={16} className="mt-16 w-full max-w-3xl">
+          <div className="relative">
+            <div className="aspect-video overflow-hidden rounded-xl border border-border bg-card shadow-elevated">
               {embedUrl ? (
                 <iframe
                   src={embedUrl}
@@ -90,15 +72,15 @@ export function Hero({ heroVideoUrl }: { heroVideoUrl?: string | null }) {
               ) : (
                 <div className="flex h-full flex-col items-center justify-center gap-4 bg-gradient-to-br from-muted/40 to-muted/10">
                   <div className="flex items-center justify-center rounded-full bg-background/80 p-5 shadow-sm">
-                    <PlayCircle className="size-10 text-brand" />
+                    <PlayCircle className="size-10 text-brand-ink" />
                   </div>
                   <p className="text-sm text-muted-foreground">Vídeo demonstrativo em breve</p>
                 </div>
               )}
-            </GlassPremiumCard>
+            </div>
           </div>
         </BlurFade>
-      </CursorGlow>
+      </div>
     </section>
   );
 }

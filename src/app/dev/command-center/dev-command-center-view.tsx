@@ -100,7 +100,7 @@ export function DevCommandCenterView({ initialSnapshot, cards }: { initialSnapsh
             key={id}
             onClick={() => setTab(id)}
             className={`inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
-              tab === id ? "border-brand bg-brand-subtle text-brand" : "border-border/60 text-muted-foreground hover:bg-muted"
+              tab === id ? "border-brand bg-brand-subtle text-brand-ink" : "border-border/60 text-muted-foreground hover:bg-muted"
             }`}
           >
             <Icon className="size-3.5" /> {label}
@@ -179,7 +179,7 @@ export function DevCommandCenterView({ initialSnapshot, cards }: { initialSnapsh
             </AnalyticsCard>
           </div>
 
-          <Link href="/dev/command-center/events" className="inline-flex items-center gap-1.5 text-xs font-medium text-brand hover:underline">
+          <Link href="/dev/command-center/events" className="inline-flex items-center gap-1.5 text-xs font-medium text-brand-ink hover:underline">
             Abrir o Event Explorer →
           </Link>
         </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { BRAND } from "@/lib/brand";
 import Link from "next/link";
 import { ArrowRight, Check, CreditCard } from "lucide-react";
 import { toast } from "sonner";
@@ -86,15 +87,15 @@ export function StoreProductGrid({ products }: { products: StoreProduct[] }) {
                   <p className="mt-4 text-sm text-muted-foreground">{product.description}</p>
                   <ul className="mt-6 flex-1 space-y-2.5 text-sm">
                     <li className="flex items-start gap-2">
-                      <Check className="mt-0.5 size-4 shrink-0 text-brand" />
+                      <Check className="mt-0.5 size-4 shrink-0 text-brand-ink" />
                       <span className="text-muted-foreground">Chip NFC + QR Code dinâmico no mesmo cartão</span>
                     </li>
                     <li className="flex items-start gap-2">
-                      <Check className="mt-0.5 size-4 shrink-0 text-brand" />
+                      <Check className="mt-0.5 size-4 shrink-0 text-brand-ink" />
                       <span className="text-muted-foreground">Link de destino configurado antes do envio</span>
                     </li>
                     <li className="flex items-start gap-2">
-                      <Check className="mt-0.5 size-4 shrink-0 text-brand" />
+                      <Check className="mt-0.5 size-4 shrink-0 text-brand-ink" />
                       <span className="text-muted-foreground">Acompanhamento do pedido por link direto</span>
                     </li>
                   </ul>
@@ -178,7 +179,7 @@ function PurchaseDialog({ product, onOpenChange }: { product: StoreProduct | nul
             <Label htmlFor="store-email">E-mail</Label>
             <Input id="store-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
             <p className="text-xs text-muted-foreground">
-              Se você já tem (ou vier a criar) uma conta no NFC OS com este e-mail, seus cartões aparecem
+              Se você já tem (ou vier a criar) uma conta no {BRAND.name} com este e-mail, seus cartões aparecem
               automaticamente nela.
             </p>
           </div>
@@ -225,7 +226,7 @@ function PurchaseDialog({ product, onOpenChange }: { product: StoreProduct | nul
           <p className="text-muted-foreground">Já sabe que quer usar o software?</p>
           <a
             href={`/sign-up?plan=STARTER&cardProductId=${product.id}`}
-            className="mt-1 inline-flex items-center gap-1 font-medium text-brand hover:underline"
+            className="mt-1 inline-flex items-center gap-1 font-medium text-brand-ink hover:underline"
           >
             Assine com este cartão incluso <ArrowRight className="size-3.5" />
           </a>

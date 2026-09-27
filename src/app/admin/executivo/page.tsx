@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { BRAND } from "@/lib/brand";
 import { ArrowLeft, Boxes, Building2, Gavel, ShoppingCart, TrendingUp, Wallet } from "lucide-react";
 import { getAdminOverviewSnapshot } from "@/services/admin-overview.service";
 import { getFinanceSnapshot } from "@/services/finance.service";
@@ -38,7 +39,7 @@ export default async function AdminExecutivePage() {
           <Link href="/admin" className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
             <ArrowLeft className="size-3.5" /> Sair do Modo Executivo
           </Link>
-          <h1 className="text-sm font-semibold uppercase tracking-widest text-muted-foreground">NFC OS · Modo Executivo</h1>
+          <h1 className="text-sm font-semibold uppercase tracking-widest text-muted-foreground">{BRAND.name} · Modo Executivo</h1>
         </div>
         <WallboardClock />
       </header>

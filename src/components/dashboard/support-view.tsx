@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { BRAND } from "@/lib/brand";
 import { toast } from "sonner";
 import { LifeBuoy } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -62,7 +63,7 @@ export function SupportView({ initialRequests }: { initialRequests: SupportReque
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Suporte</h1>
-        <p className="text-sm text-muted-foreground">Precisa de ajuda com o NFC OS? Conte o que está acontecendo — respondemos aqui mesmo.</p>
+        <p className="text-sm text-muted-foreground">Precisa de ajuda com o {BRAND.name}? Conte o que está acontecendo — respondemos aqui mesmo.</p>
       </div>
 
       <AnalyticsCard title="Abrir um chamado">

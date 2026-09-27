@@ -7,7 +7,7 @@ const TONE_CLASSES: Record<Tone, string> = {
   warning: "bg-amber-500/12 text-amber-700 dark:text-amber-400",
   danger: "bg-red-500/12 text-red-700 dark:text-red-400",
   info: "bg-sky-500/12 text-sky-700 dark:text-sky-400",
-  brand: "bg-brand-subtle text-brand",
+  brand: "bg-brand-subtle text-brand-ink",
   neutral: "bg-muted text-muted-foreground",
 };
 

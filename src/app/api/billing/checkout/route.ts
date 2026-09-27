@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { BRAND } from "@/lib/brand";
 import { z } from "zod";
 import { requireAuthContext, requirePermission } from "@/lib/auth";
 import { stripe } from "@/lib/stripe";
@@ -90,7 +91,7 @@ export async function POST(req: NextRequest) {
         price_data: {
           currency: "brl",
           unit_amount: cardProduct.unitPriceCents,
-          product_data: { name: `${cardProduct.name} — NFC OS`, description: cardProduct.description },
+          product_data: { name: `${cardProduct.name} — ${BRAND.name}`, description: cardProduct.description },
         },
         quantity: cardProduct.quantity,
       });

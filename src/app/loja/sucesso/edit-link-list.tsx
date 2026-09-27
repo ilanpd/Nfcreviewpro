@@ -21,7 +21,7 @@ export function EditLinkList({ links }: { links: string[] }) {
     <div className="mt-3 space-y-2">
       {links.map((url) => (
         <div key={url} className="flex items-center gap-2 rounded-lg border bg-background p-2">
-          <a href={url} className="min-w-0 flex-1 truncate text-left font-medium text-brand underline underline-offset-2">
+          <a href={url} className="min-w-0 flex-1 truncate text-left font-medium text-brand-ink underline underline-offset-2">
             {url}
           </a>
           <Button type="button" size="sm" variant="outline" className="shrink-0" onClick={() => copy(url)}>

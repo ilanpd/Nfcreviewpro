@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { BRAND } from "@/lib/brand";
 import { resolveBrandByHost } from "@/lib/white-label/resolve-brand";
 
 /**
@@ -10,8 +11,8 @@ import { resolveBrandByHost } from "@/lib/white-label/resolve-brand";
  */
 export async function GET(req: NextRequest) {
   const brand = await resolveBrandByHost(req.headers.get("host"));
-  const name = brand?.name ?? "NFC Review Pro";
-  const themeColor = brand?.primaryColor ?? "#0F172A";
+  const name = brand?.name ?? BRAND.name;
+  const themeColor = brand?.primaryColor ?? BRAND.colors.ink;
 
   return NextResponse.json(
     {

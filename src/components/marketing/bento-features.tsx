@@ -2,8 +2,6 @@
 
 import { BarChart3, Flame, Wand2, Palette, Code2, TrendingUp, ArrowUpRight } from "lucide-react";
 import { BentoCard, BentoGrid } from "@/components/ui/bento-grid";
-import { NumberTicker } from "@/components/ui/number-ticker";
-import { BorderBeam } from "@/components/ui/border-beam";
 
 /**
  * Seis capacidades REAIS do produto (ROADMAP.md) — nunca recursos
@@ -18,17 +16,18 @@ function AnalyticsBackground() {
   return (
     <div className="absolute inset-0 flex items-start justify-center overflow-hidden p-5 pt-16">
       <div className="w-full max-w-sm rounded-xl border border-border/60 bg-background/90 p-4 shadow-premium backdrop-blur-sm">
+        <p className="mb-3 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Exemplo ilustrativo</p>
         <div className="flex items-center justify-between">
           <div>
             <p className="text-xs text-muted-foreground">Avaliações captadas</p>
             <p className="mt-1 text-2xl font-semibold tracking-tight">
-              <NumberTicker value={1284} />
+              1.284
             </p>
           </div>
           <div>
             <p className="text-xs text-muted-foreground">Conversão</p>
             <p className="mt-1 text-2xl font-semibold tracking-tight text-emerald-600 dark:text-emerald-400">
-              <NumberTicker value={68} decimalPlaces={1} />%
+              68,0%
             </p>
           </div>
         </div>
@@ -82,7 +81,7 @@ function PlaybooksBackground() {
           key={p.name}
           className="flex items-center gap-3 rounded-lg border border-border/60 bg-background/90 px-4 py-3 shadow-subtle backdrop-blur-sm"
         >
-          <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-brand-subtle text-brand">
+          <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-brand-subtle text-brand-ink">
             <Wand2 className="size-4" />
           </span>
           <div className="min-w-0 flex-1">
@@ -132,18 +131,14 @@ function ApiBackground() {
 function RoiBackground() {
   return (
     <>
-      {/* Único card com Border Beam — "destaque" do grid, o único cuja
-          receita é a mensagem principal (Princípio 2: comunica o estado
-          "isto é a métrica que mais importa"), nunca aplicado nos outros. */}
-      <BorderBeam colorFrom="var(--brand)" colorTo="var(--chart-2)" size={90} duration={6} />
       <div className="absolute inset-0 flex items-start justify-center p-5 pt-14">
         <div className="text-center">
           <p className="flex items-center justify-center gap-1 text-4xl font-semibold tracking-tight text-foreground">
-            R$ <NumberTicker value={4820} />
+            R$ 4.820
           </p>
           <p className="mt-2 flex items-center justify-center gap-1 text-xs font-medium text-emerald-600 dark:text-emerald-400">
             <ArrowUpRight className="size-3.5" />
-            receita estimada este mês
+            receita estimada este mês (exemplo)
           </p>
         </div>
       </div>

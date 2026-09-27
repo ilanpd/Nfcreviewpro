@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { BRAND } from "@/lib/brand";
 import { getAuthContext } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { PLANS } from "@/lib/plans";
@@ -31,7 +32,7 @@ export default async function OnboardingPlanPage({
         <div className="space-y-2 text-center">
           <h1 className="text-2xl font-semibold tracking-tight">Escolha seu plano</h1>
           <p className="text-sm text-muted-foreground">
-            Sua empresa já está criada — falta só ativar a assinatura para começar a usar o NFC OS.
+            Sua empresa já está criada — falta só ativar a assinatura para começar a usar o {BRAND.name}.
           </p>
         </div>
         <PlanSelector initialPlan={initialPlan} initialCardProductId={initialCardProductId} hasExistingCards={cardCount > 0} cardCount={cardCount} />

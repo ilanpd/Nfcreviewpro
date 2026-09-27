@@ -47,7 +47,7 @@ export default async function AdminSidebarLayout({ children }: { children: React
               // <UserButton/> exige <ClerkProvider/>, removido de propósito
               // nesse modo (ADR-052). Mesmo padrão de dashboard/layout.tsx.
               <span
-                className="flex size-7 items-center justify-center rounded-full bg-brand-subtle text-xs font-semibold text-brand"
+                className="flex size-7 items-center justify-center rounded-full bg-brand-subtle text-xs font-semibold text-brand-ink"
                 title={`Dev Runtime — ${devRuntimeUserEmail()}`}
               >
                 {devRuntimeUserEmail().slice(0, 1).toUpperCase()}

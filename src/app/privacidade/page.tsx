@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
+import { pageTitle } from "@/lib/brand";
 import { LegalPage, type LegalSection } from "@/components/legal/legal-page";
 
 export const metadata: Metadata = {
-  title: "Política de Privacidade",
+  title: pageTitle("Política de Privacidade"),
   description: "Como tratamos os dados de quem compra, usa o painel ou encosta o celular no cartão.",
 };
 

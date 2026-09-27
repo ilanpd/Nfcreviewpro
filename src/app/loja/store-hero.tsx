@@ -1,8 +1,8 @@
 "use client";
 
 import { ArrowRight, ShieldCheck, Truck, Zap } from "lucide-react";
+import { BRAND } from "@/lib/brand";
 import { BlurFade } from "@/components/ui/blur-fade";
-import { AuroraBackground, CursorGlow } from "@nfc-os/ui";
 
 const TRUST_ITEMS = [
   { icon: Zap, label: "Configurado antes de sair da fábrica" },
@@ -13,12 +13,10 @@ const TRUST_ITEMS = [
 export function StoreHero() {
   return (
     <section className="relative overflow-hidden px-6 pt-20 pb-16 sm:pt-28">
-      <AuroraBackground variant="vivid" />
-
-      <CursorGlow className="mx-auto flex max-w-4xl flex-col items-center text-center" size={560}>
+      <div className="mx-auto flex max-w-4xl flex-col items-center text-center">
         <BlurFade delay={0}>
           <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-border/60 bg-muted/60 px-4 py-1.5 text-xs font-medium text-muted-foreground">
-            Loja oficial NFC OS
+            Loja oficial {BRAND.name}
           </div>
         </BlurFade>
 
@@ -37,7 +35,7 @@ export function StoreHero() {
 
         <BlurFade delay={0.15}>
           <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
-            <a href="#produtos" className="inline-flex items-center gap-2 rounded-lg bg-brand px-6 py-3 text-sm font-medium text-brand-foreground shadow-premium transition-transform hover:scale-[1.02]">
+            <a href="#produtos" className="inline-flex items-center gap-2 rounded-lg bg-brand px-6 py-3 text-sm font-medium text-brand-foreground shadow-elevated transition-colors hover:bg-brand/90">
               Ver planos e preços
               <ArrowRight className="size-4" />
             </a>
@@ -48,13 +46,13 @@ export function StoreHero() {
           <div className="mt-12 flex flex-wrap items-center justify-center gap-x-8 gap-y-3 text-sm text-muted-foreground">
             {TRUST_ITEMS.map(({ icon: Icon, label }) => (
               <div key={label} className="flex items-center gap-2">
-                <Icon className="size-4 text-brand" />
+                <Icon className="size-4 text-brand-ink" />
                 {label}
               </div>
             ))}
           </div>
         </BlurFade>
-      </CursorGlow>
+      </div>
     </section>
   );
 }

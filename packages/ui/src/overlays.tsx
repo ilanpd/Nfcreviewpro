@@ -41,7 +41,7 @@ export function PremiumModal({ open, onOpenChange, icon: Icon, title, descriptio
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             {Icon ? (
-              <span className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-brand-subtle text-brand">
+              <span className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-brand-subtle text-brand-ink">
                 <Icon className="size-3.5" />
               </span>
             ) : null}
@@ -80,7 +80,7 @@ export function PremiumDrawer({ open, onOpenChange, icon: Icon, title, descripti
         <SheetHeader className="border-b border-border/60">
           <SheetTitle className="flex items-center gap-2">
             {Icon ? (
-              <span className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-brand-subtle text-brand">
+              <span className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-brand-subtle text-brand-ink">
                 <Icon className="size-3.5" />
               </span>
             ) : null}

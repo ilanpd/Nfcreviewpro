@@ -1,19 +1,19 @@
 import { Document, Page, Text, View, StyleSheet } from "@react-pdf/renderer";
+import { BRAND } from "@/lib/brand";
 import type { AnalyticsReportData } from "../export-engine.service";
 import type { KpiValue } from "@/domain/analytics/types";
 
-// Aproximação em hex da cor de marca do produto (`oklch(0.549 0.214 279)`
-// em globals.css) — PDF não consome variáveis CSS, então o acento visual
-// deste relatório é um hex fixo próximo, não a mesma fonte da verdade do
-// resto do produto. Ver ADR-030.
-const ACCENT = "#4F46E5";
+// PDF não consome variáveis CSS: o acento vem das cores em hex de
+// `lib/brand.ts` (as mesmas do CSS, conferidas em teste). Âmbar só em filete e
+// borda; o título usa a tinta, porque âmbar puro não tem contraste de texto.
+const ACCENT = BRAND.colors.amber;
 const MUTED = "#6B7280";
 const BORDER = "#E5E7EB";
 
 const styles = StyleSheet.create({
   page: { padding: 32, fontSize: 10, fontFamily: "Helvetica", color: "#111827" },
   header: { marginBottom: 16, borderBottomWidth: 2, borderBottomColor: ACCENT, borderBottomStyle: "solid", paddingBottom: 8 },
-  title: { fontSize: 18, fontWeight: "bold", color: ACCENT },
+  title: { fontSize: 18, fontWeight: "bold", color: BRAND.colors.ink },
   subtitle: { fontSize: 10, color: MUTED, marginTop: 2 },
   sectionTitle: { fontSize: 13, fontWeight: "bold", marginTop: 16, marginBottom: 6 },
   kpiGrid: { flexDirection: "row", flexWrap: "wrap" },
@@ -84,7 +84,7 @@ export function AnalyticsReportPdf({ report }: { report: AnalyticsReportData }) 
           ))
         )}
 
-        <Text style={styles.footer} render={({ pageNumber, totalPages }) => `Página ${pageNumber} de ${totalPages} — NFC Review Pro`} fixed />
+        <Text style={styles.footer} render={({ pageNumber, totalPages }) => `Página ${pageNumber} de ${totalPages} — ${BRAND.name}`} fixed />
       </Page>
 
       <Page size="A4" style={styles.page}>
@@ -116,7 +116,7 @@ export function AnalyticsReportPdf({ report }: { report: AnalyticsReportData }) 
             : "ROI Mode não configurado — configure o ticket médio e a taxa de retorno em Configurações para ver a receita estimada influenciada."}
         </Text>
 
-        <Text style={styles.footer} render={({ pageNumber, totalPages }) => `Página ${pageNumber} de ${totalPages} — NFC Review Pro`} fixed />
+        <Text style={styles.footer} render={({ pageNumber, totalPages }) => `Página ${pageNumber} de ${totalPages} — ${BRAND.name}`} fixed />
       </Page>
     </Document>
   );

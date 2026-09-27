@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { BRAND } from "@/lib/brand";
 import { z } from "zod";
 import { stripe } from "@/lib/stripe";
 import { getStoreProduct, applyStoreProductOverrides } from "@/lib/store-products";
@@ -58,7 +59,7 @@ export async function POST(req: NextRequest) {
           price_data: {
             currency: "brl",
             unit_amount: product.unitPriceCents,
-            product_data: { name: `${product.name} — NFC OS`, description: product.description },
+            product_data: { name: `${product.name} — ${BRAND.name}`, description: product.description },
           },
           quantity: product.quantity,
         },

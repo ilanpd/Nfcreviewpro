@@ -52,7 +52,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
                 // nesse modo (ADR-052). Nunca fingir um menu de usuário que não
                 // funciona; só identificar quem está "logado" nesta sessão.
                 <span
-                  className="flex size-7 items-center justify-center rounded-full bg-brand-subtle text-xs font-semibold text-brand"
+                  className="flex size-7 items-center justify-center rounded-full bg-brand-subtle text-xs font-semibold text-brand-ink"
                   title={`Dev Runtime — ${ctx.email}`}
                 >
                   {ctx.email.slice(0, 1).toUpperCase()}

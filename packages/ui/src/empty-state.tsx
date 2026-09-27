@@ -25,7 +25,7 @@ export function EmptyState({ icon, title, description, action, className }: Empt
       variants={fadeIn}
       className={`flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-border/70 px-6 py-12 text-center ${className ?? ""}`}
     >
-      <span className="flex size-12 items-center justify-center rounded-2xl bg-brand-subtle text-brand [&_svg]:size-5">{icon}</span>
+      <span className="flex size-12 items-center justify-center rounded-2xl bg-brand-subtle text-brand-ink [&_svg]:size-5">{icon}</span>
       <div className="space-y-1">
         <p className="text-sm font-semibold text-foreground">{title}</p>
         {description ? <p className="max-w-sm text-sm text-muted-foreground">{description}</p> : null}

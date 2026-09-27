@@ -1,5 +1,6 @@
 import "server-only";
 import { createElement } from "react";
+import { BRAND } from "@/lib/brand";
 import ExcelJS from "exceljs";
 import { renderToBuffer } from "@react-pdf/renderer";
 import { toCsv } from "@/lib/csv";
@@ -112,7 +113,7 @@ function styleHeaderRow(row: ExcelJS.Row) {
  * coluna) em vez de uma única tabela achatada. */
 export async function renderReportXlsx(report: AnalyticsReportData): Promise<Buffer> {
   const workbook = new ExcelJS.Workbook();
-  workbook.creator = "NFC Review Pro";
+  workbook.creator = BRAND.name;
   workbook.created = report.generatedAt;
 
   const summarySheet = workbook.addWorksheet("Resumo");

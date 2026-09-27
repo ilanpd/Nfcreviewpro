@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 import { resolveBrandByHost } from "@/lib/white-label/resolve-brand";
 import { buildBrandColorSet } from "@/domain/white-label/color";
 import { DEFAULT_PRIMARY_COLOR } from "@/domain/white-label/types";
+import { BRAND } from "@/lib/brand";
 
 export const runtime = "nodejs";
 
@@ -11,7 +12,7 @@ export const runtime = "nodejs";
  * Assets Inteligentes (Fase 10) — favicon dinâmico, resolvido por Host a
  * cada requisição via o mesmo `DomainResolver` do middleware (cacheado —
  * ver `resolve-brand.ts`). No domínio raiz do produto, `resolveBrandByHost`
- * devolve `null` e este favicon volta ao ícone padrão do NFC OS —
+ * devolve `null` e este favicon volta ao ícone padrão do Pulse —
  * white-label só entra em cena quando a empresa acessa pelo próprio
  * subdomínio/domínio. Sem um `faviconUrl` configurado, gera um ícone com a
  * inicial do nome sobre a cor da marca em vez de um genérico — todo
@@ -32,7 +33,9 @@ export async function GET(req: NextRequest) {
   }
 
   const colors = buildBrandColorSet(brand?.primaryColor ?? DEFAULT_PRIMARY_COLOR, brand?.secondaryColor);
-  const initial = (brand?.name ?? "N").trim().charAt(0).toUpperCase();
+  const initial = (brand?.name ?? BRAND.name).trim().charAt(0).toUpperCase();
+  const background = brand ? colors.primary : BRAND.colors.ink;
+  const glyph = brand ? colors.onPrimary : BRAND.colors.amberOnDark;
 
   return new ImageResponse(
     (
@@ -43,10 +46,10 @@ export async function GET(req: NextRequest) {
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          background: colors.primary,
+          background,
         }}
       >
-        <span style={{ color: colors.onPrimary, fontSize: Math.round(size * 0.55), fontWeight: 700, fontFamily: "sans-serif" }}>
+        <span style={{ color: glyph, fontSize: Math.round(size * 0.55), fontWeight: 700, fontFamily: "sans-serif" }}>
           {initial}
         </span>
       </div>

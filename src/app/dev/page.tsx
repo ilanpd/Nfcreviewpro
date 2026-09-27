@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { BRAND } from "@/lib/brand";
 import Link from "next/link";
 import { ArrowUpRight, CheckCircle2, FileText, GitBranch, History, ShieldCheck } from "lucide-react";
 import { KpiCard, AnalyticsCard, SmartBadge, Timeline, ActivityFeed, EmptyState } from "@nfc-os/ui";
@@ -40,12 +41,12 @@ export default function DevStatusPage() {
       <div className="flex items-start justify-between gap-4">
         <div className="space-y-2">
           <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Developer Command Center</p>
-          <h1 className="text-2xl font-semibold tracking-tight">NFC Review Pro — Status de build</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">{BRAND.name} — Status de build</h1>
           <p className="text-sm text-muted-foreground">
             Gerado em {status.generatedAt} · {doneCount}/{status.phases.length} fases concluídas
           </p>
         </div>
-        <Link href="/dev/ceo" className="flex shrink-0 items-center gap-1 text-sm text-brand hover:underline">
+        <Link href="/dev/ceo" className="flex shrink-0 items-center gap-1 text-sm text-brand-ink hover:underline">
           Modo CEO <ArrowUpRight className="size-3.5" />
         </Link>
       </div>

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { BRAND } from "@/lib/brand";
+import { Bricolage_Grotesque, Instrument_Sans, IBM_Plex_Mono } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 import { ThemeProvider } from "next-themes";
 import { isDevRuntimeEnabled } from "@/lib/dev-runtime/config";
@@ -7,14 +8,27 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+// Tipografia Pulse (ADR-077): títulos em Bricolage Grotesque, texto em
+// Instrument Sans, códigos e números em IBM Plex Mono. Só o subconjunto latino
+// (português não precisa de mais), com `display: swap` para o texto aparecer
+// antes da fonte chegar.
+const bricolage = Bricolage_Grotesque({
+  variable: "--font-bricolage",
   subsets: ["latin"],
+  display: "swap",
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const instrumentSans = Instrument_Sans({
+  variable: "--font-instrument-sans",
   subsets: ["latin"],
+  display: "swap",
+});
+
+const plexMono = IBM_Plex_Mono({
+  variable: "--font-plex-mono",
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+  display: "swap",
 });
 
 // Assets Inteligentes (Fase 10) — favicon/OG/manifest apontam para rotas
@@ -27,9 +41,8 @@ const geistMono = Geist_Mono({
 // genérico em vez do dinâmico por marca.
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"),
-  title: "NFC Review Pro — Um toque leva o cliente até a avaliação no Google",
-  description:
-    "Cartões NFC que levam o cliente direto para avaliar no Google ou falar com o seu negócio, sem aplicativo e sem cadastro.",
+  title: `${BRAND.name} — ${BRAND.tagline}`,
+  description: BRAND.description,
   icons: {
     icon: "/api/brand/icon",
     apple: "/api/brand/icon?size=180",
@@ -68,7 +81,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html
       lang="pt-BR"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${bricolage.variable} ${instrumentSans.variable} ${plexMono.variable} h-full antialiased`}
       suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col bg-background text-foreground">

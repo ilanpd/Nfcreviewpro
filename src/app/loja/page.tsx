@@ -1,4 +1,5 @@
 import { SiteHeader } from "@/components/marketing/site-header";
+import { pageTitle } from "@/lib/brand";
 import { SiteFooter } from "@/components/marketing/site-footer";
 import { StoreHero } from "./store-hero";
 import { StoreProductGrid } from "./store-product-grid";
@@ -6,7 +7,7 @@ import { STORE_PRODUCTS, applyStoreProductOverrides } from "@/lib/store-products
 import { getSiteSettings } from "@/lib/site-settings";
 
 export const metadata = {
-  title: "Loja de cartões NFC — NFC OS",
+  title: pageTitle("Loja de cartões NFC"),
   description: "Cartões NFC premium com QR Code dinâmico, prontos para configurar em minutos. Sem contrato, sem burocracia.",
 };
 

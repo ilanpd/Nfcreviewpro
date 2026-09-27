@@ -122,7 +122,7 @@ export function PlaybookApplyDialog({ open, headline, impactLabel, fetchPreview,
                 type="button"
                 onClick={() => setScheduleMode(mode)}
                 className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
-                  scheduleMode === mode ? "border-brand bg-brand-subtle text-brand" : "border-border/60 text-muted-foreground hover:bg-muted"
+                  scheduleMode === mode ? "border-brand bg-brand-subtle text-brand-ink" : "border-border/60 text-muted-foreground hover:bg-muted"
                 }`}
               >
                 {mode === "now" ? "Agora" : mode === "later" ? "Depois" : "Repetir"}

@@ -79,7 +79,7 @@ export function KpiCard({ label, value, icon, delta, deltaLabel, hint, valueClas
       <div className="flex items-start justify-between gap-3">
         <p className="text-sm font-medium text-muted-foreground">{label}</p>
         {icon ? (
-          <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-brand-subtle text-brand [&_svg]:size-4">
+          <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-brand-subtle text-brand-ink [&_svg]:size-4">
             {icon}
           </span>
         ) : null}
