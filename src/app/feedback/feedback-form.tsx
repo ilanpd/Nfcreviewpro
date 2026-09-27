@@ -8,12 +8,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
+/** De onde vem a mensagem: exatamente uma das três (ver lib/validations/feedback.ts). */
+export type FeedbackOrigin = { visitId: string } | { cardCode: string } | { ratingEventId: string };
+
 interface FeedbackFormProps {
-  ratingEventId: string;
+  origin: FeedbackOrigin;
   primaryColor: string;
 }
 
-export function FeedbackForm({ ratingEventId, primaryColor }: FeedbackFormProps) {
+export function FeedbackForm({ origin, primaryColor }: FeedbackFormProps) {
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState({ name: "", phone: "", message: "" });
@@ -29,7 +32,7 @@ export function FeedbackForm({ ratingEventId, primaryColor }: FeedbackFormProps)
       const res = await fetch("/api/feedback", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ratingEventId, ...form }),
+        body: JSON.stringify({ ...origin, ...form }),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));

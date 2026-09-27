@@ -6,28 +6,98 @@ import { buildFeedbackWhatsappUrl } from "@/lib/whatsapp";
 import { publishEvent } from "@/lib/event-bus";
 import type { CreateFeedbackInput } from "@/lib/validations/feedback";
 
-export async function createFeedback(input: CreateFeedbackInput) {
-  const ratingEvent = await prisma.ratingEvent.findUnique({
-    where: { id: input.ratingEventId },
-    include: { privateFeedback: true, company: true, visit: { include: { card: true } } },
+export class FeedbackError extends Error {
+  constructor(
+    message: string,
+    public readonly status: number
+  ) {
+    super(message);
+    this.name = "FeedbackError";
+  }
+}
+
+interface FeedbackTarget {
+  companyId: string;
+  whatsapp: string;
+  cardId: string | null;
+  cardName: string;
+  ratingEventId: string | null;
+  visitId: string | null;
+  stars: number | null;
+}
+
+/** De onde vem a mensagem: a nota (link antigo), a visita ou só o cartão. */
+async function resolveTarget(input: CreateFeedbackInput): Promise<FeedbackTarget> {
+  if (input.ratingEventId) {
+    const ratingEvent = await prisma.ratingEvent.findUnique({
+      where: { id: input.ratingEventId },
+      include: { privateFeedback: true, company: true, visit: { include: { card: true } } },
+    });
+    if (!ratingEvent) throw new FeedbackError("Visita não encontrada", 404);
+    if (ratingEvent.privateFeedback) throw new FeedbackError("Esta visita já enviou uma mensagem", 409);
+    return {
+      companyId: ratingEvent.companyId,
+      whatsapp: ratingEvent.company.whatsapp,
+      cardId: ratingEvent.visit.cardId,
+      cardName: ratingEvent.visit.card.name,
+      ratingEventId: ratingEvent.id,
+      visitId: null,
+      stars: ratingEvent.stars,
+    };
+  }
+
+  if (input.visitId) {
+    const visit = await prisma.visit.findUnique({
+      where: { id: input.visitId },
+      include: { company: true, card: true, privateFeedbacks: { select: { id: true }, take: 1 } },
+    });
+    if (!visit) throw new FeedbackError("Visita não encontrada", 404);
+    if (visit.privateFeedbacks.length > 0) throw new FeedbackError("Esta visita já enviou uma mensagem", 409);
+    return {
+      companyId: visit.companyId,
+      whatsapp: visit.company.whatsapp,
+      cardId: visit.cardId,
+      cardName: visit.card.name,
+      ratingEventId: null,
+      visitId: visit.id,
+      stars: null,
+    };
+  }
+
+  const card = await prisma.nFCCard.findFirst({
+    where: { uniqueCode: input.cardCode!, active: true },
+    include: { company: true },
   });
-  if (!ratingEvent) throw new Error("Avaliação não encontrada");
-  if (ratingEvent.privateFeedback) throw new Error("Esta avaliação já recebeu um feedback");
+  if (!card) throw new FeedbackError("Cartão não encontrado", 404);
+  return {
+    companyId: card.companyId,
+    whatsapp: card.company.whatsapp,
+    cardId: card.id,
+    cardName: card.name,
+    ratingEventId: null,
+    visitId: null,
+    stars: null,
+  };
+}
+
+export async function createFeedback(input: CreateFeedbackInput) {
+  const target = await resolveTarget(input);
 
   const whatsappUrl = buildFeedbackWhatsappUrl({
-    whatsapp: ratingEvent.company.whatsapp,
-    stars: ratingEvent.stars,
+    whatsapp: target.whatsapp,
+    stars: target.stars,
     message: input.message,
     name: input.name,
     phone: input.phone,
-    cardName: ratingEvent.visit.card.name,
+    cardName: target.cardName,
     createdAt: new Date(),
   });
 
   const feedback = await prisma.privateFeedback.create({
     data: {
-      ratingEventId: ratingEvent.id,
-      companyId: ratingEvent.companyId,
+      ratingEventId: target.ratingEventId,
+      visitId: target.visitId,
+      companyId: target.companyId,
       name: input.name || null,
       phone: input.phone || null,
       message: input.message,
@@ -41,12 +111,42 @@ export async function createFeedback(input: CreateFeedbackInput) {
   after(() => {
     publishEvent(
       "FeedbackRecebido",
-      { feedbackId: feedback.id, ratingEventId: ratingEvent.id, cardId: ratingEvent.visit.cardId, stars: ratingEvent.stars },
-      { companyId: ratingEvent.companyId }
+      { feedbackId: feedback.id, ratingEventId: target.ratingEventId, cardId: target.cardId, stars: target.stars },
+      { companyId: target.companyId }
     ).catch((err) => console.error("[feedback] publish FeedbackRecebido failed", err));
   });
 
   return { feedback, whatsappUrl };
+}
+
+/** O que a página /feedback precisa para se montar: só a marca da empresa e se já houve mensagem. */
+export async function getFeedbackPageContext(origin: { ratingEventId?: string; visitId?: string; cardCode?: string }) {
+  const brand = { name: true, logoUrl: true, primaryColor: true } as const;
+
+  if (origin.ratingEventId) {
+    const ratingEvent = await prisma.ratingEvent.findUnique({
+      where: { id: origin.ratingEventId },
+      include: { company: { select: brand }, privateFeedback: { select: { id: true } } },
+    });
+    if (!ratingEvent) return null;
+    return { company: ratingEvent.company, alreadySent: !!ratingEvent.privateFeedback };
+  }
+  if (origin.visitId) {
+    const visit = await prisma.visit.findUnique({
+      where: { id: origin.visitId },
+      include: { company: { select: brand }, privateFeedbacks: { select: { id: true }, take: 1 } },
+    });
+    if (!visit) return null;
+    return { company: visit.company, alreadySent: visit.privateFeedbacks.length > 0 };
+  }
+  if (origin.cardCode) {
+    const card = await prisma.nFCCard.findFirst({
+      where: { uniqueCode: origin.cardCode, active: true },
+      select: { company: { select: brand } },
+    });
+    return card ? { company: card.company, alreadySent: false } : null;
+  }
+  return null;
 }
 
 /**

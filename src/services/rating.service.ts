@@ -44,25 +44,6 @@ export async function createRating(visitId: string, stars: number): Promise<Publ
   return buildPublicRatingResult({ ratingEventId: ratingEvent.id, googleReviewUrl: company.googleReviewUrl });
 }
 
-/** Public lookup used by /feedback — only exposes what the branding screen needs. */
-export async function getRatingEventForFeedback(ratingEventId: string) {
-  const ratingEvent = await prisma.ratingEvent.findUnique({
-    where: { id: ratingEventId },
-    include: { company: true, privateFeedback: true },
-  });
-  if (!ratingEvent) return null;
-
-  return {
-    stars: ratingEvent.stars,
-    alreadyHasFeedback: Boolean(ratingEvent.privateFeedback),
-    company: {
-      name: ratingEvent.company.name,
-      logoUrl: ratingEvent.company.logoUrl,
-      primaryColor: ratingEvent.company.primaryColor,
-    },
-  };
-}
-
 export async function markRedirectedToGoogle(ratingEventId: string) {
   await prisma.ratingEvent.update({
     where: { id: ratingEventId },

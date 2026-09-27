@@ -6,7 +6,7 @@ import { getRequestIp } from "@/lib/ip";
 import { requireAuthContext } from "@/lib/auth";
 import { handleApiError } from "@/lib/api-error";
 
-// Public: submitted from the /feedback screen after a 1-3 star rating.
+// Public: "Falar com a gente", aberto a todos os clientes (ADR-080), sem depender de nota.
 export async function POST(req: NextRequest) {
   try {
     const ip = await getRequestIp();

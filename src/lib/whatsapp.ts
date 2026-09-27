@@ -2,7 +2,8 @@ const STARS_FILLED = "⭐";
 
 interface FeedbackWhatsappInput {
   whatsapp: string;
-  stars: number;
+  /** Só existe nas mensagens de links antigos; a tela nova não pergunta nota. */
+  stars?: number | null;
   message: string;
   name?: string | null;
   phone?: string | null;
@@ -29,14 +30,9 @@ export function buildFeedbackWhatsappUrl({
     timeStyle: "short",
   }).format(createdAt);
 
-  const lines = [
-    "Nova experiência registrada.",
-    `Cartão: ${cardName}`,
-    `Nota: ${STARS_FILLED.repeat(stars)}`,
-    "Comentário:",
-    `"${message}"`,
-    `Cliente: ${name?.trim() || "Não informado"}`,
-  ];
+  const lines = ["Nova mensagem de um cliente.", `Cartão: ${cardName}`];
+  if (stars) lines.push(`Nota: ${STARS_FILLED.repeat(stars)}`);
+  lines.push("Mensagem:", `"${message}"`, `Cliente: ${name?.trim() || "Não informado"}`);
 
   if (phone?.trim()) lines.push(`Telefone: ${phone.trim()}`);
   lines.push(`Data: ${dateLabel}`);

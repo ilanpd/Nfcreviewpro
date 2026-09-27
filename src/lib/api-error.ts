@@ -4,6 +4,7 @@ import { UnauthorizedError, ForbiddenError } from "./auth";
 import { CampaignConflictError } from "@/services/campaign.service";
 import { StoreOrderProvisionError } from "@/services/store-order.service";
 import { ReturnOfferError } from "@/services/return-offer.service";
+import { FeedbackError } from "@/services/feedback.service";
 
 /** Central place to turn a thrown error into a consistent JSON response for API routes. */
 export function handleApiError(error: unknown): NextResponse {
@@ -20,6 +21,9 @@ export function handleApiError(error: unknown): NextResponse {
     return NextResponse.json({ error: error.message }, { status: 409 });
   }
   if (error instanceof StoreOrderProvisionError) {
+    return NextResponse.json({ error: error.message }, { status: error.status });
+  }
+  if (error instanceof FeedbackError) {
     return NextResponse.json({ error: error.message }, { status: error.status });
   }
   if (error instanceof ReturnOfferError) {

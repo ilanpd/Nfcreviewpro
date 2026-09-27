@@ -49,7 +49,7 @@ export interface DomainEventPayloads {
   CampanhaCriada: { campaignId: string; name: string; type: string };
   CampanhaAtualizada: { campaignId: string; changedFields: string[] };
   CampanhaEncerrada: { campaignId: string; reason: "ARCHIVED" | "DELETED" };
-  FeedbackRecebido: { feedbackId: string; ratingEventId: string; cardId: string; stars: number };
+  FeedbackRecebido: { feedbackId: string; ratingEventId: string | null; cardId: string | null; stars: number | null };
   AvaliacaoPublicada: { ratingEventId: string; cardId: string; stars: number };
   ZonaAtualizada: { zoneId: string; action: "CREATED" | "UPDATED" | "DELETED" };
   MesaAtualizada: { cardId: string; action: "CREATED" | "UPDATED" | "DELETED" };
