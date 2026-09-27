@@ -38,6 +38,19 @@ enum PlanType {
   BUSINESS
 }
 
+// Motor de Ativação (Fase 18) — distingue uma empresa que só comprou o
+// cartão físico (nunca teve, e pode nunca vir a ter, um User com login) de
+// uma empresa assinante de verdade. GUEST é criada silenciosamente pelo
+// webhook de pagamento (ver services/store-order.service.ts) só para o
+// cartão físico ter um `companyId` para existir — nunca aparece como
+// "cliente ativo do SaaS", nunca tem `User`, nunca acessa /dashboard. Vira
+// CUSTOMER pelo fluxo de upgrade (claimGuestCompany) sem recriar cartões.
+// Ver ADR-065.
+enum AccountType {
+  GUEST
+  CUSTOMER
+}
+
 enum TeamMemberStatus {
   PENDING
   ACTIVE
@@ -203,31 +216,31 @@ enum AutoPilotLevel {
 // semeado uma vez (`prisma/seed.ts`), nunca hardcoded em componente React ou
 // serviço. Editar um limiar aqui nunca exige tocar em código.
 model Playbook {
-  id          String             @id @default(cuid())
-  key         String             @unique // slug estável ("happy-hour-boost") — nunca muda, é o identificador real
-  name        String
-  description String
-  category    PlaybookCategory
-  triggerType PlaybookTriggerType
+  id                     String              @id @default(cuid())
+  key                    String              @unique // slug estável ("happy-hour-boost") — nunca muda, é o identificador real
+  name                   String
+  description            String
+  category               PlaybookCategory
+  triggerType            PlaybookTriggerType
   // Limiares do gatilho (amostra mínima, delta mínimo, janela de horário) —
   // consumidos por domain/playbooks/triggers.ts, nunca por número mágico
   // embutido em código.
-  triggerConfig Json
-  actionType  PlaybookActionType
+  triggerConfig          Json
+  actionType             PlaybookActionType
   // Parâmetros da ação: tipo de campanha preferido para criação
   // (WHATSAPP/GOOGLE_REVIEWS), modelo de mensagem, regra de tempo a anexar
   // (TIME_WINDOW/DAY_OF_WEEK), delta de prioridade, etc. — tudo dado.
-  actionConfig Json
+  actionConfig           Json
   estimatedDurationHours Int
   // Frase pronta (PT-BR) explicando como desfazer esta ação específica —
   // mostrada no Explainability Panel, nunca inventada na hora pela UI.
-  reversalDescription String
+  reversalDescription    String
   // Só playbooks marcados aqui podem ser executados sem confirmação humana
   // no nível AutoPilot "Automático" — ver ADR-049 (Autonomy Review).
-  safeForAutomation Boolean @default(false)
-  active      Boolean            @default(true)
-  createdAt   DateTime           @default(now())
-  updatedAt   DateTime           @updatedAt
+  safeForAutomation      Boolean             @default(false)
+  active                 Boolean             @default(true)
+  createdAt              DateTime            @default(now())
+  updatedAt              DateTime            @updatedAt
 
   recommendations PlaybookRecommendation[]
 }
@@ -242,29 +255,29 @@ model PlaybookRecommendation {
   playbookId String
   playbook   Playbook @relation(fields: [playbookId], references: [id], onDelete: Cascade)
 
-  status     RecommendationStatus @default(PENDING)
+  status            RecommendationStatus @default(PENDING)
   // 0..1, calculado por domain/playbooks/confidence-engine.ts a partir de
   // amostra/efeito/recência — nunca um número decorativo. Explainability
   // First exige mostrar isto sempre, nunca escondido atrás de "recomendado".
-  confidence Float
+  confidence        Float
   confidenceFactors Json // [{ label, value, weight }] — o detalhamento exibido no Explainability Panel
   // { conversõesEsperadas, avaliaçõesEsperadas, receitaInfluenciada, label } —
   // sempre rotulado como estimativa, nunca uma promessa (ver domain/playbooks/impact.ts).
-  estimatedImpact Json
+  estimatedImpact   Json
   // Dados usados + comparação histórica + eventos responsáveis + regra
   // disparada — o conteúdo bruto do botão "Ver motivo".
-  evidence   Json
-  headline   String // "A Varanda converte 42% melhor depois das 18h..."
-  scopeType  TargetScope // reaproveita o enum já usado por CampaignAssignment — nunca um scope paralelo
-  scopeId    String? // zoneId/branchId/cardId conforme scopeType; null quando COMPANY
+  evidence          Json
+  headline          String // "A Varanda converte 42% melhor depois das 18h..."
+  scopeType         TargetScope // reaproveita o enum já usado por CampaignAssignment — nunca um scope paralelo
+  scopeId           String? // zoneId/branchId/cardId conforme scopeType; null quando COMPANY
   // Preenchido só quando o gatilho encontrou uma campanha JÁ EXISTENTE para
   // agir sobre (Instagram Momentum, Weekend Accelerator) — nunca inventado.
   // Sem @relation de propósito: sobrevive a uma campanha arquivada/excluída
   // depois, mesma razão de EventLog não ter FK (ADR-032).
-  targetCampaignId String?
+  targetCampaignId  String?
 
-  expiresAt        DateTime?
-  respondedAt      DateTime?
+  expiresAt         DateTime?
+  respondedAt       DateTime?
   respondedByUserId String?
 
   createdAt DateTime @default(now())
@@ -282,27 +295,27 @@ model PlaybookRecommendation {
 // Undo ser completo (nunca parcial) — ver Achados do Architect Review em
 // RELATORIO_FASE_11.md.
 model PlaybookExecution {
-  id               String                  @id @default(cuid())
+  id               String                 @id @default(cuid())
   companyId        String
-  company          Company                 @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  recommendationId String                  @unique
-  recommendation   PlaybookRecommendation  @relation(fields: [recommendationId], references: [id], onDelete: Cascade)
+  company          Company                @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  recommendationId String                 @unique
+  recommendation   PlaybookRecommendation @relation(fields: [recommendationId], references: [id], onDelete: Cascade)
 
-  status       PlaybookExecutionStatus @default(RUNNING)
-  triggeredBy  String // "USER" | "AUTOPILOT" — nunca ambíguo, sempre exibido (Autonomy Review)
+  status            PlaybookExecutionStatus @default(RUNNING)
+  triggeredBy       String // "USER" | "AUTOPILOT" — nunca ambíguo, sempre exibido (Autonomy Review)
   triggeredByUserId String?
   // O que foi feito de verdade: [{ type, campaignId, assignmentIds,
   // ruleId, campaignWasCreated, previousStatus, previousPriority }] —
   // suficiente para reverter sem adivinhar.
-  actionsTaken Json?
-  scheduledFor DateTime? // "executar depois"
-  recurrence   Json? // "repetir" — { type: "DAILY"|"WEEKLY", until? }
-  startedAt    DateTime?
-  completedAt  DateTime?
-  undoneAt     DateTime?
-  failureReason String?
-  createdAt    DateTime                @default(now())
-  updatedAt    DateTime                @updatedAt
+  actionsTaken      Json?
+  scheduledFor      DateTime? // "executar depois"
+  recurrence        Json? // "repetir" — { type: "DAILY"|"WEEKLY", until? }
+  startedAt         DateTime?
+  completedAt       DateTime?
+  undoneAt          DateTime?
+  failureReason     String?
+  createdAt         DateTime                @default(now())
+  updatedAt         DateTime                @updatedAt
 
   @@index([companyId, status])
   @@index([scheduledFor])
@@ -337,105 +350,150 @@ model Organization {
 }
 
 model Company {
-  id              String        @id @default(cuid())
-  organizationId  String?
-  organization    Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
-  name            String
-  slug            String   @unique
-  logoUrl         String?
+  id                       String        @id @default(cuid())
+  organizationId           String?
+  organization             Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  name                     String
+  slug                     String        @unique
+  logoUrl                  String?
   // Preparação para White Label (Fase 10, ainda não implementada) — mesmo
   // padrão de `logoUrl`: nulo até a fase construir a UI de upload e o
   // `<link rel="icon">` dinâmico que a lê. Ver ADR-039.
-  faviconUrl      String?
-  whatsapp        String
-  googleReviewUrl String
-  primaryColor    String   @default("#0F172A")
+  faviconUrl               String?
+  whatsapp                 String
+  googleReviewUrl          String
+  primaryColor             String        @default("#0F172A")
   // White Label (Fase 10) — cor secundária opcional; sem ela, a UI de marca
   // deriva um tom neutro de `primaryColor` (ver domain/white-label/color.ts),
   // nunca inventa uma cor sem relação com a marca escolhida.
-  secondaryColor  String?
+  secondaryColor           String?
   // `domain` já existia desde uma fase anterior (ver ADR-039) — sem uso até
   // agora. Nesta fase ganha um leitor de verdade: `domainVerifiedAt` é nulo
   // até uma checagem real de DNS (TXT) confirmar posse do domínio; o
   // DomainResolver nunca resolve branding por um domínio não verificado
   // (ver ADR-042).
-  domain          String?  @unique
-  domainVerifiedAt DateTime?
+  domain                   String?       @unique
+  domainVerifiedAt         DateTime?
   // Token aleatório por tentativa de verificação — o empresário publica
   // `_nfcos-challenge.<domínio> TXT "<domainVerificationToken>"` no DNS;
   // `verifyDomainOwnership` confirma via uma consulta DNS-over-HTTPS real
   // antes de `domainVerifiedAt` ser preenchido. Nunca reaproveita um
   // segredo de outra finalidade (ex.: IP_HASH_SALT) — token de posse de
   // domínio é uma preocupação própria. Ver ADR-042.
-  domainVerificationToken String?
+  domainVerificationToken  String?
   // Tela de login com marca própria (Fase 10) — ambos opcionais, nulos até
   // configurados; sem eles a tela de login mostra o padrão do produto.
-  loginHeadline      String?
-  loginBackgroundUrl String?
-  plan            PlanType @default(STARTER)
+  loginHeadline            String?
+  loginBackgroundUrl       String?
+  plan                     PlanType      @default(STARTER)
+  // Motor de Ativação (Fase 18) — ver comentário do enum AccountType.
+  accountType              AccountType   @default(CUSTOMER)
+  // Billing (Stripe) — nulos até o primeiro checkout. `stripeCustomerId` é
+  // criado uma vez e reaproveitado em toda assinatura futura da empresa;
+  // `stripeSubscriptionStatus` espelha literalmente o `status` do Subscription
+  // object da Stripe ("active", "past_due", "canceled", etc.) — nunca um
+  // enum próprio, para nunca ficar dessincronizado do vocabulário real da
+  // Stripe. `plan` acima continua sendo a fonte da verdade para limites/
+  // features do produto; o webhook do Stripe é o único escritor de `plan`
+  // depois do checkout inicial. Ver ADR-062.
+  stripeCustomerId         String?       @unique
+  stripeSubscriptionId     String?       @unique
+  stripeSubscriptionStatus String?
   // IANA identifier. Used by the Rule Engine to evaluate DAY_OF_WEEK/
   // TIME_WINDOW/DATE_RANGE rules in the business's local time, not the
   // server's — a "Friday 18:00" Happy Hour rule must mean 6pm in the
   // restaurant, not 6pm UTC. Defaults to Brazil since every string in this
   // product is already pt-BR; a real timezone picker is a Settings UI
   // nicety, not a Phase 3 blocker.
-  timezone        String   @default("America/Sao_Paulo")
+  timezone                 String        @default("America/Sao_Paulo")
   // ROI Mode (Fase 7) — configuração opcional, definida uma vez pelo
   // empresário em Configurações, que transforma toques/conversões em
   // dinheiro estimado. Os três campos só existem juntos (nulos até o
   // empresário configurar pela primeira vez); o Analytics Engine só calcula
   // receita influenciada quando os três estão preenchidos — nunca estima
   // com valores parciais ou inventados. Ver ADR-029.
-  roiAvgTicket        Float?
-  roiReturnRate       Float?
-  roiNewCustomerValue Float?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  roiAvgTicket             Float?
+  roiReturnRate            Float?
+  roiNewCustomerValue      Float?
+  createdAt                DateTime      @default(now())
+  updatedAt                DateTime      @updatedAt
 
-  users               User[]
-  cards               NFCCard[]
-  visits              Visit[]
-  ratingEvents        RatingEvent[]
-  privateFeedbacks    PrivateFeedback[]
-  campaigns           Campaign[]
-  campaignAssignments CampaignAssignment[]
-  redirectLogs        RedirectLog[]
-  branches            Branch[]
-  zones               Zone[]
-  rules               Rule[]
-  campaignVariants    CampaignVariant[]
-  ruleExecutionLogs   RuleExecutionLog[]
-  userAccessScopes    UserAccessScope[]
-  auditLogs           AuditLog[]
-  apiKeys             ApiKey[]
-  webhookEndpoints    WebhookEndpoint[]
-  apiRequestLogs      ApiRequestLog[]
+  users                   User[]
+  cards                   NFCCard[]
+  visits                  Visit[]
+  ratingEvents            RatingEvent[]
+  privateFeedbacks        PrivateFeedback[]
+  campaigns               Campaign[]
+  campaignAssignments     CampaignAssignment[]
+  redirectLogs            RedirectLog[]
+  branches                Branch[]
+  zones                   Zone[]
+  rules                   Rule[]
+  campaignVariants        CampaignVariant[]
+  ruleExecutionLogs       RuleExecutionLog[]
+  userAccessScopes        UserAccessScope[]
+  auditLogs               AuditLog[]
+  apiKeys                 ApiKey[]
+  webhookEndpoints        WebhookEndpoint[]
+  apiRequestLogs          ApiRequestLog[]
   playbookRecommendations PlaybookRecommendation[]
   playbookExecutions      PlaybookExecution[]
   autoPilotSetting        AutoPilotSetting?
+  supportRequests         SupportRequest[]
 
   @@index([organizationId])
 }
 
 model User {
-  id        String            @id @default(cuid())
-  clerkId   String?           @unique
+  id        String           @id @default(cuid())
+  clerkId   String?          @unique
   companyId String
-  company   Company           @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  company   Company          @relation(fields: [companyId], references: [id], onDelete: Cascade)
   email     String
   name      String?
-  role      Role              @default(OPERATOR)
-  status    TeamMemberStatus  @default(PENDING)
-  createdAt DateTime          @default(now())
-  updatedAt DateTime          @updatedAt
+  role      Role             @default(OPERATOR)
+  status    TeamMemberStatus @default(PENDING)
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
 
   ownedCampaigns  Campaign[]
   accessScopes    UserAccessScope[]
   auditLogs       AuditLog[]
   createdApiKeys  ApiKey[]
+  supportRequests SupportRequest[]
 
   @@unique([companyId, email])
   @@index([companyId])
+}
+
+enum SupportRequestStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+}
+
+// Fase 20 — Central de Suporte: até aqui não existia NENHUM jeito do dono
+// de uma empresa cliente falar com o operador da plataforma (NFC OS) a
+// partir do próprio Dashboard — só o caminho contrário (Central do Cliente
+// do Admin, Fase 19.7, olhando PARA a empresa). Modelo deliberadamente
+// simples (sem thread, sem SLA, sem prioridade) — mesma decisão já tomada
+// na Fase 19.7 para `PrivateFeedback`: uma "Central de Tickets" completa é
+// um projeto à parte, não um pré-requisito pra uma primeira venda real.
+model SupportRequest {
+  id         String               @id @default(cuid())
+  companyId  String
+  company    Company              @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  userId     String?
+  user       User?                @relation(fields: [userId], references: [id], onDelete: SetNull)
+  subject    String
+  message    String
+  status     SupportRequestStatus @default(OPEN)
+  resolvedAt DateTime?
+  createdAt  DateTime             @default(now())
+  updatedAt  DateTime             @updatedAt
+
+  @@index([companyId, createdAt])
+  @@index([status, createdAt])
 }
 
 // RECTANGLE/CIRCLE only — matches the two shapes every reference floor-plan
@@ -448,14 +506,21 @@ enum TableShape {
 }
 
 model NFCCard {
-  id          String   @id @default(cuid())
-  companyId   String
-  company     Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  uniqueCode  String   @unique
-  name        String
-  tags        String[] @default([])
-  qrCodeUrl   String?
-  active      Boolean  @default(true)
+  id             String     @id @default(cuid())
+  companyId      String
+  company        Company    @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  uniqueCode     String     @unique
+  // Motor de Ativação (Fase 18) — link pessoal de autoedição para clientes
+  // GUEST (portal /meu-cartao, ver services/campaign.service.ts). Nunca
+  // gerado para cartões de empresas CUSTOMER (essas já têm o dashboard
+  // completo com RBAC de verdade; um segundo token seria superfície de
+  // risco sem uso). Deliberadamente diferente de `uniqueCode`: o código
+  // gravado no chip físico nunca deve dobrar como link de edição.
+  editToken      String?    @unique
+  name           String
+  tags           String[]   @default([])
+  qrCodeUrl      String?
+  active         Boolean    @default(true)
   // Both nullable and independent (a card can belong to a Branch without a
   // Zone, e.g. a simple multi-location business that skips zoning). A
   // ZONE-scope or BRANCH-scope CampaignAssignment matches by direct equality
@@ -463,10 +528,10 @@ model NFCCard {
   // — so there's no cross-referencing to keep consistent. See Phase 2 report
   // for why the richer Organization/Branch hierarchy stays deferred while
   // this minimal, single-company-scoped version ships now.
-  branchId    String?
-  branch      Branch?  @relation(fields: [branchId], references: [id], onDelete: SetNull)
-  zoneId      String?
-  zone        Zone?    @relation(fields: [zoneId], references: [id], onDelete: SetNull)
+  branchId       String?
+  branch         Branch?    @relation(fields: [branchId], references: [id], onDelete: SetNull)
+  zoneId         String?
+  zone           Zone?      @relation(fields: [zoneId], references: [id], onDelete: SetNull)
   // Table Map (Phase 5) layout — entirely optional and additive. `layoutX`/
   // `layoutY` are null until a merchant actually drags this card onto the
   // canvas for the first time (an "unplaced" table); every other layout
@@ -483,8 +548,8 @@ model NFCCard {
   layoutRotation Float      @default(0)
   tableShape     TableShape @default(RECTANGLE)
   seats          Int        @default(4)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
 
   visits              Visit[]
   campaignAssignments CampaignAssignment[]
@@ -659,17 +724,17 @@ model RatingEvent {
 }
 
 model PrivateFeedback {
-  id              String      @id @default(cuid())
-  ratingEventId   String      @unique
-  ratingEvent     RatingEvent @relation(fields: [ratingEventId], references: [id], onDelete: Cascade)
-  companyId       String
-  company         Company     @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  name            String?
-  phone           String?
-  message         String
-  resolved        Boolean     @default(false)
-  whatsappSentAt  DateTime?
-  createdAt       DateTime    @default(now())
+  id             String      @id @default(cuid())
+  ratingEventId  String      @unique
+  ratingEvent    RatingEvent @relation(fields: [ratingEventId], references: [id], onDelete: Cascade)
+  companyId      String
+  company        Company     @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  name           String?
+  phone          String?
+  message        String
+  resolved       Boolean     @default(false)
+  whatsappSentAt DateTime?
+  createdAt      DateTime    @default(now())
 
   @@index([companyId, createdAt])
   @@index([companyId, resolved])
@@ -680,40 +745,40 @@ model PrivateFeedback {
 // The asset never carries a destination itself; see src/lib/resolution-engine.
 
 model Campaign {
-  id          String         @id @default(cuid())
-  companyId   String
-  company     Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  name        String
-  description String?
-  type        CampaignType
-  status      CampaignStatus @default(DRAFT)
+  id               String         @id @default(cuid())
+  companyId        String
+  company          Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  name             String
+  description      String?
+  type             CampaignType
+  status           CampaignStatus @default(DRAFT)
   // Higher wins. Ties are broken by assignment scope specificity (CARD beats
   // ZONE beats BRANCH beats COMPANY) then recency — see resolution-engine/resolve.ts.
-  priority    Int            @default(0)
-  startsAt    DateTime?
-  endsAt      DateTime?
+  priority         Int            @default(0)
+  startsAt         DateTime?
+  endsAt           DateTime?
   recurrenceType   RecurrenceType @default(NONE)
   // Shape depends on recurrenceType, e.g. {"daysOfWeek":[5],"startTime":"18:00","endTime":"22:00"}
   // for WEEKLY. Captured for the Rule Engine phase — not evaluated yet.
   recurrenceConfig Json?
-  tags        String[]       @default([])
-  ownerId     String?
-  owner       User?          @relation(fields: [ownerId], references: [id], onDelete: SetNull)
+  tags             String[]       @default([])
+  ownerId          String?
+  owner            User?          @relation(fields: [ownerId], references: [id], onDelete: SetNull)
   // Shape is discriminated by `type` — validated at read time with the Zod
   // schemas in src/lib/validations/campaign.ts, never trusted as typed.
-  config      Json
+  config           Json
   // ROI Mode (Fase 7) — opcional. Sem isso, "ROI da campanha" e "custo por
   // avaliação" não têm como ser calculados honestamente (não existe
   // integração de gasto de anúncio neste produto) — o Analytics Engine
   // mostra "configure o custo desta campanha" em vez de inventar um número.
-  estimatedCost Float?
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
+  estimatedCost    Float?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
 
-  assignments      CampaignAssignment[]
-  redirectLogs     RedirectLog[]
-  rules            Rule[]
-  variants         CampaignVariant[]
+  assignments       CampaignAssignment[]
+  redirectLogs      RedirectLog[]
+  rules             Rule[]
+  variants          CampaignVariant[]
   ruleExecutionLogs RuleExecutionLog[]
 
   @@index([companyId, status])
@@ -823,19 +888,19 @@ model CampaignAssignment {
 // this schema's "every row carries companyId" convention; that abuse
 // surface is already covered by the existing publicCard rate limiter.
 model RedirectLog {
-  id                String          @id @default(cuid())
+  id                String           @id @default(cuid())
   companyId         String
-  company           Company         @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  company           Company          @relation(fields: [companyId], references: [id], onDelete: Cascade)
   cardId            String
-  card              NFCCard         @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  card              NFCCard          @relation(fields: [cardId], references: [id], onDelete: Cascade)
   campaignId        String?
-  campaign          Campaign?       @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+  campaign          Campaign?        @relation(fields: [campaignId], references: [id], onDelete: SetNull)
   // Which A/B variant was shown, if the winning campaign had any (Phase 3).
   variantId         String?
   variant           CampaignVariant? @relation(fields: [variantId], references: [id], onDelete: SetNull)
   outcome           RedirectOutcome
-  resolvedFromCache Boolean         @default(false)
-  createdAt         DateTime        @default(now())
+  resolvedFromCache Boolean          @default(false)
+  createdAt         DateTime         @default(now())
 
   @@index([companyId, createdAt])
   @@index([cardId, createdAt])
@@ -913,7 +978,7 @@ model WebhookEndpoint {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  deliveries  WebhookDelivery[]
+  deliveries WebhookDelivery[]
 
   @@index([companyId])
 }
@@ -972,4 +1037,161 @@ model ApiRequestLog {
 
   @@index([companyId, createdAt])
   @@index([apiKeyId, createdAt])
+}
+
+// PENDING_PAYMENT → PAID é automático (webhook do Stripe). PAID → SHIPPED →
+// DELIVERED avança manualmente por quem opera o envio (Painel Admin, Fase
+// 16) — não existe integração de logística nesta fase, então esses dois
+// passos são sempre uma ação humana explícita, nunca inferida.
+enum StoreOrderStatus {
+  PENDING_PAYMENT
+  PAID
+  SHIPPED
+  DELIVERED
+  CANCELED
+  // Auditoria do Fluxo de Vendas (12/09/2026) — antes, "Cancelar" só mudava
+  // este enum e nunca tocava o Stripe; o dinheiro do cliente continuava
+  // cobrado até alguém entrar manualmente no Dashboard do Stripe e estornar
+  // à parte. Ver refundStoreOrder em store-order.service.ts.
+  REFUNDED
+}
+
+// Motor de Ativação (Fase 18) — distingue os dois checkouts que geram um
+// StoreOrder: a loja avulsa (/loja, sempre convidado-compatível) e o
+// checkout combinado dentro de /onboarding/plan (sempre já autenticado,
+// companyId nunca nulo). Nunca inferido do `companyId` sozinho (um
+// CARD_ONLY pode ganhar companyId depois, via associação silenciosa ou
+// provisionamento) — por isso é um campo próprio, gravado uma vez no
+// checkout e nunca mudado depois.
+enum StoreOrderType {
+  CARD_ONLY
+  CARD_PLUS_SAAS
+}
+
+// Loja pública de cartões NFC físicos (Fase 15) — deliberadamente
+// desacoplada de `Company`/autenticação: um comprador da loja não precisa
+// ter (ou nunca chegar a ter) uma conta no SaaS. `destinationUrl` é o link
+// que o cliente escolhe no checkout para onde seus cartões devem
+// redirecionar assim que chegarem fisicamente — capturado aqui para quem
+// for fabricar/configurar os chips, já que o fulfillment ainda é manual
+// (nenhuma integração com fornecedor/logística nesta fase, ver ADR-062).
+// `status` avança PENDING_PAYMENT → PAID via webhook do Stripe
+// (`checkout.session.completed`); FULFILLED/CANCELED são atualizados
+// manualmente por quem opera o envio, não pelo código.
+model StoreOrder {
+  id                      String           @id @default(cuid())
+  stripeCheckoutSessionId String           @unique
+  stripePaymentIntentId   String?
+  customerEmail           String
+  customerName            String
+  // Motor de Ativação (Fase 18) — CPF/CNPJ e telefone, coletados no
+  // checkout (loja avulsa e combinado) para nota fiscal futura e contato
+  // direto se a produção travar. Opcionais só para não quebrar pedidos já
+  // existentes antes desta migração — todo checkout novo passa a exigi-los.
+  customerDocument        String?
+  customerPhone           String?
+  // Endereço de cobrança — deliberadamente separado de `shippingAddress`
+  // (podem divergir; `shippingAddress` já vem pronto do Stripe Checkout).
+  billingAddress          Json?
+  orderType               StoreOrderType   @default(CARD_ONLY)
+  // Preenchido só quando o comprador já tinha uma sessão ativa no SaaS no
+  // momento da compra (associação silenciosa, nunca uma pergunta "você tem
+  // conta?" no checkout — a maioria dos e-commerces reais não força essa
+  // escolha). Nulo para todo comprador convidado, que é o caminho padrão.
+  companyId               String?
+  productId               String
+  quantity                Int
+  destinationUrl          String
+  amountTotalCents        Int
+  status                  StoreOrderStatus @default(PENDING_PAYMENT)
+  shippingAddress         Json?
+  // Motor de Ativação (Fase 18) — checklist real de produção, granular o
+  // bastante para o Admin nunca precisar adivinhar onde um pedido travou.
+  // `status` acima continua sendo o resumo simplificado que o cliente vê;
+  // estes timestamps são a esteira interna. `provisionedAt` abaixo já cobre
+  // "cartões criados" — não duplicado aqui.
+  stockConfirmedAt        DateTime?
+  // Fase 19.3 — "Impressão" vira etapa própria no quadro de 8 colunas
+  // (Pago/Separação/Impressão/Programação NFC/Qualidade/Embalagem/
+  // Expedição/Entregue). "Separação" reaproveita `stockConfirmedAt` (mesma
+  // ação: confirmar que o material físico está separado/disponível) — só
+  // esta é campo novo de verdade.
+  printedAt               DateTime?
+  nfcWrittenAt            DateTime?
+  qcPassedAt              DateTime?
+  packagedAt              DateTime?
+  shippedAt               DateTime?
+  deliveredAt             DateTime?
+  trackingCode            String?
+  carrier                 String?
+  // Provisionamento (Fase 17) — quando um admin transforma um pedido pago em
+  // `NFCCard`s reais, prontos para o cliente ver no Mapa de Mesas. Nulo até
+  // isso acontecer; `provisionedCardIds` guarda os ids criados para nunca
+  // duplicar cartões se a ação for chamada de novo por engano (idempotente).
+  provisionedAt           DateTime?
+  provisionedCardIds      String[]         @default([])
+  // Auditoria do Fluxo de Vendas (12/09/2026) — antes, uma contestação de
+  // pagamento (`charge.dispute.created`) só ficava registrada em log; nada
+  // no Admin avisava que existia dinheiro em risco. `disputeStatus` guarda o
+  // vocabulário do próprio Stripe (needs_response/under_review/won/lost...)
+  // — nunca reinventado aqui, é exatamente o que o webhook recebe.
+  disputedAt              DateTime?
+  disputeStatus           String?
+  refundedAt              DateTime?
+  refundAmountCents       Int?
+  // E-mail transacional (12/09/2026) — um timestamp por etapa, não um
+  // boolean: além de idempotência (nunca reenvia a mesma etapa duas vezes),
+  // vira histórico visível no detalhe do pedido ("confirmação enviada às
+  // 14:32"). `null` cobre tanto "ainda não chegou nesta etapa" quanto
+  // "chegou, mas o envio falhou" — ver lib/email.ts, que nunca lança, só loga.
+  confirmationEmailSentAt DateTime?
+  shippedEmailSentAt      DateTime?
+  deliveredEmailSentAt    DateTime?
+  notes                   StoreOrderNote[]
+  createdAt               DateTime         @default(now())
+  updatedAt               DateTime         @updatedAt
+
+  @@index([status, createdAt])
+  @@index([companyId])
+}
+
+// Auditoria do Fluxo de Vendas (12/09/2026) — histórico de anotações
+// internas por pedido ("cliente ligou reclamando de atraso em 10/09"), nunca
+// visível ao comprador. Modelo próprio (não um campo `String?` sobrescrito
+// no `StoreOrder`) para preservar todas as notas anteriores, não só a
+// última — o mesmo motivo de `RuleExecutionLog` guardar histórico em vez de
+// um campo mutável.
+model StoreOrderNote {
+  id        String     @id @default(cuid())
+  orderId   String
+  order     StoreOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  body      String
+  createdAt DateTime   @default(now())
+
+  @@index([orderId, createdAt])
+}
+
+// Painel Admin (Fase 16) — configuração global do site público (não de uma
+// empresa cliente), editável só pelo super-admin. Singleton de verdade: uma
+// única linha, sempre com `id = "singleton"` (nunca `findMany`, sempre
+// `upsert` no mesmo id) — nunca existe um segundo "site" para configurar.
+// `storeProductOverrides` é um mapa `{ [productId]: { imageUrl?, unitPriceCents? } }`
+// mesclado por cima do catálogo estático em `lib/store-products.ts` na hora
+// de renderizar — o super-admin nunca edita preço/imagem sem esse catálogo
+// base já existir (nome, quantidade, descrição continuam fixos no código).
+model SiteSettings {
+  id                    String   @id @default("singleton")
+  heroVideoUrl          String?
+  storeProductOverrides Json?
+  // Motor de Ativação (Fase 18) — contador simples de chips NFC em branco
+  // disponíveis para gravação. Decrementado a cada `NFCCard` provisionado
+  // pela loja (ver services/store-order.service.ts); editável manualmente
+  // pelo Admin em /admin/conteudo quando repor estoque com o fornecedor.
+  // `lowStockThreshold` só controla o aviso visual — nunca bloqueia um
+  // provisionamento (ficar sem estoque é uma decisão operacional do dono,
+  // não uma trava de sistema).
+  blankChipStock        Int      @default(0)
+  lowStockThreshold     Int      @default(20)
+  updatedAt             DateTime @updatedAt
+  updatedByEmail        String?
 }

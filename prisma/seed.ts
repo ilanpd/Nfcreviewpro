@@ -164,7 +164,6 @@ async function main() {
           uniqueCode,
           qrCodeUrl,
           name,
-          tags: [zoneName.toLowerCase()],
           zoneId: zonesByName.get(zoneName)!.id,
           layoutX: pos.x,
           layoutY: pos.y,
