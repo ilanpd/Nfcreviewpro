@@ -24,7 +24,7 @@ export async function getDevRuntimeAuthContext(): Promise<AuthContext | null> {
       companyId: true,
       role: true,
       email: true,
-      company: { select: { organizationId: true } },
+      company: { select: { organizationId: true, plan: true } },
       accessScopes: { select: { branchId: true, zoneId: true } },
     },
   });
@@ -36,6 +36,7 @@ export async function getDevRuntimeAuthContext(): Promise<AuthContext | null> {
     organizationId: user.company.organizationId,
     role: user.role,
     email: user.email,
+    plan: user.company.plan,
     accessScopes: user.accessScopes,
   };
 }

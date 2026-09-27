@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { ZodError } from "zod";
 import { UnauthorizedError, ForbiddenError } from "./auth";
 import { CampaignConflictError } from "@/services/campaign.service";
+import { StoreOrderProvisionError } from "@/services/store-order.service";
 
 /** Central place to turn a thrown error into a consistent JSON response for API routes. */
 export function handleApiError(error: unknown): NextResponse {
@@ -16,6 +17,9 @@ export function handleApiError(error: unknown): NextResponse {
   }
   if (error instanceof CampaignConflictError) {
     return NextResponse.json({ error: error.message }, { status: 409 });
+  }
+  if (error instanceof StoreOrderProvisionError) {
+    return NextResponse.json({ error: error.message }, { status: error.status });
   }
   if (error instanceof Error && error.message === "RATE_LIMITED") {
     return NextResponse.json({ error: "Muitas requisições, tente novamente em instantes." }, { status: 429 });

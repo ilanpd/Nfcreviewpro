@@ -29,6 +29,13 @@ export async function getCardForCompany(companyId: string, cardId: string) {
   return card;
 }
 
+// Usado pelo fluxo normal do dashboard (um usuário logado clicando "Novo
+// cartão"), onde o limite do plano sempre faz sentido cobrar. O
+// provisionamento da loja física (services/store-order.service.ts) NÃO
+// chama esta função — usa sua própria criação transacional
+// (createCardsInTransaction), que nunca checa limite de plano de propósito:
+// um cartão avulso foi pago por unidade, não é uma criação "de dashboard"
+// contra o limite de uma assinatura que talvez nem exista (empresa GUEST).
 export async function createCard(companyId: string, input: CreateCardInput) {
   const company = await prisma.company.findUniqueOrThrow({ where: { id: companyId } });
   const currentCount = await prisma.nFCCard.count({ where: { companyId } });

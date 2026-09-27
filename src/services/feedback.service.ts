@@ -49,10 +49,24 @@ export async function createFeedback(input: CreateFeedbackInput) {
   return { feedback, whatsappUrl };
 }
 
-export function listFeedback(companyId: string, resolved?: boolean) {
+/**
+ * `since`/`take` são opcionais e só usados pela página de Analytics — ela
+ * roda em toda visita, então não pode custar uma varredura sem limite do
+ * histórico inteiro da empresa (medido em produção: 22.8s de renderização
+ * numa empresa com bastante histórico, perto o bastante do timeout da
+ * função serverless pra derrubar a página de vez em quando). A gestão de
+ * feedback de verdade (`/api/feedback`) e a exportação em CSV continuam sem
+ * limite nenhum — cortar histórico ali seria perder dado, não só lentidão.
+ */
+export function listFeedback(companyId: string, resolved?: boolean, options?: { since?: Date; take?: number }) {
   return prisma.privateFeedback.findMany({
-    where: { companyId, ...(resolved !== undefined ? { resolved } : {}) },
+    where: {
+      companyId,
+      ...(resolved !== undefined ? { resolved } : {}),
+      ...(options?.since ? { createdAt: { gte: options.since } } : {}),
+    },
     orderBy: { createdAt: "desc" },
+    take: options?.take,
     include: { ratingEvent: { include: { visit: { select: { device: true, browser: true, createdAt: true } } } } },
   });
 }

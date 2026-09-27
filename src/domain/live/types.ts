@@ -6,13 +6,17 @@
  * `resolution-engine` ou `domain/table-map` — ver ADR-025.
  */
 
-export type LiveEventKind = "REDIRECT" | "RATING" | "FEEDBACK" | "ASSIGNMENT_CHANGED";
+// "ORDER" (Fase 19.2) — pedido da loja física pago ou entregue, visível só
+// no feed GLOBAL do Admin (`listGlobalRecentEvents`), nunca no Live Mode
+// por-empresa (que é sobre o que acontece NUM salão, não sobre vendas).
+export type LiveEventKind = "REDIRECT" | "RATING" | "FEEDBACK" | "ASSIGNMENT_CHANGED" | "ORDER";
 
 export interface LiveEvent {
   id: string;
   kind: LiveEventKind;
   /** Cartão afetado — null para eventos que não são de um cartão específico
-   * (ex.: uma atribuição em escopo de zona/empresa inteira). */
+   * (ex.: uma atribuição em escopo de zona/empresa inteira, ou um pedido da
+   * loja física). */
   cardId: string | null;
   /** Texto pronto para o feed de eventos, já em português — ver
    * domain/live/format.ts. */

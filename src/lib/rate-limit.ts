@@ -17,7 +17,7 @@ function memoryLimit(key: string, limit: number, windowMs: number) {
   return { success, remaining: Math.max(0, limit - entry.count) };
 }
 
-type LimiterName = "publicCard" | "rating" | "feedback" | "api" | "queueRouting" | "apiV1" | "demoScenario";
+type LimiterName = "publicCard" | "rating" | "feedback" | "api" | "queueRouting" | "apiV1" | "demoScenario" | "authMutation";
 
 const LIMITS: Record<LimiterName, { limit: number; windowSeconds: number }> = {
   publicCard: { limit: 60, windowSeconds: 60 },
@@ -43,6 +43,15 @@ const LIMITS: Record<LimiterName, { limit: number; windowSeconds: number }> = {
   // ao vivo, apertado o bastante para não virar uma via de escrita em
   // massa não autenticada.
   demoScenario: { limit: 10, windowSeconds: 60 },
+  // Segurança (Auditoria Nível Bilionário, 11/09/2026) — antes desta
+  // entrada, NENHUMA rota de mutação autenticada do dashboard tinha limite
+  // de taxa (só as rotas públicas tinham). Aplicado uma vez, no middleware,
+  // a toda rota `/api/*` que muta dado (ver src/middleware.ts) — nunca
+  // depende de cada rota individualmente lembrar de chamar isto. Por
+  // usuário (não por IP) sempre que autenticado, generoso o bastante para
+  // uso legítimo intenso (editar várias campanhas em sequência), apertado
+  // o bastante para travar um script martelando uma rota.
+  authMutation: { limit: 120, windowSeconds: 60 },
 };
 
 const limiters = new Map<LimiterName, Ratelimit>();

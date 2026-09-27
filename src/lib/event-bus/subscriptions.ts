@@ -42,4 +42,8 @@ export const EVENT_SUBSCRIPTIONS: Record<DomainEventType, QueueName[]> = {
   RecomendacaoGerada: ["analytics"],
   PlaybookExecutado: ["analytics"],
   PlaybookDesfeito: ["analytics"],
+  // Sem fila hoje — existe só para EventLog acumular histórico real de
+  // trocas de plano (ver domain/finance/revenue-snapshot.ts); nenhum
+  // consumidor assíncrono depende disto ainda.
+  PlanoAlterado: [],
 };

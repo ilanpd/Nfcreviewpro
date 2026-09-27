@@ -101,13 +101,14 @@ export async function requireApiKey(req: NextRequest, requiredScopes: ApiScope[]
  * contra ele.
  */
 export async function buildSyntheticAuthContext(companyId: string): Promise<AuthContext> {
-  const company = await prisma.company.findUniqueOrThrow({ where: { id: companyId }, select: { organizationId: true } });
+  const company = await prisma.company.findUniqueOrThrow({ where: { id: companyId }, select: { organizationId: true, plan: true } });
   return {
     userId: "api-key",
     companyId,
     organizationId: company.organizationId,
     role: "OWNER",
     email: "api@nfcos.internal",
+    plan: company.plan,
     accessScopes: [],
   };
 }

@@ -4,9 +4,10 @@ import { prisma } from "./prisma";
 import { resolveOrClaimUser } from "@/services/team.service";
 import { roleHasPermission, type Permission } from "@/domain/rbac/roles";
 import { isWithinScope, type ScopeRestriction, type ScopeTargetCheck } from "@/domain/rbac/scope";
+import { planHasFeature, type PlanFeature } from "@/lib/plans";
 import { isDevRuntimeEnabled } from "@/lib/dev-runtime/config";
 import { getDevRuntimeAuthContext } from "@/lib/dev-runtime/auth";
-import type { Role } from "@/generated/prisma/client";
+import type { Role, PlanType } from "@/generated/prisma/client";
 
 export class UnauthorizedError extends Error {
   constructor(message = "Não autenticado") {
@@ -28,6 +29,11 @@ export interface AuthContext {
   organizationId: string | null;
   role: Role;
   email: string;
+  /** Fase 20 — o plano da empresa, resolvido na mesma query que já busca
+   * `organizationId` (zero round trip extra). Fonte para `requirePlanFeature`
+   * abaixo; nunca buscado de novo em cada rota que precisa checar um recurso
+   * pago. */
+  plan: PlanType;
   /** Empty = unrestricted (default). One or more rows = allow-listed to
    * only those branches/zones — see domain/rbac/scope.ts. */
   accessScopes: ScopeRestriction[];
@@ -43,7 +49,7 @@ const AUTH_USER_SELECT = {
   companyId: true,
   role: true,
   email: true,
-  company: { select: { organizationId: true } },
+  company: { select: { organizationId: true, plan: true } },
   accessScopes: { select: { branchId: true, zoneId: true } },
 } as const;
 
@@ -52,7 +58,7 @@ function toAuthContext(user: {
   companyId: string;
   role: Role;
   email: string;
-  company: { organizationId: string | null };
+  company: { organizationId: string | null; plan: PlanType };
   accessScopes: { branchId: string | null; zoneId: string | null }[];
 }): AuthContext {
   return {
@@ -61,6 +67,7 @@ function toAuthContext(user: {
     organizationId: user.company.organizationId,
     role: user.role,
     email: user.email,
+    plan: user.company.plan,
     accessScopes: user.accessScopes,
   };
 }
@@ -120,6 +127,16 @@ export function requireRole(ctx: AuthContext, roles: Role[]) {
 
 export function requirePermission(ctx: AuthContext, permission: Permission) {
   if (!roleHasPermission(ctx.role, permission)) throw new ForbiddenError();
+}
+
+/** Fase 20 — mesmo formato de `requirePermission`, mas por PLANO em vez de
+ * papel: bloqueia a ação mesmo que o usuário tenha o cargo certo, se a
+ * empresa não pagar pelo recurso. Nunca confiar só no gate de UI (que só
+ * esconde/mostra) — isto é o que impede alguém de chamar a rota direto. */
+export function requirePlanFeature(ctx: AuthContext, feature: PlanFeature) {
+  if (!planHasFeature(ctx.plan, feature)) {
+    throw new ForbiddenError(`Este recurso não está disponível no plano ${ctx.plan}. Faça upgrade para usá-lo.`);
+  }
 }
 
 /** Throws unless the acting user's access scopes (if any) cover the target

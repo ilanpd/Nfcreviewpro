@@ -35,6 +35,9 @@ export const PUBLIC_WEBHOOK_EVENT_MAP: Record<DomainEventType, string | null> = 
   RecomendacaoGerada: null,
   PlaybookExecutado: null,
   PlaybookDesfeito: null,
+  // Financeiro (Fase 19.6) — mesmo motivo dos três acima: evento novo,
+  // interno por enquanto, sem pedido real de integração externa ainda.
+  PlanoAlterado: null,
 };
 
 export const PUBLIC_WEBHOOK_EVENT_TYPES = Object.values(PUBLIC_WEBHOOK_EVENT_MAP).filter(

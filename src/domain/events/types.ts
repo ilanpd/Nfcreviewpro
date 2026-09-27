@@ -29,7 +29,9 @@ export type DomainEventType =
   // --- Smart Campaign Playbooks (Fase 11) ---
   | "RecomendacaoGerada"
   | "PlaybookExecutado"
-  | "PlaybookDesfeito";
+  | "PlaybookDesfeito"
+  // --- Financeiro (Fase 19.6) ---
+  | "PlanoAlterado";
 
 export interface DomainEventPayloads {
   NFCTocado: { cardId: string; uniqueCode: string };
@@ -52,6 +54,17 @@ export interface DomainEventPayloads {
   RecomendacaoGerada: { recommendationId: string; playbookKey: string; confidence: number };
   PlaybookExecutado: { executionId: string; recommendationId: string; playbookKey: string; triggeredBy: "USER" | "AUTOPILOT" };
   PlaybookDesfeito: { executionId: string; recommendationId: string; playbookKey: string };
+  // --- Financeiro (Fase 19.6) ---
+  // Primeiro evento que registra uma troca de plano no momento em que ela
+  // acontece — antes desta fase, `Company.plan` era sobrescrito sem deixar
+  // rastro do valor anterior. Base para um gráfico de tendência de MRR real
+  // dentro de alguns meses, nunca um histórico fabricado retroativamente.
+  PlanoAlterado: {
+    companyId: string;
+    previousPlan: "STARTER" | "PRO" | "BUSINESS";
+    newPlan: "STARTER" | "PRO" | "BUSINESS";
+    reason: "CHECKOUT_INICIAL" | "TROCA_PORTAL_STRIPE" | "CANCELAMENTO";
+  };
 }
 
 /** O envelope que todo evento publicado carrega, além do payload

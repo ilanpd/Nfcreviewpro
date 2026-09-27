@@ -56,6 +56,20 @@ export function formatFeedbackEvent(row: { id: string; cardId: string; cardName:
   };
 }
 
+/** Fase 19.2 — pedido da loja física, só no feed global do Admin. `stage`
+ * distingue "acabou de pagar" de "acabou de entregar" com a MESMA função —
+ * nunca duas funções quase idênticas por uma frase diferente. */
+export function formatStoreOrderEvent(row: { id: string; customerName: string; stage: "paid" | "delivered"; createdAt: Date }): LiveEvent {
+  const message = row.stage === "paid" ? `Novo pedido pago — ${row.customerName}` : `Pedido entregue — ${row.customerName}`;
+  return {
+    id: `order:${row.stage}:${row.id}`,
+    kind: "ORDER",
+    cardId: null,
+    message,
+    createdAt: row.createdAt.getTime(),
+  };
+}
+
 /** Eventos de auditoria de atribuição não têm um cartão único necessariamente
  * (uma atribuição pode ser de zona/empresa inteira) — `cardId` fica `null` de
  * propósito; o cliente reage a este tipo de evento re-buscando o status de

@@ -2,6 +2,7 @@ import "server-only";
 import { prisma } from "@/lib/prisma";
 import { ForbiddenError } from "@/lib/auth";
 import { roleHasPermission } from "@/domain/rbac/roles";
+import { canInviteTeamMember } from "@/lib/plans";
 import type { CreateAccessScopeInput, InviteMemberInput, UpdateMemberInput } from "@/lib/validations/team";
 import type { Role } from "@/generated/prisma/client";
 
@@ -12,11 +13,22 @@ export function listMembers(companyId: string) {
   });
 }
 
+// Fase 20 — Starter é uso solo por desenho (ver lib/plans.ts). O limite é
+// checado aqui, não na rota, mesmo espírito de `card.service.ts::createCard`:
+// a empresa (não o `ctx` de quem chama) é a fonte da verdade do plano.
 export async function inviteMember(companyId: string, input: InviteMemberInput) {
   const existing = await prisma.user.findUnique({
     where: { companyId_email: { companyId, email: input.email } },
   });
   if (existing) return existing;
+
+  const [company, currentMemberCount] = await Promise.all([
+    prisma.company.findUniqueOrThrow({ where: { id: companyId } }),
+    prisma.user.count({ where: { companyId } }),
+  ]);
+  if (!canInviteTeamMember(company.plan, currentMemberCount)) {
+    throw new ForbiddenError(`O plano ${company.plan} atingiu o limite de membros na equipe. Faça upgrade para convidar mais gente.`);
+  }
 
   return prisma.user.create({
     data: {

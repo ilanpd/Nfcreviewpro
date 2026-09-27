@@ -1,6 +1,8 @@
 "use client";
 
 import { motion } from "framer-motion";
+import Link from "next/link";
+import { ChevronRight } from "lucide-react";
 import { slideUp, staggerContainer } from "@nfc-os/animations";
 import { PremiumCardShell } from "./premium-card";
 
@@ -16,6 +18,12 @@ export interface InsightCardEntry {
   id: string;
   message: string;
   severity: InsightSeverity;
+  /** Fase 19.2 — Radar de Atenção do Admin: quando presente, o card inteiro
+   * vira um link pra tela que resolve aquele insight (Explainability First
+   * também significa nunca deixar "o que fazer com isso" só implícito).
+   * Opcional e aditivo — nenhum uso existente (Command Center, Analytics
+   * Enterprise) precisa mudar. */
+  href?: string;
 }
 
 /**
@@ -33,8 +41,15 @@ export function InsightCardList({ insights, emptyLabel = "Nenhum insight com sig
     <motion.div initial="hidden" animate="visible" variants={staggerContainer} className="grid gap-3 sm:grid-cols-2">
       {insights.map((insight) => (
         <motion.div key={insight.id} variants={slideUp}>
-          <PremiumCardShell accentColor={SEVERITY_COLOR[insight.severity]} className="p-4">
-            <p className="text-sm text-foreground">{insight.message}</p>
+          <PremiumCardShell accentColor={SEVERITY_COLOR[insight.severity]} className="p-4" interactive={!!insight.href}>
+            {insight.href ? (
+              <Link href={insight.href} className="flex items-center justify-between gap-2">
+                <p className="text-sm text-foreground">{insight.message}</p>
+                <ChevronRight className="size-4 shrink-0 text-muted-foreground" />
+              </Link>
+            ) : (
+              <p className="text-sm text-foreground">{insight.message}</p>
+            )}
           </PremiumCardShell>
         </motion.div>
       ))}

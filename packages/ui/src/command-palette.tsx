@@ -31,6 +31,17 @@ export interface CommandPaletteGroup {
 interface CommandPaletteProps {
   groups: CommandPaletteGroup[];
   placeholder?: string;
+  /** Modo controlado, para busca server-side (ex.: Command+K do Admin
+   * pesquisando empresas/pedidos reais via API) — passar junto com
+   * `onValueChange` e `shouldFilter={false}` (o cmdk não deve refiltrar
+   * localmente resultados que o servidor já filtrou). Omitir os três para o
+   * comportamento padrão (lista estática, filtro fuzzy do próprio cmdk). */
+  value?: string;
+  onValueChange?: (value: string) => void;
+  shouldFilter?: boolean;
+  /** Estado de carregamento da busca server-side — mostra no lugar do
+   * "Nada encontrado" enquanto a requisição está em voo. */
+  loading?: boolean;
 }
 
 /** Controla a abertura via Cmd+K / Ctrl+K a partir de qualquer lugar do
@@ -52,19 +63,30 @@ export function useCommandPaletteShortcut() {
   return { open, setOpen };
 }
 
-export function CommandPalette({ open, onOpenChange, groups, placeholder = "Buscar ou executar um comando…" }: CommandPaletteProps & { open: boolean; onOpenChange: (open: boolean) => void }) {
+export function CommandPalette({
+  open,
+  onOpenChange,
+  groups,
+  placeholder = "Buscar ou executar um comando…",
+  value,
+  onValueChange,
+  shouldFilter = true,
+  loading,
+}: CommandPaletteProps & { open: boolean; onOpenChange: (open: boolean) => void }) {
   return (
     <CommandPrimitive.Dialog
       open={open}
       onOpenChange={onOpenChange}
       label="Command Palette"
       className="fixed top-1/4 left-1/2 z-[120] w-full max-w-lg -translate-x-1/2 overflow-hidden rounded-xl border border-border/60 bg-popover text-popover-foreground shadow-premium"
-      shouldFilter
+      shouldFilter={shouldFilter}
     >
       <div className="flex items-center gap-2 border-b border-border/60 px-3">
         <Search className="size-4 shrink-0 text-muted-foreground" />
         <CommandPrimitive.Input
           placeholder={placeholder}
+          value={value}
+          onValueChange={onValueChange}
           className="h-11 w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
         />
         <kbd className="hidden shrink-0 rounded border border-border/60 px-1.5 py-0.5 text-[10px] text-muted-foreground sm:inline">
@@ -73,7 +95,7 @@ export function CommandPalette({ open, onOpenChange, groups, placeholder = "Busc
       </div>
       <CommandPrimitive.List className="max-h-80 overflow-y-auto p-2">
         <CommandPrimitive.Empty className="py-6 text-center text-sm text-muted-foreground">
-          Nada encontrado.
+          {loading ? "Buscando…" : "Nada encontrado."}
         </CommandPrimitive.Empty>
         {groups.map((group) => (
           <CommandPrimitive.Group
@@ -86,8 +108,16 @@ export function CommandPalette({ open, onOpenChange, groups, placeholder = "Busc
                 key={item.id}
                 value={`${item.label} ${(item.keywords ?? []).join(" ")}`}
                 onSelect={() => {
+                  // Fecha num microtask separado (Fase 19.1) — chamar
+                  // `onOpenChange(false)` no mesmo tick que uma navegação
+                  // client-side (`router.push` dentro de `item.onSelect()`)
+                  // é uma corrida real: fechar antes de navegar cancela a
+                  // navegação (o Dialog do cmdk desmonta o próprio Item no
+                  // meio da chamada); fechar depois deixava a paleta aberta
+                  // por cima da página de destino. Adiar o fechamento evita
+                  // as duas.
                   item.onSelect();
-                  onOpenChange(false);
+                  setTimeout(() => onOpenChange(false), 0);
                 }}
                 className={cn(
                   "flex cursor-pointer items-center gap-2 rounded-lg px-2 py-2 text-sm",

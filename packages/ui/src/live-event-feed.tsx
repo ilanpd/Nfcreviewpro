@@ -1,13 +1,14 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { Radio, Star, MessageSquareWarning, RefreshCw } from "lucide-react";
+import { Radio, Star, MessageSquareWarning, RefreshCw, Package } from "lucide-react";
 import { slideInFromRight } from "@nfc-os/animations";
 import { EmptyState } from "./empty-state";
 
 export interface LiveFeedEntry {
   id: string;
-  kind: "REDIRECT" | "RATING" | "FEEDBACK" | "ASSIGNMENT_CHANGED";
+  // "ORDER" (Fase 19.2) — pedido da loja física, só no feed global do Admin.
+  kind: "REDIRECT" | "RATING" | "FEEDBACK" | "ASSIGNMENT_CHANGED" | "ORDER";
   message: string;
   /** Já formatado para exibição (ex.: "14:32:07") — este componente não
    * formata datas, só renderiza o que recebe. */
@@ -19,6 +20,7 @@ const KIND_ICON: Record<LiveFeedEntry["kind"], React.ReactNode> = {
   RATING: <Star className="size-3.5" />,
   FEEDBACK: <MessageSquareWarning className="size-3.5" />,
   ASSIGNMENT_CHANGED: <RefreshCw className="size-3.5" />,
+  ORDER: <Package className="size-3.5" />,
 };
 
 const MAX_VISIBLE = 30;
