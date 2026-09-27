@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { handleApiError } from "@/lib/api-error";
 import { markShipped, markDelivered, listStoreOrderNotes, StoreOrderProvisionError } from "@/services/store-order.service";
 import { getStoreProduct } from "@/lib/store-products";
+import { cardPublicUrl, getCardUrlGuard } from "@/lib/card-url";
 
 const bodySchema = z.object({
   status: z.enum(["SHIPPED", "DELIVERED", "CANCELED"]),
@@ -37,10 +38,15 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
       ? `https://dashboard.stripe.com/${stripeMode}payments/${order.stripePaymentIntentId}`
       : null;
 
+    // ADR-076: a URL vai para o programador de chips. Com o ambiente exigindo
+    // endereço definitivo e ele ainda provisório, a lista não sai — melhor um
+    // aviso vermelho do que um lote de chips gravado com endereço que vai mudar.
+    const guard = getCardUrlGuard();
     return NextResponse.json({
       order,
       productLabel: getStoreProduct(order.productId)?.name ?? order.productId,
-      cards: cards.map((c) => ({ ...c, publicUrl: `${process.env.NEXT_PUBLIC_APP_URL}/r/${c.uniqueCode}` })),
+      cardUrl: { kind: guard.status.kind, host: guard.status.host, message: guard.status.message, blocked: guard.blocked },
+      cards: cards.map((c) => ({ ...c, publicUrl: guard.blocked ? null : cardPublicUrl(c.uniqueCode) })),
       notes,
       stripeDashboardUrl,
     });

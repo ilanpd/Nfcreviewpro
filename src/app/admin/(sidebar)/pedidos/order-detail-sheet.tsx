@@ -41,12 +41,14 @@ interface ProvisionedCard {
   id: string;
   name: string;
   uniqueCode: string;
-  publicUrl: string;
+  /** `null` quando o endereço do cartão ainda não é o definitivo e o ambiente o exige (ADR-076). */
+  publicUrl: string | null;
 }
 
 interface OrderDetail {
   order: StoreOrder;
   productLabel: string;
+  cardUrl: { kind: "final" | "provisional" | "local" | "invalid"; host: string; message: string; blocked: boolean };
   cards: ProvisionedCard[];
   notes: StoreOrderNote[];
   stripeDashboardUrl: string | null;
@@ -166,6 +168,10 @@ export function OrderDetailSheet({ orderId, onClose, onOrderChanged }: { orderId
 
   function copyCards() {
     if (!detail?.cards.length) return;
+    if (detail.cardUrl.blocked) {
+      toast.error(detail.cardUrl.message);
+      return;
+    }
     navigator.clipboard.writeText(detail.cards.map((c) => `${c.name}\t${c.uniqueCode}\t${c.publicUrl}`).join("\n"));
     toast.success("Lista copiada");
   }
@@ -297,9 +303,17 @@ export function OrderDetailSheet({ orderId, onClose, onOrderChanged }: { orderId
                         <Copy className="size-3" /> Copiar tudo
                       </Button>
                     </div>
+                    {detail.cardUrl.kind !== "final" ? (
+                      <p
+                        role="alert"
+                        className={`rounded-lg border px-2.5 py-1.5 text-xs ${detail.cardUrl.blocked ? "border-destructive/40 text-destructive" : "border-amber-500/40 text-amber-700 dark:text-amber-400"}`}
+                      >
+                        {detail.cardUrl.message}
+                      </p>
+                    ) : null}
                     <div className="max-h-32 space-y-1 overflow-y-auto rounded-lg border p-2 font-mono text-[11px] text-muted-foreground">
                       {detail.cards.map((c) => (
-                        <div key={c.id} className="truncate">{c.publicUrl}</div>
+                        <div key={c.id} className="truncate">{c.publicUrl ?? `${c.uniqueCode} — endereço bloqueado`}</div>
                       ))}
                     </div>
                   </section>

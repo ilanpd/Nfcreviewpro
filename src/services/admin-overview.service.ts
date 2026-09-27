@@ -4,6 +4,7 @@ import { getSiteSettings } from "@/lib/site-settings";
 import { stageEnteredAt, daysSince } from "@/domain/store-order/board";
 import { buildAttentionRadar } from "@/domain/admin/attention-radar";
 import { listStuckSupportRequests } from "@/services/support.service";
+import { getCardUrlGuard } from "@/lib/card-url";
 import type { InsightCardEntry } from "@nfc-os/ui";
 
 const NEGATIVE_REVIEW_WINDOW_DAYS = 7;
@@ -70,7 +71,15 @@ export async function getAdminOverviewSnapshot(): Promise<AdminOverviewSnapshot>
     .map((o) => ({ id: o.id, customerName: o.customerName, daysStuck: daysSince(stageEnteredAt(o)) }))
     .filter((o) => o.daysStuck >= 3);
 
+  const cardUrlGuard = getCardUrlGuard();
+
   const radar = buildAttentionRadar({
+    cardUrl: {
+      kind: cardUrlGuard.status.kind,
+      host: cardUrlGuard.status.host,
+      blocked: cardUrlGuard.blocked,
+      pendingOrders: activeProduction.length,
+    },
     stuckOrders,
     lowStock: { blankChipStock: stock, lowStockThreshold },
     disputedOrders: disputedOrders.map((o) => ({ id: o.id, customerName: o.customerName, disputeStatus: o.disputeStatus })),
@@ -84,8 +93,7 @@ export async function getAdminOverviewSnapshot(): Promise<AdminOverviewSnapshot>
   }).map((insight) => {
     if (insight.id.startsWith("reviews:")) return { ...insight, href: `/admin/empresas/${insight.id.split(":")[1]}` };
     if (insight.id.startsWith("support:")) return { ...insight, href: `/admin/empresas/${insight.id.split(":")[1]}` };
-    if (insight.id === "low-stock") return { ...insight, href: "/admin/conteudo" };
-    return { ...insight, href: "/admin/pedidos" };
+    if (insight.id === "low-stock") return { ...insight, href: "/admin/conteudo" };    return { ...insight, href: "/admin/pedidos" };
   });
 
   const conversionRate = checkoutStarted > 0 ? Math.round((checkoutCompleted / checkoutStarted) * 100) : null;

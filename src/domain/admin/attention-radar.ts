@@ -1,4 +1,5 @@
 import type { InsightCardEntry } from "@nfc-os/ui";
+import type { CardUrlKind } from "@/domain/card-url/classify";
 
 /**
  * Fase 19.2 — Radar de Atenção do Centro de Operações. Função pura: recebe
@@ -20,6 +21,10 @@ export interface AttentionRadarInput {
    * demais; quem já filtrou "mais velho que o limiar" é o chamador
    * (`services/admin-overview.service.ts`), esta função só formata. */
   stuckSupportRequests: { id: string; companyId: string; companyName: string; subject: string }[];
+  /** ADR-076 — endereço que vai no chip/QR. `pendingOrders` são os pedidos
+   * pagos que ainda vão virar chip; sem nenhum, um endereço provisório não
+   * está prejudicando ninguém e o alerta não aparece. */
+  cardUrl?: { kind: CardUrlKind; host: string; blocked: boolean; pendingOrders: number } | null;
 }
 
 export function buildAttentionRadar(input: AttentionRadarInput): InsightCardEntry[] {
@@ -64,6 +69,18 @@ export function buildAttentionRadar(input: AttentionRadarInput): InsightCardEntr
       id: `support:${request.companyId}:${request.id}`,
       severity: "attention",
       message: `${request.companyName} está esperando resposta no chamado "${request.subject}"`,
+    });
+  }
+
+  const cardUrl = input.cardUrl;
+  if (cardUrl && cardUrl.kind !== "final" && cardUrl.pendingOrders > 0) {
+    const orders = cardUrl.pendingOrders === 1 ? "1 pedido em produção" : `${cardUrl.pendingOrders} pedidos em produção`;
+    insights.push({
+      id: "card-url",
+      severity: "attention",
+      message: cardUrl.blocked
+        ? `Endereço do cartão ainda não é o definitivo (${cardUrl.host || "inválido"}) — a gravação de chips está bloqueada e há ${orders}`
+        : `Endereço do cartão ainda não é o definitivo (${cardUrl.host || "inválido"}) e há ${orders} — não grave chips antes de definir o domínio`,
     });
   }
 

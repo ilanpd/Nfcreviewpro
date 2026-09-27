@@ -3,6 +3,7 @@ import { isSuperAdmin } from "@/lib/super-admin";
 import { prisma } from "@/lib/prisma";
 import { handleApiError } from "@/lib/api-error";
 import { provisionStoreOrder } from "@/services/store-order.service";
+import { cardPublicUrl, getCardUrlGuard } from "@/lib/card-url";
 
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -14,8 +15,12 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
       where: { id: { in: order.provisionedCardIds } },
       select: { id: true, name: true, uniqueCode: true },
     });
+    // ADR-076: mesma regra da rota de detalhe — sem endereço definitivo (quando
+    // exigido), a URL do chip não sai.
+    const guard = getCardUrlGuard();
     return NextResponse.json({
-      cards: cards.map((c) => ({ ...c, publicUrl: `${process.env.NEXT_PUBLIC_APP_URL}/r/${c.uniqueCode}` })),
+      cardUrl: { kind: guard.status.kind, host: guard.status.host, message: guard.status.message, blocked: guard.blocked },
+      cards: cards.map((c) => ({ ...c, publicUrl: guard.blocked ? null : cardPublicUrl(c.uniqueCode) })),
     });
   } catch (error) {
     return handleApiError(error);

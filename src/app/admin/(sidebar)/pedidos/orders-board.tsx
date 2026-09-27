@@ -41,7 +41,14 @@ interface ProvisionedCard {
   id: string;
   name: string;
   uniqueCode: string;
-  publicUrl: string;
+  /** `null` quando o endereço do cartão ainda não é o definitivo e o ambiente o exige (ADR-076). */
+  publicUrl: string | null;
+}
+
+interface CardUrlInfo {
+  kind: "final" | "provisional" | "local" | "invalid";
+  message: string;
+  blocked: boolean;
 }
 
 /**
@@ -59,6 +66,7 @@ export function OrdersBoard({ initialOrders }: { initialOrders: StoreOrder[] }) 
   const [draggedId, setDraggedId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [cardsByOrder, setCardsByOrder] = useState<Record<string, ProvisionedCard[]>>({});
+  const [cardUrl, setCardUrl] = useState<CardUrlInfo | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   // Substitui os dois window.prompt() originais (Auditoria Nível
   // Bilionário, 11/09/2026) — nativos do navegador, não seguem o tema,
@@ -265,12 +273,19 @@ export function OrdersBoard({ initialOrders }: { initialOrders: StoreOrder[] }) 
     if (!cardsByOrder[orderId]) {
       const res = await fetch(`/api/admin/orders/${orderId}/provision`);
       const data = await res.json();
-      if (res.ok) setCardsByOrder((prev) => ({ ...prev, [orderId]: data.cards }));
+      if (res.ok) {
+        setCardsByOrder((prev) => ({ ...prev, [orderId]: data.cards }));
+        setCardUrl(data.cardUrl ?? null);
+      }
     }
     setExpandedId(orderId);
   }
 
   function copyAll(cards: ProvisionedCard[]) {
+    if (cardUrl?.blocked) {
+      toast.error(cardUrl.message);
+      return;
+    }
     navigator.clipboard.writeText(cards.map((c) => `${c.name}\t${c.uniqueCode}\t${c.publicUrl}`).join("\n"));
     toast.success("Lista copiada");
   }
@@ -441,9 +456,16 @@ export function OrdersBoard({ initialOrders }: { initialOrders: StoreOrder[] }) 
                             <Copy className="size-3" /> Copiar
                           </Button>
                         </div>
+                        {cardUrl && cardUrl.kind !== "final" ? (
+                          <p className={`mb-1.5 rounded border px-2 py-1 ${cardUrl.blocked ? "border-destructive/40 text-destructive" : "border-amber-500/40 text-amber-700 dark:text-amber-400"}`}>
+                            {cardUrl.message}
+                          </p>
+                        ) : null}
                         <div className="max-h-32 space-y-1 overflow-y-auto font-mono">
                           {cardsByOrder[order.id].map((c) => (
-                            <div key={c.id} className="truncate text-muted-foreground">{c.publicUrl}</div>
+                            <div key={c.id} className="truncate text-muted-foreground">
+                              {c.publicUrl ?? `${c.uniqueCode} — endereço bloqueado`}
+                            </div>
                           ))}
                         </div>
                       </div>
