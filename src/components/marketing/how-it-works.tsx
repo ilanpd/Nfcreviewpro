@@ -1,25 +1,31 @@
 "use client";
 
 import { useRef } from "react";
-import { CreditCard, Nfc, Cpu, Target, BarChart3, Wand2 } from "lucide-react";
+import { CreditCard, Nfc, Cpu, Target, Gift, Store } from "lucide-react";
 import { AnimatedBeam } from "@/components/ui/animated-beam";
 import { GridPattern } from "@/components/ui/grid-pattern";
 import { BlurFade } from "@/components/ui/blur-fade";
 import { cn } from "@/lib/utils";
 
 /**
- * O pipeline real do NFC OS (ROADMAP.md, Fase 1 em diante — nunca inventado
- * para a Landing): um Ativo NFC nunca aponta direto para um Destino, tudo
- * passa por um Resolvedor. Esta seção visualiza esse pipeline de verdade,
- * não uma ilustração genérica de "como funciona".
+ * O pipeline real do produto (ROADMAP.md, Fase 1 em diante — nunca
+ * inventado para a Landing): um cartão NFC nunca aponta direto para um
+ * destino, tudo passa por um Resolvedor. Esta seção visualiza esse
+ * pipeline de verdade, não uma ilustração genérica de "como funciona".
+ *
+ * C10 (ADR-085) — os dois últimos passos eram "Analytics"/"Playbooks",
+ * recursos do Pro/Business — nenhum Starter (o plano vendido hoje) chega
+ * lá. Trocados por Retorno/Resgate: o ciclo completo do brinde, que TODO
+ * plano tem desde o Starter — a mesma honestidade do bloco de Bento logo
+ * abaixo.
  */
 const NODES = [
   { key: "cliente", icon: CreditCard, label: "Cliente" },
   { key: "nfc", icon: Nfc, label: "Toque NFC" },
   { key: "engine", icon: Cpu, label: "Resolution Engine" },
   { key: "destino", icon: Target, label: "Destino inteligente" },
-  { key: "analytics", icon: BarChart3, label: "Analytics" },
-  { key: "playbooks", icon: Wand2, label: "Playbooks" },
+  { key: "retorno", icon: Gift, label: "Brinde do Retorno" },
+  { key: "resgate", icon: Store, label: "Resgate na loja" },
 ] as const;
 
 function FlowNode({

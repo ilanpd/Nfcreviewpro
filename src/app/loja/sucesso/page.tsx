@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { CheckCircle2, Circle } from "lucide-react";
 import { SiteHeader } from "@/components/marketing/site-header";
 import { SiteFooter } from "@/components/marketing/site-footer";
@@ -115,10 +116,14 @@ export default async function StoreSuccessPage({
           ) : null}
 
           <p className="mt-8 text-center text-sm text-muted-foreground">
-            Alguma dúvida? Fale com a gente por{" "}
-            <a href="mailto:contato@nfcos.com" className="text-brand-ink underline">
-              contato@nfcos.com
-            </a>
+            Alguma dúvida?{" "}
+            <Link href="/contato" className="font-medium text-brand-ink underline underline-offset-4">
+              Fale com a gente
+            </Link>{" "}
+            ou veja a{" "}
+            <Link href="/ajuda" className="font-medium text-brand-ink underline underline-offset-4">
+              Central de Ajuda
+            </Link>
             .
           </p>
         </div>

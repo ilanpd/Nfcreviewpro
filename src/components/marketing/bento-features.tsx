@@ -1,37 +1,117 @@
 "use client";
 
-import { BarChart3, Flame, Wand2, Palette, Code2, TrendingUp, ArrowUpRight } from "lucide-react";
+import { Gift, Smartphone, MessageCircleHeart, LifeBuoy, BarChart3, Building2 } from "lucide-react";
 import { BentoCard, BentoGrid } from "@/components/ui/bento-grid";
+import { formatVoucherCode } from "@/domain/return-offer/code";
 
 /**
- * Seis capacidades REAIS do produto (ROADMAP.md) — nunca recursos
- * inventados para a Landing parecer mais completa do que é. Os números
- * dentro de cada mockup são ilustrativos (mesma convenção do "Rocket
- * Rides" da Stripe: uma prévia de produto, não uma promessa de resultado
- * para quem está visitando a página).
+ * Seis capacidades REAIS do produto — nunca recursos inventados para a
+ * Landing parecer mais completa do que é. Os números/exemplos dentro de
+ * cada mockup são ilustrativos (mesma convenção do "Rocket Rides" da
+ * Stripe: uma prévia de produto, não uma promessa de resultado).
+ *
+ * C10 (ADR-085) — reescrito porque as 6 telas antigas eram 100%
+ * recursos do Pro/Business (Analytics, Heatmap, Playbooks, API, White
+ * Label, ROI Mode) — nenhuma mencionava o Retorno nem o cartão físico,
+ * que são literalmente o que o Starter vende hoje (Pulse virou Starter
+ * First, Pro/Business congelados). Um visitante lia a home inteira sendo
+ * vendido em recursos que o próprio plano que ele assinaria não inclui —
+ * prejudica venda (expectativa errada) e experiência (frustração pós-
+ * cadastro). Agora: 4 blocos são o que o Starter realmente entrega hoje,
+ * e os 2 últimos viram um convite honesto pra crescer — rotulados "No
+ * Pro"/"No Business", nunca escondidos, mas nunca a promessa principal.
  */
 
-function AnalyticsBackground() {
-  const bars = [40, 65, 50, 80, 60, 95, 70];
+function RetornoBackground() {
+  const code = formatVoucherCode("K7X4QM");
   return (
     <div className="absolute inset-0 flex items-start justify-center overflow-hidden p-5 pt-16">
       <div className="w-full max-w-sm rounded-xl border border-border/60 bg-background/90 p-4 shadow-premium backdrop-blur-sm">
         <p className="mb-3 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Exemplo ilustrativo</p>
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-xs text-muted-foreground">Avaliações captadas</p>
-            <p className="mt-1 text-2xl font-semibold tracking-tight">
-              1.284
-            </p>
-          </div>
-          <div>
-            <p className="text-xs text-muted-foreground">Conversão</p>
-            <p className="mt-1 text-2xl font-semibold tracking-tight text-emerald-600 dark:text-emerald-400">
-              68,0%
-            </p>
+        <div className="flex items-center gap-3 rounded-lg bg-brand-subtle/40 p-3">
+          <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-brand text-brand-foreground">
+            <Gift className="size-5" />
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-medium text-foreground">Sobremesa grátis</p>
+            <p className="text-xs text-muted-foreground">Válida na próxima visita</p>
           </div>
         </div>
-        <div className="mt-5 flex h-16 items-end gap-1.5">
+        <div className="mt-3 flex items-center justify-between rounded-lg border border-dashed border-border/60 px-3 py-2">
+          <span className="font-mono text-sm font-semibold tracking-wider text-foreground">{code}</span>
+          <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
+            Pronto pra resgatar
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function CardTapBackground() {
+  return (
+    <div className="absolute inset-0 flex items-start justify-center p-5 pt-16">
+      <div className="relative flex size-28 items-center justify-center">
+        <span className="heatmap-breathe absolute inset-0 rounded-full border-2 border-brand/40" />
+        <span className="absolute inset-3 rounded-full border-2 border-brand/25" />
+        <span className="flex size-14 items-center justify-center rounded-2xl bg-brand text-brand-foreground shadow-premium">
+          <Smartphone className="size-6" />
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function FeedbackBackground() {
+  return (
+    <div className="absolute inset-0 flex items-start justify-center p-5 pt-16">
+      <div className="w-full max-w-xs space-y-2">
+        <div className="ml-auto w-fit max-w-[85%] rounded-2xl rounded-tr-sm bg-brand px-3.5 py-2 text-xs text-brand-foreground shadow-subtle">
+          A fila hoje tava um pouco longa, mas o atendimento foi ótimo!
+        </div>
+        <div className="w-fit max-w-[85%] rounded-2xl rounded-tl-sm border border-border/60 bg-background/90 px-3.5 py-2 text-xs text-foreground shadow-subtle backdrop-blur-sm">
+          Obrigado pelo retorno! Vamos abrir mais um caixa no horário de pico 🙏
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function HelpBackground() {
+  const rows = ["Como ativo o brinde?", "Perdi meu link, e agora?", "Cobrança atrasou, o que muda?"];
+  return (
+    <div className="absolute inset-0 flex items-start justify-center p-5 pt-16">
+      <div className="w-full max-w-sm space-y-2">
+        {rows.map((row) => (
+          <div
+            key={row}
+            className="flex items-center justify-between rounded-lg border border-border/60 bg-background/90 px-3 py-2 text-xs text-foreground shadow-subtle backdrop-blur-sm"
+          >
+            {row}
+            <span className="text-muted-foreground">→</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function GrowthBadge({ label }: { label: string }) {
+  return (
+    <span className="absolute right-4 top-4 rounded-full border border-border/60 bg-background/90 px-2.5 py-1 text-[11px] font-medium text-muted-foreground shadow-subtle backdrop-blur-sm">
+      {label}
+    </span>
+  );
+}
+
+function AnalyticsGrowthBackground() {
+  const bars = [40, 65, 50, 80, 60, 95, 70];
+  return (
+    <div className="absolute inset-0 flex items-start justify-center overflow-hidden p-5 pt-16">
+      <GrowthBadge label="No Pro" />
+      <div className="w-full max-w-sm rounded-xl border border-border/60 bg-background/90 p-4 shadow-premium backdrop-blur-sm">
+        <p className="mb-3 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Exemplo ilustrativo</p>
+        <div className="flex h-16 items-end gap-1.5">
           {bars.map((h, i) => (
             <div
               key={i}
@@ -40,165 +120,80 @@ function AnalyticsBackground() {
             />
           ))}
         </div>
+        <p className="mt-3 text-xs text-muted-foreground">Analytics, Mapa de Mesas e Playbooks automáticos</p>
       </div>
     </div>
   );
 }
 
-function HeatmapBackground() {
-  const cells = Array.from({ length: 24 }, (_, i) => {
-    const intensity = [0.15, 0.3, 0.55, 0.85, 0.35, 0.2][i % 6];
-    const breathing = intensity > 0.7;
-    return { intensity, breathing };
-  });
-  return (
-    <div className="absolute inset-0 flex items-start justify-center p-5 pt-16">
-      <div className="grid grid-cols-4 gap-2">
-        {cells.map((cell, i) => (
-          <div
-            key={i}
-            className={cell.breathing ? "heatmap-breathe rounded-md" : "rounded-md"}
-            style={{
-              width: 22,
-              height: 22,
-              backgroundColor: `color-mix(in oklch, var(--brand) ${cell.intensity * 100}%, transparent)`,
-            }}
-          />
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function PlaybooksBackground() {
-  return (
-    <div className="absolute inset-0 flex flex-col justify-start gap-3 p-5 pt-16">
-      {[
-        { name: "Happy Hour Boost", confidence: 92 },
-        { name: "Silent Zone Rescue", confidence: 78 },
-      ].map((p) => (
-        <div
-          key={p.name}
-          className="flex items-center gap-3 rounded-lg border border-border/60 bg-background/90 px-4 py-3 shadow-subtle backdrop-blur-sm"
-        >
-          <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-brand-subtle text-brand-ink">
-            <Wand2 className="size-4" />
-          </span>
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-medium text-foreground">{p.name}</p>
-            <p className="text-xs text-muted-foreground">{p.confidence}% de confiança</p>
-          </div>
-          <span className="shrink-0 rounded-full border border-border/60 px-2.5 py-1 text-[11px] font-medium text-muted-foreground">
-            Aplicar
-          </span>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function WhiteLabelBackground() {
-  const colors = ["var(--brand)", "var(--chart-2)", "var(--chart-3)", "var(--chart-4)", "var(--chart-5)"];
+function ApiGrowthBackground() {
   return (
     <div className="absolute inset-0 flex items-start justify-center p-5 pt-14">
-      <div className="flex items-center gap-2">
-        {colors.map((c, i) => (
-          <div
-            key={i}
-            className="size-8 rounded-full border-2 border-background shadow-subtle"
-            style={{ backgroundColor: c, marginLeft: i === 0 ? 0 : -10 }}
-          />
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function ApiBackground() {
-  return (
-    <div className="absolute inset-0 flex items-start justify-center p-5 pt-14">
+      <GrowthBadge label="No Business" />
       <div className="w-full rounded-lg bg-[#0B0E14] p-4 font-mono text-[11px] leading-relaxed shadow-premium">
         <p className="text-emerald-400">POST /api/v1/campaigns</p>
         <p className="text-slate-400">
           {"{"} <span className="text-sky-300">&quot;type&quot;</span>: <span className="text-amber-300">&quot;GOOGLE_REVIEW&quot;</span> {"}"}
         </p>
-        <p className="text-slate-500">200 OK · 82ms</p>
+        <p className="text-slate-500">200 OK · marca própria em cada tela</p>
       </div>
     </div>
   );
 }
 
-function RoiBackground() {
-  return (
-    <>
-      <div className="absolute inset-0 flex items-start justify-center p-5 pt-14">
-        <div className="text-center">
-          <p className="flex items-center justify-center gap-1 text-4xl font-semibold tracking-tight text-foreground">
-            R$ 4.820
-          </p>
-          <p className="mt-2 flex items-center justify-center gap-1 text-xs font-medium text-emerald-600 dark:text-emerald-400">
-            <ArrowUpRight className="size-3.5" />
-            receita estimada este mês (exemplo)
-          </p>
-        </div>
-      </div>
-    </>
-  );
-}
-
 const FEATURES = [
   {
-    name: "Analytics em tempo real",
-    description: "KPIs, funil e ranking de equipe — atualizados enquanto o salão funciona, não no fim do dia.",
-    Icon: BarChart3,
-    href: "/sign-up",
-    cta: "Ver Analytics",
-    background: <AnalyticsBackground />,
+    name: "Retorno: o brinde que traz o cliente de volta",
+    description: "Todo toque no cartão já sai com um código de brinde reservado pra próxima visita — sem cupom pra imprimir, sem aplicativo.",
+    Icon: Gift,
+    href: "/ajuda",
+    cta: "Ver como funciona",
+    background: <RetornoBackground />,
     className: "md:col-span-2 md:row-span-2",
   },
   {
-    name: "Heatmap das mesas",
-    description: "Veja quais mesas aquecem e quais esfriam, em tempo real.",
-    Icon: Flame,
+    name: "Cartão NFC + QR Code",
+    description: "Toque ou escaneie — funciona em qualquer celular, sem instalar nada.",
+    Icon: Smartphone,
     href: "/sign-up",
-    cta: "Ver Mapa de Mesas",
-    background: <HeatmapBackground />,
+    cta: "Começar grátis",
+    background: <CardTapBackground />,
     className: "md:col-span-1 md:row-span-2",
   },
   {
-    name: "Playbooks inteligentes",
-    description: "O sistema recomenda a próxima ação — e executa com um clique, sempre com Desfazer.",
-    Icon: Wand2,
+    name: "Canal de feedback privado",
+    description: "Cliente insatisfeito fala direto com você no WhatsApp — nunca vira avaliação pública de 1 estrela.",
+    Icon: MessageCircleHeart,
     href: "/sign-up",
-    cta: "Ver Playbooks",
-    background: <PlaybooksBackground />,
+    cta: "Ver Mensagens",
+    background: <FeedbackBackground />,
     className: "md:col-span-2 md:row-span-1",
   },
   {
-    name: "API Pública",
-    description: "SDK oficial, webhooks e documentação real — pronto para integrar.",
-    Icon: Code2,
-    href: "/developers",
-    cta: "Ver documentação",
-    background: <ApiBackground />,
+    name: "Central de Ajuda",
+    description: "Respostas diretas pro seu cliente e pra você, sem precisar abrir chamado.",
+    Icon: LifeBuoy,
+    href: "/ajuda",
+    cta: "Ver a Central",
+    background: <HelpBackground />,
     className: "md:col-span-1 md:row-span-1",
   },
   {
-    name: "White Label",
-    description: "Cor, logo e domínio próprios em cada tela, QR Code e impressão.",
-    Icon: Palette,
-    href: "/sign-up",
-    cta: "Ver Theme Studio",
-    background: <WhiteLabelBackground />,
+    name: "Quando crescer: Analytics, Mapa de Mesas e Playbooks",
+    description: "Automação, heatmap de mesas e recomendações com um clique — libera no Pro, quando fizer sentido pro seu volume.",
+    Icon: BarChart3,
+    href: "/#planos",
+    cta: "Ver planos",
+    background: <AnalyticsGrowthBackground />,
     className: "md:col-span-1 md:row-span-1",
   },
   {
-    name: "ROI Mode",
-    description: "Cada toque convertido em receita estimada — a fórmula sempre visível, nunca uma caixa-preta.",
-    Icon: TrendingUp,
-    href: "/sign-up",
-    cta: "Calcular ROI",
-    background: <RoiBackground />,
+    name: "Quando crescer: API pública e marca própria",
+    description: "Múltiplas unidades, domínio e login com a sua cara, integrações via API — libera no Business.",
+    Icon: Building2,
+    href: "/#planos",
+    cta: "Ver planos",
+    background: <ApiGrowthBackground />,
     className: "md:col-span-2 md:row-span-1",
   },
 ] as const;
@@ -208,10 +203,11 @@ export function BentoFeatures() {
     <section className="mx-auto max-w-6xl px-6 py-24">
       <div className="mx-auto max-w-2xl text-center">
         <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">
-          Um sistema operacional, não uma planilha de QR Codes
+          Feito pra fazer o cliente voltar, não só avaliar
         </h2>
         <p className="mt-4 text-muted-foreground">
-          Cada cartão NFC alimenta o mesmo motor — analytics, automação e marca própria, desde o primeiro toque.
+          O cartão físico, o brinde do Retorno e o canal de feedback já vêm no Starter — o mesmo motor cresce com
+          você quando chegar a hora do Pro ou do Business.
         </p>
       </div>
 

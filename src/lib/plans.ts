@@ -17,7 +17,20 @@ export const PLANS: Record<PlanType, PlanDefinition> = {
     priceLabel: "R$39/mês",
     priceMonthly: 39,
     cardLimit: 1,
-    features: ["1 cartão NFC", "Redirecionamento para o Google", "Canal de feedback privado", "Central de ajuda (self-service)"],
+    // C10 (ADR-085) — "Retorno" faltava nesta lista desde que o recurso
+    // existe (C5): quem olhava o preço via essa lista nunca via o motivo
+    // real de assinar hoje ("Faça cada cliente voltar", BRAND.tagline desde
+    // o C8). `highlighted` migrou de PRO pra cá na mesma revisão — Pulse
+    // virou Starter First (Pro/Business congelados, só compatibilidade);
+    // destacar o Pro contradizia a própria estratégia atual do produto.
+    features: [
+      "1 cartão NFC",
+      "Retorno: brinde para o cliente voltar",
+      "Redirecionamento para avaliação no Google",
+      "Canal de feedback privado",
+      "Central de ajuda (self-service)",
+    ],
+    highlighted: true,
   },
   PRO: {
     id: "PRO",
@@ -25,8 +38,17 @@ export const PLANS: Record<PlanType, PlanDefinition> = {
     priceLabel: "R$89/mês",
     priceMonthly: 89,
     cardLimit: 10,
-    features: ["Até 10 cartões", "Campanhas customizadas", "Mapa de Mesas", "Analytics completo", "Exportação CSV", "Playbooks/automação", "Até 5 usuários na equipe", "Suporte por e-mail"],
-    highlighted: true,
+    features: [
+      "Até 10 cartões",
+      "Retorno: brinde para o cliente voltar",
+      "Campanhas customizadas",
+      "Mapa de Mesas",
+      "Analytics completo",
+      "Exportação CSV",
+      "Playbooks/automação",
+      "Até 5 usuários na equipe",
+      "Suporte por e-mail",
+    ],
   },
   BUSINESS: {
     id: "BUSINESS",
@@ -34,7 +56,15 @@ export const PLANS: Record<PlanType, PlanDefinition> = {
     priceLabel: "R$199/mês",
     priceMonthly: 199,
     cardLimit: null,
-    features: ["Cartões ilimitados", "Múltiplas unidades e zonas", "Equipe ilimitada", "Marca própria (domínio/login)", "API pública e Webhooks", "Suporte prioritário"],
+    features: [
+      "Cartões ilimitados",
+      "Retorno: brinde para o cliente voltar",
+      "Múltiplas unidades e zonas",
+      "Equipe ilimitada",
+      "Marca própria (domínio/login)",
+      "API pública e Webhooks",
+      "Suporte prioritário",
+    ],
   },
 };
 
