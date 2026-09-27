@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { toast } from "sonner";
 import { MousePointerClick } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -70,6 +71,13 @@ export function MeuCartaoForm({
           </Button>
         </form>
       </PremiumCardShell>
+
+      <p className="text-center text-xs text-muted-foreground">
+        Perdeu este link?{" "}
+        <Link href="/meu-cartao/recuperar" className="font-medium text-brand-ink underline underline-offset-4">
+          Recuperar por e-mail
+        </Link>
+      </p>
 
       {/* Fase 21 — vai pro /sign-up, não direto pro /onboarding/plan: quem
           está aqui não tem sessão nenhuma (portal sem login), então
