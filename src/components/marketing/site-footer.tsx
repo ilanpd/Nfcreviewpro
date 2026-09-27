@@ -9,7 +9,13 @@ export function SiteFooter() {
         <Link href="/" className="flex items-center gap-2 font-medium text-foreground">
           <BrandWordmark />
         </Link>
-        <nav aria-label="Legal" className="flex items-center gap-4">
+        <nav aria-label="Links" className="flex flex-wrap items-center justify-center gap-4">
+          <Link href="/ajuda" className="hover:text-foreground">
+            Central de Ajuda
+          </Link>
+          <Link href="/contato" className="hover:text-foreground">
+            Contato
+          </Link>
           <Link href="/termos" className="hover:text-foreground">
             Termos de Uso
           </Link>

@@ -21,15 +21,16 @@ import { prisma } from "@/lib/prisma";
  * segurança em dois layouts.
  */
 export default async function AdminSidebarLayout({ children }: { children: React.ReactNode }) {
-  const [pendingOrders, user] = await Promise.all([
+  const [pendingOrders, pendingContactMessages, user] = await Promise.all([
     prisma.storeOrder.count({ where: { status: { in: ["PAID", "SHIPPED"] } } }),
+    prisma.contactMessage.count({ where: { respondedAt: null } }),
     currentUser().catch(() => null),
   ]);
   const adminEmail = isDevRuntimeEnabled() ? devRuntimeUserEmail() : user?.primaryEmailAddress?.emailAddress;
 
   return (
     <SidebarProvider>
-      <AdminSidebar pendingOrders={pendingOrders} adminEmail={adminEmail} />
+      <AdminSidebar pendingOrders={pendingOrders} pendingContactMessages={pendingContactMessages} adminEmail={adminEmail} />
       <SidebarInset>
         <header className="glass sticky top-0 z-40 flex h-14 shrink-0 items-center gap-2 border-b px-4">
           <SidebarTrigger className="-ml-1" />

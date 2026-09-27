@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Image as ImageIcon, Package, Building2, ShieldCheck, Wallet, Monitor } from "lucide-react";
+import { LayoutDashboard, Image as ImageIcon, Package, Building2, ShieldCheck, Wallet, Monitor, Mail } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -39,7 +39,7 @@ interface NavGroup {
  * sai deste layout com sidebar para o wallboard full-bleed
  * (`admin/executivo`, fora do route group `(sidebar)`).
  */
-function buildNavGroups(pendingOrders: number): NavGroup[] {
+function buildNavGroups(pendingOrders: number, pendingContactMessages: number): NavGroup[] {
   return [
     {
       label: "Operação",
@@ -60,12 +60,27 @@ function buildNavGroups(pendingOrders: number): NavGroup[] {
       label: "Financeiro",
       items: [{ href: "/admin/financeiro", label: "Receita", icon: Wallet }],
     },
+    {
+      // C9/F6 — o único canal de quem escreve pelo site sem ter conta ainda
+      // (ver services/contact.service.ts). Grupo próprio, pequeno demais
+      // pra forçar dentro de "Empresas" (nem toda mensagem é de um cliente).
+      label: "Suporte",
+      items: [{ href: "/admin/contato", label: "Mensagens do site", icon: Mail, badge: pendingContactMessages }],
+    },
   ];
 }
 
-export function AdminSidebar({ pendingOrders = 0, adminEmail }: { pendingOrders?: number; adminEmail?: string }) {
+export function AdminSidebar({
+  pendingOrders = 0,
+  pendingContactMessages = 0,
+  adminEmail,
+}: {
+  pendingOrders?: number;
+  pendingContactMessages?: number;
+  adminEmail?: string;
+}) {
   const pathname = usePathname();
-  const groups = buildNavGroups(pendingOrders);
+  const groups = buildNavGroups(pendingOrders, pendingContactMessages);
 
   return (
     <Sidebar collapsible="icon">

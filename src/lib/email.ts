@@ -51,6 +51,22 @@ export interface SendEmailInput {
  * não marcar `confirmationEmailSentAt` quando `sent` for falso, para uma
  * tentativa futura poder reenviar).
  */
+/**
+ * Para onde mandar avisos que não pertencem a nenhuma empresa cliente
+ * (C9/F6) — hoje só a notificação de `/contato`. `SUPPORT_INBOX_EMAIL` é a
+ * fonte correta quando configurada; sem ela, cai no primeiro e-mail de
+ * `SUPER_ADMIN_EMAILS` (já configurado neste projeto para o Painel Admin) em
+ * vez de inventar um endereço — `null` quando nem isso existe, e quem chama
+ * decide não notificar (a mensagem em si já ficou salva em `ContactMessage`,
+ * nunca perdida por falta de e-mail configurado).
+ */
+export function supportInboxEmail(): string | null {
+  const direct = process.env.SUPPORT_INBOX_EMAIL?.trim();
+  if (direct) return direct;
+  const firstAdmin = (process.env.SUPER_ADMIN_EMAILS ?? "").split(",")[0]?.trim();
+  return firstAdmin || null;
+}
+
 export async function sendEmail(input: SendEmailInput): Promise<{ sent: boolean }> {
   if (!resend) {
     log.info("email", `[sem provedor configurado] seria enviado: "${input.subject}" -> ${input.to}`);

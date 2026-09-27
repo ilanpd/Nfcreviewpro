@@ -28,7 +28,8 @@ type LimiterName =
   | "authMutation"
   | "voucherLookup"
   | "voucherRedeem"
-  | "personalLinkRecovery";
+  | "personalLinkRecovery"
+  | "contact";
 
 const LIMITS: Record<LimiterName, { limit: number; windowSeconds: number }> = {
   publicCard: { limit: 60, windowSeconds: 60 },
@@ -72,6 +73,9 @@ const LIMITS: Record<LimiterName, { limit: number; windowSeconds: number }> = {
   // "Perdi o link pessoal" (ADR-080) — por IP. Sem limite por e-mail: a rota
   // nunca revela se o e-mail existe, então nem faria sentido travar por ele.
   personalLinkRecovery: { limit: 5, windowSeconds: 300 },
+  // /contato (C9/F6) — por IP, mesma ordem de grandeza de `feedback`: uma
+  // pessoa de verdade manda uma mensagem de cada vez, nunca em rajada.
+  contact: { limit: 5, windowSeconds: 300 },
 };
 
 const limiters = new Map<LimiterName, Ratelimit>();
