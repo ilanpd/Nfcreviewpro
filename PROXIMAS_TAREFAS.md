@@ -313,6 +313,15 @@ Encontradas durante os ciclos C0 e C1 e não corrigidas na hora (fora do escopo 
 - [ ] **RETURN_PIN_SECRET, RETURN pilot e billing gate seguem sem ligar em produção** — pré-requisitos já documentados no C5, sem mudança neste ciclo.
 - [ ] **Mensagem "Retorno pausado" para quem nunca configurou nada** — `ownerAvailabilityMessage("PAUSED")` fala em "brindes já emitidos continuam valendo", que não faz sentido para uma empresa que nunca ativou o Retorno. Distinguir "nunca configurado" de "pausado depois de já ter rodado" quando a Visão geral entrar (não é o mesmo texto do checklist de ativação que falta).
 
+- [ ] **F6 (Aquisição e conversão) — o essencial que falta, tudo o que o plano pede:**
+  - Site: Home (bento/FAQ ainda com estrutura antiga fora do headline), Preços, Como funciona, Loja e Sucesso revisados para o Retorno; Central de Ajuda (10 artigos); Contato.
+  - Onboarding/checkout: cartão + Starter como padrão (hoje o avulso é o caminho principal); avulso em um clique para virar Starter.
+  - E-mails que faltam (o de recuperar link pessoal já existe desde o C6): confirmação/produção/envio/entrega já existem para o pedido físico; faltam "como usar o Retorno", boas-vindas ao assinar, aviso de mensagem nova (Mensagens), aviso de atraso/cancelamento de cobrança, e convites de reengajamento D+7 e D+30 para quem não ativou o Retorno.
+  - Termos e Privacidade: versão final (aguarda razão social, CNPJ, DPO, foro e revisão jurídica — ação sua/jurídico, já registrada).
+- [ ] **Ação sua: Stripe em produção** — produtos, os 3 preços reais, nome na fatura, portal de cobrança e endereço do webhook novo. Envolve conta e dinheiro reais; não faço sem sua aprovação explícita a cada passo (checkout ao vivo, chaves live).
+- [ ] **Ação sua: domínio de e-mail verificado** — SPF, DKIM, DMARC no Resend. Sem isso, todo e-mail deste produto continua só logado, nunca entregue de verdade.
+- [ ] **Ação sua/conteúdo: os 10 artigos da Central de Ajuda** — decisão de conteúdo (o que escrever), não de engenharia; eu monto a página quando os textos existirem.
+
 ## Backlog (não iniciado)
 
 - Fase 9.5 — Marketplace & Integrações (registrada em `ROADMAP.md`, não projetada)
