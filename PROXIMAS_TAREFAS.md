@@ -287,6 +287,10 @@ Encontradas durante os ciclos C0 e C1 e não corrigidas na hora (fora do escopo 
 - [ ] **Telas de entrada** — `/sign-in` e `/sign-up` não renderizam no Dev Runtime; conferir o visual no ambiente com Clerk (staging na Vercel) antes de publicar.
 - [ ] **Aviso de depreciação do Prisma 8 (RC)** — sem ação agora; reavaliar depois do lançamento.
 
+- [ ] **Aplicar a migração `retorno_fundacao` em produção** — só expansão, já aplicada no Staging no C4. Ação sua: aprovar; antes, snapshot (ver `DEPLOY_SETUP.md`) e `DIRECT_URL` passado inline.
+- [ ] **Venda fora do site e estoque de cartões (jornada J8)** — pedido novo do dono depois do plano F0 a F10: vender o cartão por fora do site (pessoalmente ou por WhatsApp) com o mesmo controle de um pedido do site. Desenho proposto, a implementar no C9 (Admin): (1) *Venda manual* no Admin (cliente, e-mail, WhatsApp, quantidade, destino, valor e forma de pagamento recebidos por fora) que cria um `StoreOrder` já pago, com canal "direto", e reaproveita o provisionamento, o quadro de produção e o e-mail com o link pessoal; (2) *Lote de estoque*: gerar N cartões numa empresa interna de estoque, exportar a lista de URLs para o fornecedor gravar os chips, e *ativar por código* na hora da venda, movendo o cartão para a empresa do comprador com o destino escolhido; (3) estado público "cartão ainda não ativado" para quem tocar num cartão de estoque. Decidir antes: cobrança por fora entra na receita do painel? (proposta: sim, com o canal visível).
+- [ ] **Material comercial do Starter e o destino do avulso** — o PDF "Pulse Smart Link · Starter" lista "Você troca o destino do cartão quando quiser" como benefício do Starter, mas o documento "O que cada opção entrega" (ponto 1, recomendação "Manter") e o código mantêm a troca de destino do avulso pelo link pessoal. Escolher uma das duas coisas e ajustar o material ou o produto; enquanto isso, o produto segue o documento de opções.
+
 ## Backlog (não iniciado)
 
 - Fase 9.5 — Marketplace & Integrações (registrada em `ROADMAP.md`, não projetada)
