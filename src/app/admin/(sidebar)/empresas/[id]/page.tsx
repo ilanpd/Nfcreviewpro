@@ -15,6 +15,7 @@ import { FeedbackList } from "@/components/dashboard/feedback-list";
 import { SupportRequestStatusSelect } from "@/components/admin/support-request-status-select";
 import { SmartBadge, AnalyticsCard, KpiCard, AvatarStack, HeatmapCard, PremiumCardShell, LiveEventFeed, EmptyState, type LiveFeedEntry } from "@nfc-os/ui";
 import { CompanyDetailTabs } from "./company-detail-tabs";
+import { ReturnSwitch } from "@/components/admin/return-switch";
 import type { FeedbackWithContext } from "@/types";
 
 const TIMELINE_WINDOW_DAYS = 30;
@@ -82,6 +83,13 @@ export default async function AdminCompanyDetailPage({ params }: { params: Promi
           /{company.slug} · {company.whatsapp || "sem WhatsApp"} · assinatura: {company.stripeSubscriptionStatus ?? "—"}
         </p>
       </div>
+
+      <ReturnSwitch
+        endpoint={`/api/admin/companies/${company.id}/return-pilot`}
+        initialEnabled={company.returnPilotEnabled}
+        label="Retorno (piloto)"
+        description="Libera o brinde de retorno nos cartões desta empresa. Só age se ela tiver assinatura ativa, brinde configurado e PIN definido."
+      />
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-3">
         <KpiCard label="Health Score" value={health.score} icon={<Gauge />} valueClassName={healthTone} hint="0–100, ver fatores abaixo" />

@@ -65,12 +65,18 @@ export type PlanFeature =
   | "automation"
   | "multi_branch"
   | "white_label"
-  | "api_access";
+  | "api_access"
+  // Pulse (ADR-078): o Retorno e a caixa de mensagens são o que o Starter vende.
+  // Estão nos três planos: Pro e Business não perdem o que o Starter já entrega.
+  | "return_offer"
+  | "messages_inbox";
 
 const PLAN_FEATURES: Record<PlanType, ReadonlySet<PlanFeature>> = {
-  STARTER: new Set([]),
-  PRO: new Set<PlanFeature>(["campaigns", "table_map", "analytics_full", "csv_export", "automation"]),
+  STARTER: new Set<PlanFeature>(["return_offer", "messages_inbox"]),
+  PRO: new Set<PlanFeature>(["return_offer", "messages_inbox", "campaigns", "table_map", "analytics_full", "csv_export", "automation"]),
   BUSINESS: new Set<PlanFeature>([
+    "return_offer",
+    "messages_inbox",
     "campaigns",
     "table_map",
     "analytics_full",

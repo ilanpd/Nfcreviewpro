@@ -18,7 +18,11 @@ export type Permission =
   | "feedback:resolve"
   | "audit:read"
   | "developers:manage"
-  | "automation:manage";
+  | "automation:manage"
+  // Retorno (ADR-079): configurar o brinde, trocar o PIN, anular um brinde.
+  // Só OWNER/ADMIN: o PIN é o que autoriza o resgate e define quanto o
+  // negócio paga em brindes, então merece permissão própria e auditável.
+  | "return:manage";
 
 /**
  * Reads as a permission matrix, not a role hierarchy — OWNER/ADMIN aren't
@@ -41,6 +45,7 @@ const ROLE_PERMISSIONS: Record<Role, ReadonlySet<Permission>> = {
     "audit:read",
     "developers:manage",
     "automation:manage",
+    "return:manage",
   ]),
   ADMIN: new Set<Permission>([
     "settings:write",
@@ -54,6 +59,7 @@ const ROLE_PERMISSIONS: Record<Role, ReadonlySet<Permission>> = {
     "audit:read",
     "developers:manage",
     "automation:manage",
+    "return:manage",
   ]),
   MARKETING: new Set<Permission>(["campaign:write", "campaign:assign"]),
   MANAGER: new Set<Permission>(["campaign:write", "campaign:assign", "card:write", "feedback:resolve"]),
@@ -98,6 +104,7 @@ export const PERMISSION_LABEL: Record<Permission, string> = {
   // recomendações futuras sem confirmação — um limite de segurança maior,
   // que merece sua própria permissão auditável (Autonomy Review).
   "automation:manage": "Configurar o nível de AutoPilot dos Playbooks",
+  "return:manage": "Configurar o brinde de retorno, o PIN e anular brindes",
 };
 
 /** Todos os papéis, na ordem em que devem aparecer em qualquer visualização
@@ -117,6 +124,7 @@ export const ALL_PERMISSIONS: Permission[] = [
   "audit:read",
   "developers:manage",
   "automation:manage",
+  "return:manage",
 ];
 
 /** Roles an OWNER/ADMIN can assign to someone else. Nobody can grant OWNER

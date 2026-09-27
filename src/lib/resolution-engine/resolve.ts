@@ -50,6 +50,7 @@ export function resolveDecision(ctx: ResolutionContext, now: Date): ResolveResul
       campaignId: winner.campaignId,
       campaignName: winner.campaignName,
       type: winner.type,
+      origin: winner.origin ?? "USER",
       config,
       variantId,
       card: ctx.card,

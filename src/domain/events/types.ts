@@ -31,7 +31,11 @@ export type DomainEventType =
   | "PlaybookExecutado"
   | "PlaybookDesfeito"
   // --- Financeiro (Fase 19.6) ---
-  | "PlanoAlterado";
+  | "PlanoAlterado"
+  // --- Retorno (ADR-079) ---
+  | "BrindeEmitido"
+  | "BrindeResgatado"
+  | "BrindeAnulado";
 
 export interface DomainEventPayloads {
   NFCTocado: { cardId: string; uniqueCode: string };
@@ -65,6 +69,12 @@ export interface DomainEventPayloads {
     newPlan: "STARTER" | "PRO" | "BUSINESS";
     reason: "CHECKOUT_INICIAL" | "TROCA_PORTAL_STRIPE" | "CANCELAMENTO";
   };
+  // --- Retorno (ADR-079) ---
+  // Nenhum payload carrega o código do brinde nem o PIN: o log de eventos é
+  // lido por webhooks e pelo Admin, e o código é o que dá direito ao brinde.
+  BrindeEmitido: { voucherId: string; cardId: string | null; windowDays: number };
+  BrindeResgatado: { voucherId: string; cardId: string | null; issuedAt: string };
+  BrindeAnulado: { voucherId: string; reason: string };
 }
 
 /** O envelope que todo evento publicado carrega, além do payload

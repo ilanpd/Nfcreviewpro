@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { parseUserAgent } from "@/lib/device";
 import { getRequestIp, hashIp } from "@/lib/ip";
 
-export async function recordVisit(cardId: string, companyId: string, userAgent: string | null) {
+export async function recordVisit(cardId: string, companyId: string, userAgent: string | null, visitorId: string | null = null) {
   const { device, browser, os } = parseUserAgent(userAgent);
   const ip = await getRequestIp();
 
@@ -22,6 +22,7 @@ export async function recordVisit(cardId: string, companyId: string, userAgent: 
       browser,
       os,
       ipHash: hashIp(ip),
+      visitorId,
       country: country ? decodeURIComponent(country) : null,
       city: city ? decodeURIComponent(city) : null,
     },

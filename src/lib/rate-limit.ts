@@ -17,7 +17,17 @@ function memoryLimit(key: string, limit: number, windowMs: number) {
   return { success, remaining: Math.max(0, limit - entry.count) };
 }
 
-type LimiterName = "publicCard" | "rating" | "feedback" | "api" | "queueRouting" | "apiV1" | "demoScenario" | "authMutation";
+type LimiterName =
+  | "publicCard"
+  | "rating"
+  | "feedback"
+  | "api"
+  | "queueRouting"
+  | "apiV1"
+  | "demoScenario"
+  | "authMutation"
+  | "voucherLookup"
+  | "voucherRedeem";
 
 const LIMITS: Record<LimiterName, { limit: number; windowSeconds: number }> = {
   publicCard: { limit: 60, windowSeconds: 60 },
@@ -52,6 +62,12 @@ const LIMITS: Record<LimiterName, { limit: number; windowSeconds: number }> = {
   // uso legítimo intenso (editar várias campanhas em sequência), apertado
   // o bastante para travar um script martelando uma rota.
   authMutation: { limit: 120, windowSeconds: 60 },
+  // Retorno (ADR-079) — rotas públicas do brinde, por IP. O código tem 481
+  // milhões de combinações e o resgate exige o PIN, mas tentativa em massa
+  // não deve nem chegar ao banco. Consulta: o cliente digita o código de vez
+  // em quando. Resgate: uma tablet de balcão faz poucos por minuto.
+  voucherLookup: { limit: 15, windowSeconds: 60 },
+  voucherRedeem: { limit: 10, windowSeconds: 60 },
 };
 
 const limiters = new Map<LimiterName, Ratelimit>();

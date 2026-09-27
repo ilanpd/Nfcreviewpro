@@ -88,6 +88,19 @@ describe("planHasFeature", () => {
   });
 });
 
+describe("return_offer e messages_inbox (ADR-078)", () => {
+  it("estão nos três planos: é o que o Starter vende, e Pro e Business não o perdem", () => {
+    for (const plan of ["STARTER", "PRO", "BUSINESS"] as const) {
+      expect(planHasFeature(plan, "return_offer")).toBe(true);
+      expect(planHasFeature(plan, "messages_inbox")).toBe(true);
+    }
+  });
+
+  it("o plano mínimo é o Starter", () => {
+    expect(minimumPlanForFeature("return_offer")).toBe("STARTER");
+  });
+});
+
 describe("minimumPlanForFeature", () => {
   it("finds PRO as the cheapest plan with campaigns", () => {
     expect(minimumPlanForFeature("campaigns")).toBe("PRO");

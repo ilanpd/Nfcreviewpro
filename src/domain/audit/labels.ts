@@ -18,4 +18,8 @@ export const AUDIT_ACTION_LABEL: Record<AuditAction, string> = {
   RECOMMENDATION_IGNORED: "Ignorou uma recomendação de Playbook",
   PLAYBOOK_EXECUTION_UNDONE: "Desfez a execução de um Playbook",
   AUTOPILOT_LEVEL_CHANGED: "Alterou o nível de AutoPilot",
+  REWARD_OFFER_UPDATED: "Atualizou o brinde de retorno",
+  REWARD_PIN_CHANGED: "Trocou o PIN da loja",
+  VOUCHER_VOIDED: "Anulou um brinde",
+  RETURN_PILOT_CHANGED: "Liberou ou bloqueou o Retorno (Admin)",
 };

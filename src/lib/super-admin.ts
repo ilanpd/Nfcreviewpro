@@ -18,6 +18,13 @@ function getSuperAdminEmails(): string[] {
     .filter(Boolean);
 }
 
+/** E-mail de quem está agindo como super-admin, para registrar na auditoria. */
+export async function getSuperAdminEmail(): Promise<string> {
+  if (isDevRuntimeEnabled()) return "dev-runtime";
+  const user = await currentUser();
+  return user?.primaryEmailAddress?.emailAddress ?? "desconhecido";
+}
+
 export async function isSuperAdmin(): Promise<boolean> {
   // Self-Healing Development (ADR-052) — sem isto, toda rota de escrita do
   // Admin fica permanentemente intestável fora do Clerk real de Produção,

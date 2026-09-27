@@ -5,6 +5,7 @@ import { STORE_PRODUCTS } from "@/lib/store-products";
 import { computeStockForecast } from "@/domain/inventory/stock";
 import { KpiCard } from "@nfc-os/ui";
 import { ContentSettingsForm } from "./content-settings-form";
+import { ReturnSwitch } from "@/components/admin/return-switch";
 
 const STOCK_CONSUMPTION_WINDOW_DAYS = 14;
 
@@ -38,6 +39,14 @@ export default async function AdminContentPage() {
             : `${stock} unidades em estoque · sem consumo recente para estimar duração`
         }
         className="max-w-sm"
+      />
+
+      <ReturnSwitch
+        endpoint="/api/admin/return/kill-switch"
+        initialEnabled={settings?.returnOfferEnabled ?? true}
+        label="Retorno ligado para todas as empresas"
+        description="Interruptor geral de emergência. Desligado, nenhum brinde novo é emitido e nenhum resgate passa, em todas as empresas, na hora. Os cartões voltam ao comportamento de antes."
+        confirmOff="Desligar o Retorno para TODAS as empresas agora? Nenhum brinde será emitido nem resgatado até você ligar de novo."
       />
 
       <ContentSettingsForm

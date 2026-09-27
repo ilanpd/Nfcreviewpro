@@ -46,4 +46,9 @@ export const EVENT_SUBSCRIPTIONS: Record<DomainEventType, QueueName[]> = {
   // trocas de plano (ver domain/finance/revenue-snapshot.ts); nenhum
   // consumidor assíncrono depende disto ainda.
   PlanoAlterado: [],
+  // Retorno (ADR-079) — só analytics: alimentam as métricas e o histórico, e
+  // nenhum consumidor assíncrono (webhook, WhatsApp, playbook) depende deles.
+  BrindeEmitido: ["analytics"],
+  BrindeResgatado: ["analytics"],
+  BrindeAnulado: ["analytics"],
 };

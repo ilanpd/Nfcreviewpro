@@ -1,4 +1,4 @@
-import type { CampaignStatus, CampaignType, RecurrenceType, RuleType, TargetScope } from "@/generated/prisma/client";
+import type { CampaignOrigin, CampaignStatus, CampaignType, RecurrenceType, RuleType, TargetScope } from "@/generated/prisma/client";
 import type { DeviceCategory } from "@/domain/rules/evaluate";
 
 export interface PublicCardInfo {
@@ -37,6 +37,9 @@ export interface CampaignAssignmentSnapshot {
   campaignId: string;
   campaignName: string;
   type: CampaignType;
+  /** Quem criou a campanha (ADR-078). Opcional porque o cache guarda o formato
+   * antigo por alguns minutos depois do deploy; ausente conta como `USER`. */
+  origin?: CampaignOrigin;
   status: CampaignStatus;
   priority: number;
   startsAt: Date | null;
@@ -71,6 +74,7 @@ export type ResolutionDecision =
       campaignId: string;
       campaignName: string;
       type: CampaignType;
+      origin: CampaignOrigin;
       config: unknown;
       variantId: string | null;
       card: PublicCardInfo;

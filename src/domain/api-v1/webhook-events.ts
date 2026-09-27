@@ -38,6 +38,11 @@ export const PUBLIC_WEBHOOK_EVENT_MAP: Record<DomainEventType, string | null> = 
   // Financeiro (Fase 19.6) — mesmo motivo dos três acima: evento novo,
   // interno por enquanto, sem pedido real de integração externa ainda.
   PlanoAlterado: null,
+  // Retorno (ADR-079) — sem contrato público até haver pedido real de
+  // integração: o payload é deliberadamente pobre (sem o código do brinde).
+  BrindeEmitido: null,
+  BrindeResgatado: null,
+  BrindeAnulado: null,
 };
 
 export const PUBLIC_WEBHOOK_EVENT_TYPES = Object.values(PUBLIC_WEBHOOK_EVENT_MAP).filter(
