@@ -1,11 +1,13 @@
 import { requireAuthContext } from "@/lib/auth";
 import { roleHasPermission } from "@/domain/rbac/roles";
+import { planHasFeature, minimumPlanForFeature } from "@/lib/plans";
+import { PlanUpsell } from "@/components/dashboard/plan-upsell";
 import { listApiKeys } from "@/services/api-key.service";
 import { listWebhookEndpoints } from "@/services/webhook-endpoint.service";
 import { listApiRequestLogs, getApiUsageSummary } from "@/services/api-request-log.service";
 import { DevelopersView } from "@/components/dashboard/developers/developers-view";
 import { EmptyState } from "@nfc-os/ui";
-import { Lock } from "lucide-react";
+import { Lock, Code2 } from "lucide-react";
 
 /**
  * Dashboard de Desenvolvedor (Fase 9) — API Keys, Webhooks e Logs reais da
@@ -24,6 +26,23 @@ export default async function DevelopersPage() {
           icon={<Lock />}
           title="Acesso restrito"
           description="Só Proprietários e Administradores podem gerenciar chaves de API e webhooks desta empresa."
+        />
+      </main>
+    );
+  }
+
+  if (!planHasFeature(ctx.plan, "api_access")) {
+    return (
+      <main className="space-y-6 p-6 sm:p-10">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">Desenvolvedores</h1>
+          <p className="text-sm text-muted-foreground">Chaves de API e webhooks para integrar o NFC OS a outros sistemas.</p>
+        </div>
+        <PlanUpsell
+          icon={<Code2 />}
+          featureLabel="API pública e Webhooks"
+          requiredPlan={minimumPlanForFeature("api_access")}
+          currentPlan={ctx.plan}
         />
       </main>
     );

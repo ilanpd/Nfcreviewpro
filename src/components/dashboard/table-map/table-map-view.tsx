@@ -1,14 +1,16 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
+import Link from "next/link";
 import { toast } from "sonner";
 import { cn } from "cn";
-import { Copy, LayoutGrid } from "lucide-react";
+import { Copy, LayoutGrid, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ConnectionIndicator } from "@nfc-os/ui";
+import { CardFormDialog } from "@/components/dashboard/card-form-dialog";
 import { Canvas } from "./canvas";
 import { CampaignTray } from "./campaign-tray";
 import { UnplacedTray } from "./unplaced-tray";
@@ -64,6 +66,7 @@ type PendingBulkAction =
 export function TableMapView({
   initialCards,
   zones,
+  branches,
   campaigns,
   initialAssignments,
   organizationId,
@@ -296,6 +299,29 @@ export function TableMapView({
     }
   }
 
+  async function handleDeleteSelected() {
+    if (selectedIds.size === 0) return;
+    const ids = [...selectedIds];
+    const label = ids.length === 1 ? "esta mesa" : `estas ${ids.length} mesas`;
+    if (!confirm(`Excluir ${label}? Essa ação não pode ser desfeita.`)) return;
+    try {
+      const results = await Promise.all(ids.map((id) => fetch(`/api/cards/${id}`, { method: "DELETE" })));
+      const failed = results.filter((r) => !r.ok).length;
+      const deletedIds = new Set(ids.filter((_, i) => results[i].ok));
+      setCards((prev) => prev.filter((c) => !deletedIds.has(c.id)));
+      setSelectedIds(new Set());
+      if (failed > 0) toast.error(`${failed} mesa(s) não puderam ser excluídas`);
+      else toast.success(ids.length === 1 ? "Mesa excluída" : `${ids.length} mesas excluídas`);
+    } catch {
+      toast.error("Não foi possível excluir as mesas selecionadas");
+    }
+  }
+
+  function handleCardCreated(card: TableCardItem) {
+    setCards((prev) => [...prev, card]);
+    toast.success('Mesa criada — arme-a em "Não posicionadas" e clique no mapa para posicioná-la.');
+  }
+
   async function handlePlaceArmed(point: { x: number; y: number }) {
     if (!armedId) return;
     const id = armedId;
@@ -458,7 +484,27 @@ export function TableMapView({
   }
 
   return (
-    <div className={cn("flex h-[calc(100vh-2rem)] flex-col gap-3", className)}>
+    // O Mapa de Mesas é um canvas com pan/zoom próprio (ver canvas.tsx) — a
+    // PÁGINA em volta dele nunca deve rolar; toda navegação acontece dentro
+    // do canvas. `flex-1 min-h-0` (não uma altura calculada em px/rem) é o
+    // que faz isso funcionar de verdade: o componente simplesmente ocupa
+    // TODO o espaço que sobrar depois de qualquer coisa que
+    // `dashboard/layout.tsx` renderize acima dele (header, banner de pedido
+    // em andamento, o que vier a existir no futuro) — sem nenhuma conta de
+    // pixels cravada aqui que possa ficar desatualizada. Isso só funciona
+    // porque o `<main>` em `dashboard/layout.tsx` é `overflow-y-auto` com
+    // altura real (herdada de `SidebarInset`/`SidebarProvider` em `h-dvh`) —
+    // se aquele teto algum dia for removido, ESTE `flex-1` para de ter
+    // limite e volta a vazar pra rolagem da página. `overflow-hidden` aqui
+    // é o cinto de segurança: mesmo que algo weird aconteça, o excesso é
+    // cortado dentro deste componente, nunca na página.
+    // `-mb-4 sm:-mb-6` reaproveita o padding inferior do `<main>` que já
+    // envolve toda página do dashboard (`p-4 sm:p-6`, ver
+    // dashboard/layout.tsx) — as outras páginas querem essa margem de
+    // respiro embaixo do último conteúdo, mas o Mapa de Mesas é uma
+    // ferramenta de canvas de borda a borda: cada pixel a mais aqui embaixo
+    // é mais mesa/campanha visível sem precisar rolar.
+    <div className={cn("-mb-4 flex min-h-0 flex-1 flex-col gap-3 overflow-hidden sm:-mb-6", className)}>
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight">
@@ -467,9 +513,26 @@ export function TableMapView({
           <p className="text-sm text-muted-foreground">Arraste, agrupe por zona e aplique campanhas visualmente — sem regravar nenhum cartão.</p>
         </div>
         <div className="flex flex-wrap items-center gap-4">
+          {canEditLayout ? (
+            <CardFormDialog
+              branches={branches}
+              zones={zones}
+              onSaved={handleCardCreated}
+              trigger={
+                <Button size="sm">
+                  <Plus className="size-3.5" /> Nova mesa
+                </Button>
+              }
+            />
+          ) : null}
           {selectedIds.size > 0 && canEditLayout ? (
             <Button variant="outline" size="sm" onClick={handleDuplicateSelected}>
               <Copy className="size-3.5" /> Duplicar ({selectedIds.size})
+            </Button>
+          ) : null}
+          {selectedIds.size > 0 && canEditLayout ? (
+            <Button variant="outline" size="sm" onClick={handleDeleteSelected}>
+              <Trash2 className="size-3.5" /> Excluir ({selectedIds.size})
             </Button>
           ) : null}
           <HeatmapLayerToggle value={heatmapLayer} onChange={setHeatmapLayer} />
@@ -499,31 +562,42 @@ export function TableMapView({
         </div>
       </div>
 
-      <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v); setSelectedIds(new Set()); }}>
-        <TabsList>
-          {zoneTabs.map((tab) => (
-            <TabsTrigger
-              key={tab.id}
-              value={tab.id}
-              className={zoneDragOverId === tab.id ? "ring-2 ring-primary" : undefined}
-              onDragOver={(e) => {
-                if (canAssign && draggingCampaign) e.preventDefault();
-              }}
-              onDragEnter={() => {
-                if (canAssign && draggingCampaign) setZoneDragOverId(tab.id);
-              }}
-              onDragLeave={() => setZoneDragOverId((cur) => (cur === tab.id ? null : cur))}
-              onDrop={(e) => {
-                if (!canAssign || !draggingCampaign) return;
-                e.preventDefault();
-                handleDropOnTab(tab.id);
-              }}
-            >
-              {tab.label}
-            </TabsTrigger>
-          ))}
-        </TabsList>
-      </Tabs>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v); setSelectedIds(new Set()); }}>
+          <TabsList>
+            {zoneTabs.map((tab) => (
+              <TabsTrigger
+                key={tab.id}
+                value={tab.id}
+                className={zoneDragOverId === tab.id ? "ring-2 ring-primary" : undefined}
+                onDragOver={(e) => {
+                  if (canAssign && draggingCampaign) e.preventDefault();
+                }}
+                onDragEnter={() => {
+                  if (canAssign && draggingCampaign) setZoneDragOverId(tab.id);
+                }}
+                onDragLeave={() => setZoneDragOverId((cur) => (cur === tab.id ? null : cur))}
+                onDrop={(e) => {
+                  if (!canAssign || !draggingCampaign) return;
+                  e.preventDefault();
+                  handleDropOnTab(tab.id);
+                }}
+              >
+                {tab.label}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </Tabs>
+        {/* Achado da Auditoria Nível Bilionário (11/09/2026): zonas só podem
+            ser criadas em /dashboard/unidades, mas nada aqui apontava pra
+            lá — ninguém explorando o Mapa de Mesas pela primeira vez teria
+            como descobrir onde criar uma zona nova. */}
+        {canAssign ? (
+          <Link href="/dashboard/unidades" className="text-xs text-muted-foreground underline underline-offset-2 hover:text-foreground">
+            Gerenciar unidades e zonas
+          </Link>
+        ) : null}
+      </div>
 
       <UnplacedTray cards={unplacedCards} armedId={armedId} onToggleArm={(id) => setArmedId((cur) => (cur === id ? null : id))} />
 

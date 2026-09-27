@@ -7,6 +7,8 @@ import { SettingsForm } from "@/components/dashboard/settings-form";
 import { RoiSettingsForm } from "@/components/dashboard/roi-settings-form";
 import { OrganizationCard } from "@/components/dashboard/organization-card";
 import { AuditLogCard } from "@/components/dashboard/audit-log-card";
+import { BillingPortalButton } from "@/components/dashboard/billing-portal-button";
+import { DataPrivacyCard } from "@/components/dashboard/data-privacy-card";
 import { PLANS } from "@/lib/plans";
 import { AnalyticsCard, PermissionMatrix, SmartBadge } from "@nfc-os/ui";
 
@@ -34,9 +36,12 @@ export default async function SettingsPage() {
         action={<SmartBadge label={plan.name} tone="brand" />}
         className="max-w-2xl"
       >
-        <p className="text-sm text-muted-foreground">
-          {plan.priceLabel} · {plan.cardLimit === null ? "cartões ilimitados" : `até ${plan.cardLimit} cartão(ões)`}
-        </p>
+        <div className="flex items-center justify-between gap-4">
+          <p className="text-sm text-muted-foreground">
+            {plan.priceLabel} · {plan.cardLimit === null ? "cartões ilimitados" : `até ${plan.cardLimit} cartão(ões)`}
+          </p>
+          {canManageSettings ? <BillingPortalButton hasSubscription={!!company.stripeSubscriptionId} /> : null}
+        </div>
       </AnalyticsCard>
 
       {canManageSettings ? <SettingsForm company={company} /> : null}
@@ -62,6 +67,8 @@ export default async function SettingsPage() {
       ) : null}
 
       {canReadAudit ? <AuditLogCard logs={auditLogs} /> : null}
+
+      {canManageSettings ? <DataPrivacyCard companyName={company.name} isOwner={ctx.role === "OWNER"} /> : null}
     </div>
   );
 }

@@ -3,9 +3,11 @@ import { UserButton } from "@clerk/nextjs";
 import { getAuthContext } from "@/lib/auth";
 import { isDevRuntimeEnabled } from "@/lib/dev-runtime/config";
 import { getCompanyById } from "@/services/company.service";
+import { getInProgressOrderForCompany } from "@/services/store-order.service";
 import { companyToBrandConfig } from "@/domain/white-label/types";
 import { BrandProvider } from "@/components/white-label/brand-provider";
 import { AppSidebar } from "@/components/dashboard/app-sidebar";
+import { OrderStatusBanner } from "@/components/dashboard/order-status-banner";
 import { DashboardCommandPalette } from "@/components/dashboard/dashboard-command-palette";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
@@ -16,13 +18,27 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const ctx = await getAuthContext();
   if (!ctx) redirect("/onboarding");
 
-  const company = await getCompanyById(ctx.companyId);
+  const [company, inProgressOrder] = await Promise.all([
+    getCompanyById(ctx.companyId),
+    getInProgressOrderForCompany(ctx.companyId),
+  ]);
 
   return (
     <BrandProvider brand={companyToBrandConfig(company)}>
-      <SidebarProvider>
-        <AppSidebar companyName={company.name} logoUrl={company.logoUrl} />
-        <SidebarInset>
+      <SidebarProvider className="h-dvh overflow-hidden">
+        <AppSidebar companyName={company.name} logoUrl={company.logoUrl} plan={company.plan} />
+        {/* `h-dvh overflow-hidden` aqui (em vez de deixar crescer com o
+            conteúdo, o padrão de `SidebarInset`) é o que dá um teto FIXO e
+            real pro shell inteiro — sem isso, qualquer página cujo conteúdo
+            passe da viewport (um banner de pedido, um header mais alto, uma
+            página nova) empurra a ALTURA DO DOCUMENTO inteiro pra baixo, e o
+            navegador passa a rolar a página toda em vez do `<main>` rolar
+            sozinho. O `<main>` abaixo é que vira a única área com scroll
+            (`overflow-y-auto`) — normal pra a maioria das páginas, mas dá pro
+            Mapa de Mesas (que não quer rolagem nenhuma, só o pan/zoom do
+            próprio canvas) um teto de verdade pra ocupar com `flex-1`, sem
+            nenhuma conta de pixels/rem cravada no código — see table-map-view.tsx. */}
+        <SidebarInset className="overflow-hidden">
           <header className="glass sticky top-0 z-40 flex h-14 shrink-0 items-center gap-2 border-b px-4">
             <SidebarTrigger className="-ml-1" />
             <Separator orientation="vertical" className="mr-2 h-4" />
@@ -46,7 +62,10 @@ export default async function DashboardLayout({ children }: { children: React.Re
               )}
             </div>
           </header>
-          <main className="flex flex-1 flex-col gap-6 p-4 sm:p-6">{children}</main>
+          <main className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto p-4 sm:p-6">
+            {inProgressOrder ? <OrderStatusBanner order={inProgressOrder} /> : null}
+            {children}
+          </main>
         </SidebarInset>
       </SidebarProvider>
     </BrandProvider>

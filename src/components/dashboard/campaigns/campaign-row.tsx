@@ -97,7 +97,7 @@ export function CampaignRow({
 
   return (
     <TableRow>
-      <TableCell>
+      <TableCell className="max-w-64 whitespace-normal">
         <CampaignBuilderSheet
           campaign={campaign}
           branches={branches}
@@ -119,8 +119,8 @@ export function CampaignRow({
         {campaign.description ? <p className="mt-0.5 truncate text-xs text-muted-foreground">{campaign.description}</p> : null}
       </TableCell>
       <TableCell>
-        <div className="flex items-center gap-1.5 text-sm">
-          <Icon className="size-4 text-muted-foreground" />
+        <div className="flex items-center gap-1.5 whitespace-nowrap text-sm">
+          <Icon className="size-4 shrink-0 text-muted-foreground" />
           {DESTINATION_META[campaign.type].label}
         </div>
       </TableCell>

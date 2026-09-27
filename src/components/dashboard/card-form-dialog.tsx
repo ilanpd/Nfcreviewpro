@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import type { NFCCard } from "@/generated/prisma/client";
+import type { NFCCard, TableShape } from "@/generated/prisma/client";
 import type { BranchListItem, ZoneListItem } from "@/types";
 import { PremiumModal } from "@nfc-os/ui";
 
@@ -28,6 +28,8 @@ export function CardFormDialog({ card, trigger, branches, zones, onSaved }: Card
   const [tags, setTags] = useState(card?.tags.join(", ") ?? "");
   const [branchId, setBranchId] = useState(card?.branchId ?? NONE);
   const [zoneId, setZoneId] = useState(card?.zoneId ?? NONE);
+  const [tableShape, setTableShape] = useState<TableShape>(card?.tableShape ?? "RECTANGLE");
+  const [seats, setSeats] = useState(String(card?.seats ?? 4));
 
   useEffect(() => {
     if (open) {
@@ -35,6 +37,8 @@ export function CardFormDialog({ card, trigger, branches, zones, onSaved }: Card
       setTags(card?.tags.join(", ") ?? "");
       setBranchId(card?.branchId ?? NONE);
       setZoneId(card?.zoneId ?? NONE);
+      setTableShape(card?.tableShape ?? "RECTANGLE");
+      setSeats(String(card?.seats ?? 4));
     }
   }, [open, card]);
 
@@ -53,6 +57,8 @@ export function CardFormDialog({ card, trigger, branches, zones, onSaved }: Card
         body: JSON.stringify({
           name,
           tags: tagList,
+          tableShape,
+          seats: Number(seats) || 1,
           ...(card ? { branchId: branchId === NONE ? null : branchId, zoneId: zoneId === NONE ? null : zoneId } : {}),
         }),
       });
@@ -108,6 +114,35 @@ export function CardFormDialog({ card, trigger, branches, zones, onSaved }: Card
                 value={tags}
                 onChange={(e) => setTags(e.target.value)}
               />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label>Formato da mesa</Label>
+                <Select value={tableShape} onValueChange={(v) => setTableShape(v as TableShape)}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="RECTANGLE">Retangular</SelectItem>
+                    <SelectItem value="CIRCLE">Circular</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="card-seats">Lugares</Label>
+                <Input
+                  id="card-seats"
+                  type="number"
+                  min={1}
+                  max={40}
+                  value={seats}
+                  onChange={(e) => setSeats(e.target.value)}
+                />
+              </div>
+              <p className="col-span-2 text-xs text-muted-foreground">
+                Controla como a mesa aparece no Mapa de Mesas — não afeta para onde o cartão NFC/QR redireciona.
+              </p>
             </div>
 
             {card ? (

@@ -138,9 +138,17 @@ export function CardItem({ card, branches, zones, onUpdated, onDeleted, canManag
           {card.branchId ? (
             <SmartBadge label={branches.find((b) => b.id === card.branchId)?.name ?? "Unidade"} tone="neutral" />
           ) : null}
-          {card.tags.slice(0, 2).map((tag) => (
-            <SmartBadge key={tag} label={tag} tone="neutral" />
-          ))}
+          {card.tags
+            .filter((tag) => {
+              const lower = tag.toLowerCase();
+              const zoneName = card.zoneId ? zones.find((z) => z.id === card.zoneId)?.name : null;
+              const branchName = card.branchId ? branches.find((b) => b.id === card.branchId)?.name : null;
+              return lower !== zoneName?.toLowerCase() && lower !== branchName?.toLowerCase();
+            })
+            .slice(0, 2)
+            .map((tag) => (
+              <SmartBadge key={tag} label={tag} tone="neutral" />
+            ))}
         </div>
         {card.qrCodeUrl ? (
           <a href={card.qrCodeUrl} download={`qrcode-${card.uniqueCode}.png`}>

@@ -10,6 +10,13 @@ import type { GhostPreview } from "./types";
 
 interface TableNodeProps {
   card: TableCardItem;
+  /** Zoom atual do canvas (ver canvas.tsx) — usado só para manter o nome da
+   * mesa e a contagem de lugares num tamanho mínimo legível na tela mesmo
+   * bem afastado (zoom out). Sem isto, esse texto encolhe junto com a mesa
+   * (a mesma transform `scale(zoom)` do canvas escala tudo por igual) e vira
+   * um borrão cinza ilegível — o "nome fosco" reportado — em qualquer mesa
+   * visível quando o mapa está zoomado para caber o salão inteiro. */
+  zoom: number;
   status: TableStatus | null;
   selected: boolean;
   ghost: GhostPreview | null;
@@ -38,6 +45,11 @@ interface TableNodeProps {
   onDropCampaign: (cardId: string) => void;
 }
 
+/** Tamanho mínimo (px reais na tela) abaixo do qual o texto nunca deve
+ * encolher, não importa o quão zoomado-out o canvas esteja. */
+const MIN_NAME_SCREEN_PX = 10;
+const MIN_META_SCREEN_PX = 9;
+
 /** One table on the canvas. Position/size/rotation are applied as inline
  * styles (not Tailwind classes) since they're per-instance numeric values
  * driven by drag state, not design tokens. Positioning math (x/y as
@@ -45,6 +57,7 @@ interface TableNodeProps {
  * card.service.ts persists — no transform math happens anywhere else. */
 export function TableNode({
   card,
+  zoom,
   status,
   selected,
   ghost,
@@ -76,6 +89,25 @@ export function TableNode({
   const ghostColor = ghost ? DESTINATION_META[ghost.campaign.type].color : null;
   const isDropTarget = ghost !== null;
   const isHeatmapMode = heatmapIntensity !== null;
+  // Em intensidade alta, heatmapBackground vira um `--brand` bem saturado (e
+  // sempre relativamente CLARO — 0.549 de luminosidade no tema claro, 0.685
+  // no escuro, medido nos dois) — o suficiente pra o texto de `--foreground`
+  // (que é escuro no tema claro, claro no escuro — sempre o lado ERRADO
+  // aqui) cair abaixo do contraste mínimo (WCAG AA 4.5:1) nesse ponto. A
+  // troca correta nos dois temas é pra `--background` (branco no claro,
+  // quase-preto no escuro) — não pra branco fixo, que funciona no tema claro
+  // só por coincidência e FALHA no escuro (contraste medido caindo a ~3:1,
+  // pior que antes de qualquer correção). 0.95 dá margem segura acima do
+  // cruzamento medido nos dois temas (~0.89 no claro, ~0.72 no escuro).
+  const heatmapTextInverted = isHeatmapMode && !isDropTarget && (heatmapIntensity ?? 0) >= 0.95;
+
+  // O canvas aplica `scale(zoom)` numa camada acima desta — declarar aqui um
+  // font-size maior que o normal quando `zoom < 1` compensa esse encolhimento
+  // e mantém pelo menos MIN_*_SCREEN_PX de verdade na tela; acima do normal
+  // (zoom >= 1) não mexe em nada, o texto continua crescendo com o zoom como
+  // sempre cresceu.
+  const nameFontSizePx = Math.max(MIN_NAME_SCREEN_PX, 12 * zoom) / zoom;
+  const metaFontSizePx = Math.max(MIN_META_SCREEN_PX, 10 * zoom) / zoom;
 
   // Heatmap ativo: a cor deixa de significar "qual campanha venceu" (status)
   // e passa a significar "quanta intensidade" — a mesma escala de cor da
@@ -126,6 +158,13 @@ export function TableNode({
           backgroundColor: isDropTarget
             ? `${ghostColor}33`
             : heatmapBackground ?? (statusColor ? `${statusColor}22` : "var(--muted)"),
+          // Mistura com `var(--foreground)` (não um alpha cru sobre o que
+          // estiver atrás) — algumas cores de campanha são naturalmente
+          // escuras (TikTok é `#0F172A`, quase preto): um alpha cru delas
+          // sobre o canvas escuro do tema dark é praticamente invisível, a
+          // borda "some" e a mesa fica sem identidade visual nenhuma. Misturar
+          // com o foreground do tema garante uma borda sempre visível nos
+          // dois temas, com ou sem uma cor de status naturalmente clara/escura.
           borderColor: isDropTarget
             ? (ghostColor ?? undefined)
             : selected
@@ -133,7 +172,7 @@ export function TableNode({
               : isHeatmapMode
                 ? undefined
                 : statusColor
-                  ? `${statusColor}55`
+                  ? `color-mix(in oklch, ${statusColor} 55%, var(--foreground))`
                   : undefined,
           boxShadow: justAssigned && statusColor ? `0 0 0 4px ${statusColor}33` : undefined,
         }}
@@ -173,7 +212,8 @@ export function TableNode({
           />
         ) : (
           <span
-            className="max-w-[90%] truncate text-xs font-semibold"
+            className={`max-w-[90%] truncate font-semibold ${heatmapTextInverted ? "text-background" : "text-foreground"}`}
+            style={{ fontSize: nameFontSizePx }}
             onDoubleClick={(e) => {
               e.stopPropagation();
               if (canEdit) onDoubleClickLabel(card.id);
@@ -183,12 +223,15 @@ export function TableNode({
           </span>
         )}
 
-        <span className="flex items-center gap-0.5 text-[10px] text-muted-foreground">
-          <Users className="size-2.5" /> {card.seats}
+        <span
+          className={`flex items-center gap-0.5 ${heatmapTextInverted ? "text-background/80" : "text-muted-foreground"}`}
+          style={{ fontSize: metaFontSizePx }}
+        >
+          <Users style={{ width: metaFontSizePx, height: metaFontSizePx }} /> {card.seats}
         </span>
 
         {isDropTarget ? (
-          <span className="absolute -bottom-5 whitespace-nowrap rounded bg-popover px-1.5 py-0.5 text-[10px] font-medium shadow">
+          <span className="absolute -bottom-5 whitespace-nowrap rounded bg-popover px-1.5 py-0.5 text-[10px] font-medium text-popover-foreground shadow">
             {ghost!.campaign.name}
           </span>
         ) : null}

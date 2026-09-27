@@ -12,16 +12,24 @@ import { EmptyState, SmartBadge } from "@nfc-os/ui";
 export function FeedbackList({
   initialFeedback,
   canManage,
+  apiBasePath = "/api/feedback",
+  showExport = true,
 }: {
   initialFeedback: FeedbackWithContext[];
   canManage: boolean;
+  /** Central do Cliente (Fase 19.7) — o Admin reaproveita este mesmo
+   * componente para o feedback de uma empresa arbitrária, apontando para
+   * `/api/admin/feedback` (que resolve o `companyId` sozinho) em vez do
+   * `/api/feedback` escopado por sessão. */
+  apiBasePath?: string;
+  showExport?: boolean;
 }) {
   const [items, setItems] = useState(initialFeedback);
 
   async function toggleResolved(id: string, resolved: boolean) {
     setItems((prev) => prev.map((f) => (f.id === id ? { ...f, resolved } : f)));
     try {
-      const res = await fetch(`/api/feedback/${id}`, {
+      const res = await fetch(`${apiBasePath}/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ resolved }),
@@ -35,13 +43,15 @@ export function FeedbackList({
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-end">
-        <a href="/api/export/feedback">
-          <Button variant="outline" size="sm">
-            <Download className="size-4" /> Exportar CSV
-          </Button>
-        </a>
-      </div>
+      {showExport ? (
+        <div className="flex justify-end">
+          <a href="/api/export/feedback">
+            <Button variant="outline" size="sm">
+              <Download className="size-4" /> Exportar CSV
+            </Button>
+          </a>
+        </div>
+      ) : null}
 
       {items.length === 0 ? (
         <EmptyState

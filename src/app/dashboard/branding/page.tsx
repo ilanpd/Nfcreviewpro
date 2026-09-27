@@ -2,9 +2,11 @@ import { requireAuthContext, requirePermission } from "@/lib/auth";
 import { getCompanyById } from "@/services/company.service";
 import { listCards } from "@/services/card.service";
 import { getRootDomain } from "@/domain/white-label/host";
+import { planHasFeature, minimumPlanForFeature } from "@/lib/plans";
+import { PlanUpsell } from "@/components/dashboard/plan-upsell";
 import { ThemeStudioView } from "@/components/dashboard/branding/theme-studio-view";
 import { EmptyState } from "@nfc-os/ui";
-import { Lock } from "lucide-react";
+import { Lock, Palette } from "lucide-react";
 
 /**
  * Theme Studio (Fase 10) — identidade completa da empresa num único lugar:
@@ -24,6 +26,23 @@ export default async function BrandingPage() {
     return (
       <main className="p-6 sm:p-10">
         <EmptyState icon={<Lock />} title="Acesso restrito" description="Só quem pode editar configurações da empresa acessa o Theme Studio." />
+      </main>
+    );
+  }
+
+  if (!planHasFeature(ctx.plan, "white_label")) {
+    return (
+      <main className="space-y-6 p-6 sm:p-10">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">Marca própria</h1>
+          <p className="text-sm text-muted-foreground">Logo, cores, domínio e tela de login com a identidade do seu negócio.</p>
+        </div>
+        <PlanUpsell
+          icon={<Palette />}
+          featureLabel="Marca própria (domínio e login personalizados)"
+          requiredPlan={minimumPlanForFeature("white_label")}
+          currentPlan={ctx.plan}
+        />
       </main>
     );
   }

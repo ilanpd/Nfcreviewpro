@@ -1,7 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { CreditCard, Plus, Search, SearchX } from "lucide-react";
+import Link from "next/link";
+import { CreditCard, Plus, Search, SearchX, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -64,20 +65,33 @@ export function CardsView({ initialCards, cardLimit, initialBranches, initialZon
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Cartões</h1>
           <p className="text-sm text-muted-foreground">
-            {cards.length} {cardLimit !== null ? `de ${cardLimit}` : ""} cartão(ões) NFC
+            {cards.length} {cardLimit !== null ? `de ${cardLimit}` : ""} cartão(ões) NFC · para escolher pra onde cada um redireciona, posicione-o no{" "}
+            <Link href="/dashboard/table-map" className="inline-flex items-center gap-0.5 font-medium text-foreground underline underline-offset-2">
+              Mapa de Mesas <ArrowRight className="size-3" />
+            </Link>
           </p>
         </div>
         {canManage ? (
-          <CardFormDialog
-            branches={branches}
-            zones={zones}
-            onSaved={handleCreated}
-            trigger={
-              <Button disabled={limitReached}>
-                <Plus className="size-4" /> Novo cartão
-              </Button>
-            }
-          />
+          <div className="flex items-center gap-2">
+            {/* Achado real na revisão de fluxo (11/09/2026): um cliente já
+                assinante não tinha nenhum caminho visível pra comprar mais
+                cartões físicos depois — precisava saber, por conta própria,
+                que a loja pública existe. `/loja` já associa a compra à
+                empresa em sessão automaticamente quando logado. */}
+            <Button asChild variant="outline">
+              <Link href="/loja">Comprar cartões físicos</Link>
+            </Button>
+            <CardFormDialog
+              branches={branches}
+              zones={zones}
+              onSaved={handleCreated}
+              trigger={
+                <Button disabled={limitReached}>
+                  <Plus className="size-4" /> Novo cartão
+                </Button>
+              }
+            />
+          </div>
         ) : null}
       </div>
 

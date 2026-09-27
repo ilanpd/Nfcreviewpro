@@ -1,6 +1,7 @@
 "use client";
 
-import { memo, useCallback, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Scan } from "lucide-react";
 import { clampZoom, normalizeRect, rectsIntersect, screenToWorld, snapPointToGrid, snapToGrid, type Rect } from "@/domain/table-map/geometry";
 import { TableNode } from "./table-node";
 import type { DragOverTarget, GhostPreview, StatusMap, TableCardItem, TableMapCampaignItem } from "./types";
@@ -177,7 +178,17 @@ export function Canvas({
       }
 
       dragRef.current = { mode: "move", pointerId: e.pointerId, startScreen: screenPoint, startWorld: worldPoint, moved: false, originals };
-      (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+      try {
+        (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+      } catch {
+        // Alguns navegadores/dispositivos de entrada (touchpad tap-and-drag,
+        // certas automações) já consideram o ponteiro "solto" no instante
+        // deste pointerdown, lançando NotFoundError aqui — sem o try/catch,
+        // essa exceção não tratada interrompia o gesto inteiro (a mesa nem
+        // chegava a se mover). O `dragRef` acima já foi setado antes desta
+        // chamada, então o drag continua funcionando via bubbling normal do
+        // pointermove/pointerup no contêiner, mesmo sem captura explícita.
+      }
     },
     [pan, zoom, selectedIds, onSelectionChange, cards, canEdit]
   );
@@ -199,18 +210,22 @@ export function Canvas({
       }
 
       // move: delta in world units (screen delta / zoom), applied to each
-      // dragged card's own original position — snapped as a group so
-      // relative spacing between multi-selected tables is preserved.
+      // dragged card's own original position. Segue o cursor sem encaixar no
+      // grid quadro a quadro — encaixar a cada pointermove fazia a mesa
+      // "pular" em saltos de GRID_SIZE em vez de acompanhar o mouse, o "bug
+      // na grade" reportado ao mexer nas mesas. O encaixe final acontece uma
+      // única vez, no pointerup (ver handlePointerUp), igual ao padrão de
+      // "arrasta livre, encaixa ao soltar" de outros editores de canvas.
       const dxWorld = dxScreen / zoom;
       const dyWorld = dyScreen / zoom;
       const next = new Map<string, { x: number; y: number }>();
       drag.originals.forEach((orig, id) => {
-        next.set(id, { x: snapToGrid(orig.x + dxWorld, gridSize), y: snapToGrid(orig.y + dyWorld, gridSize) });
+        next.set(id, { x: orig.x + dxWorld, y: orig.y + dyWorld });
       });
       pendingRef.current.move = next;
       scheduleFrame();
     },
-    [pan, zoom, gridSize]
+    [pan, zoom]
   );
 
   const handlePointerUp = useCallback(
@@ -224,14 +239,33 @@ export function Canvas({
         // pointer capture may already be released — harmless
       }
 
-      const { marquee: finalMarquee, move: finalMove } = flushPending();
+      // Recalcula o deslocamento final direto a partir DESTE evento (soltar
+      // o botão), nunca só a partir do que os pointermove intermediários
+      // acumularam em pendingRef — um arrasto rápido o bastante pode chegar
+      // ao navegador SEM NENHUM pointermove entre o pressionar e o soltar
+      // (throttling/coalescing de input do SO ou do navegador; medido
+      // acontecendo de verdade em testes automatizados, e a causa mais
+      // provável do "às vezes dá pra mover, às vezes não" relatado — não
+      // depende de sorte, depende só de o gesto ser rápido demais pro
+      // navegador entregar um evento no meio do caminho). Sem isto,
+      // `drag.moved` continuava `false` pra sempre e o movimento inteiro
+      // era descartado em silêncio, mesmo com o ponteiro claramente tendo
+      // saído de um lugar e chegado em outro bem diferente.
+      const screenPoint = getContainerPoint(e);
+      const dxScreen = screenPoint.x - drag.startScreen.x;
+      const dyScreen = screenPoint.y - drag.startScreen.y;
+      const movedEnough = drag.moved || Math.abs(dxScreen) > CLICK_THRESHOLD || Math.abs(dyScreen) > CLICK_THRESHOLD;
+
+      const { marquee: finalMarquee } = flushPending();
 
       if (drag.mode === "marquee") {
-        if (!drag.moved && armedCardId) {
+        const worldPoint = screenToWorld(screenPoint, pan, zoom);
+        const marqueeRectFinal = finalMarquee ?? normalizeRect(drag.startWorld, worldPoint);
+        if (!movedEnough && armedCardId) {
           onPlaceArmed(snapPointToGrid(drag.startWorld, gridSize));
-        } else if (drag.moved && finalMarquee) {
+        } else if (movedEnough) {
           const hits = cards.filter((c) =>
-            rectsIntersect(finalMarquee, { x: c.layoutX ?? 0, y: c.layoutY ?? 0, width: c.layoutWidth, height: c.layoutHeight })
+            rectsIntersect(marqueeRectFinal, { x: c.layoutX ?? 0, y: c.layoutY ?? 0, width: c.layoutWidth, height: c.layoutHeight })
           );
           onSelectionChange(new Set(hits.map((c) => c.id)));
         } else if (!e.shiftKey) {
@@ -241,29 +275,134 @@ export function Canvas({
         return;
       }
 
-      // move
-      if (drag.moved && finalMove && canEdit) {
-        const moves = Array.from(finalMove.entries()).map(([id, pos]) => ({ id, x: pos.x, y: pos.y }));
+      // move — o encaixe no grid acontece aqui, uma vez só, ao soltar (ver
+      // handlePointerMove acima para o porquê do arrasto em si ser livre).
+      // A posição final vem de `drag.originals` + o delta computado ACIMA
+      // (não de `pendingRef.current.move`), pelo mesmo motivo do comentário
+      // grande acima: precisa funcionar mesmo com zero pointermove.
+      if (movedEnough && canEdit) {
+        const dxWorld = dxScreen / zoom;
+        const dyWorld = dyScreen / zoom;
+        const finalMove = new Map<string, { x: number; y: number }>();
+        drag.originals.forEach((orig, id) => {
+          finalMove.set(id, { x: orig.x + dxWorld, y: orig.y + dyWorld });
+        });
+        const moves = Array.from(finalMove.entries()).map(([id, pos]) => ({
+          id,
+          x: snapToGrid(pos.x, gridSize),
+          y: snapToGrid(pos.y, gridSize),
+        }));
         onMoveCommit(moves);
       }
       setLivePositions(null);
     },
-    [cards, onSelectionChange, onMoveCommit, canEdit, armedCardId, onPlaceArmed, gridSize]
+    [cards, onSelectionChange, onMoveCommit, canEdit, armedCardId, onPlaceArmed, gridSize, pan, zoom]
   );
+
+  /** Muda o zoom mantendo `screenPoint` (em pixels do container) apontando
+   * para o MESMO ponto do mundo antes e depois — sem isto, cada "tick" de
+   * zoom recentraliza o mapa na origem do mundo (0,0) em vez do cursor,
+   * fazendo o quadro inteiro "pular" para longe de onde o usuário está
+   * olhando a cada scroll. É a causa raiz de boa parte da navegação "não
+   * fluida" reportada, independente do bug de arrastar mesas. */
+  const zoomAtPoint = useCallback((factor: number, screenPoint: { x: number; y: number }) => {
+    setZoom((z) => {
+      const nextZoom = clampZoom(z * factor);
+      setPan((p) => ({
+        x: screenPoint.x - ((screenPoint.x - p.x) / z) * nextZoom,
+        y: screenPoint.y - ((screenPoint.y - p.y) / z) * nextZoom,
+      }));
+      return nextZoom;
+    });
+  }, []);
 
   const handleWheel = useCallback(
     (e: React.WheelEvent<HTMLDivElement>) => {
       if (e.ctrlKey || e.metaKey) {
         e.preventDefault();
         const factor = e.deltaY > 0 ? 0.92 : 1.08;
-        setZoom((z) => clampZoom(z * factor));
+        zoomAtPoint(factor, getContainerPoint(e));
       } else {
         e.preventDefault();
         setPan((p) => ({ x: p.x - e.deltaX, y: p.y - e.deltaY }));
       }
     },
-    []
+    [zoomAtPoint]
   );
+
+  const FIT_PADDING = 60;
+  // Nunca deixa o "enquadrar tudo" encolher as mesas além do confortável pra
+  // ler ou clicar — um salão muito espalhado forçaria um zoom minúsculo
+  // (mesas de poucos pixels, quase impossíveis de acertar com o mouse) só
+  // pra caber tudo de uma vez. Abaixo deste piso, é melhor ver a maior parte
+  // do salão com clareza e navegar (arrastar/zoom) até o resto do que ver
+  // tudo de uma vez sem dar pra usar nada.
+  const FIT_MIN_ZOOM = 0.5;
+
+  /** p-ésimo percentil (0-1) de uma lista JÁ ORDENADA, com interpolação
+   * linear entre os dois pontos mais próximos. */
+  function percentileOfSorted(sorted: number[], p: number): number {
+    const idx = (sorted.length - 1) * p;
+    const lo = Math.floor(idx);
+    const hi = Math.ceil(idx);
+    if (lo === hi) return sorted[lo];
+    return sorted[lo] + (sorted[hi] - sorted[lo]) * (idx - lo);
+  }
+
+  /** Enquadra todas as mesas de uma vez (zoom + pan calculados a partir do
+   * retângulo que envolve todas elas) — o botão "Ver tudo" abaixo. Sem isto,
+   * a única forma de ver o salão inteiro era arrastar manualmente em várias
+   * direções (inclusive na horizontal) até cobrir tudo, o que o usuário
+   * relatou como "ter que rolar lateralmente pra ver tudo".
+   *
+   * Usa o percentil 5-95 das bordas de cada mesa, não o mínimo/máximo bruto
+   * — encontrado ao vivo numa conta real: UMA mesa só com uma posição
+   * absurda (uma coordenada Y de milhares de unidades, quase certamente de
+   * um arrasto que deu errado em algum momento) fazia o retângulo "abraçar
+   * tudo" ficar gigantesco, o zoom calculado ir a quase zero (só escapando
+   * disso pelo piso de zoom), e o pan centralizar num ponto vazio entre a
+   * mesa perdida e todas as outras — o mapa inteiro aparecia em branco,
+   * mesmo com todas as mesas reais e corretamente posicionadas no banco.
+   * Cortar os 5% mais extremos de cada lado torna isso impossível: uma
+   * única mesa fora da curva nunca mais consegue esconder todas as outras,
+   * ela só fica de fora do enquadramento automático (ainda alcançável
+   * arrastando/dando zoom manualmente). */
+  const handleFitToView = useCallback(() => {
+    if (cards.length === 0 || !containerRef.current) return;
+    const lefts = cards.map((c) => c.layoutX ?? 0).sort((a, b) => a - b);
+    const tops = cards.map((c) => c.layoutY ?? 0).sort((a, b) => a - b);
+    const rights = cards.map((c) => (c.layoutX ?? 0) + c.layoutWidth).sort((a, b) => a - b);
+    const bottoms = cards.map((c) => (c.layoutY ?? 0) + c.layoutHeight).sort((a, b) => a - b);
+    const minX = percentileOfSorted(lefts, 0.05);
+    const minY = percentileOfSorted(tops, 0.05);
+    const maxX = percentileOfSorted(rights, 0.95);
+    const maxY = percentileOfSorted(bottoms, 0.95);
+    const contentWidth = Math.max(1, maxX - minX);
+    const contentHeight = Math.max(1, maxY - minY);
+    const { clientWidth, clientHeight } = containerRef.current;
+    const nextZoom = clampZoom(
+      Math.max(FIT_MIN_ZOOM, Math.min((clientWidth - FIT_PADDING * 2) / contentWidth, (clientHeight - FIT_PADDING * 2) / contentHeight))
+    );
+    setZoom(nextZoom);
+    setPan({
+      x: (clientWidth - contentWidth * nextZoom) / 2 - minX * nextZoom,
+      y: (clientHeight - contentHeight * nextZoom) / 2 - minY * nextZoom,
+    });
+  }, [cards]
+  );
+
+  const didFitOnLoadRef = useRef(false);
+  useEffect(() => {
+    // Enquadra tudo automaticamente na primeira renderização com mesas — o
+    // usuário pediu pra ver o salão inteiro "sem precisar clicar em botão
+    // nenhum". `didFitOnLoadRef` garante que isso acontece só UMA vez: sem
+    // ele, todo arrasto (que também muda `cards`, e portanto a identidade de
+    // `handleFitToView`) re-enquadraria a view sozinho, brigando com o pan/
+    // zoom manual do usuário no meio de uma edição.
+    if (didFitOnLoadRef.current || cards.length === 0 || !containerRef.current) return;
+    didFitOnLoadRef.current = true;
+    handleFitToView();
+  }, [cards, handleFitToView]);
 
   const visibleRect: Rect | null = containerRef.current
     ? {
@@ -343,6 +482,7 @@ export function Canvas({
             <MemoTableNode
               key={card.id}
               card={displayCard}
+              zoom={zoom}
               status={statusMap.get(card.id) ?? null}
               selected={selectedIds.has(card.id)}
               ghost={ghost}
@@ -382,10 +522,19 @@ export function Canvas({
       ) : null}
 
       <div className="absolute bottom-3 right-3 z-10 flex items-center gap-1 rounded-md bg-background/90 p-1 shadow-sm backdrop-blur">
+        <button type="button" title="Ver tudo" className="flex size-7 items-center justify-center rounded hover:bg-muted" onClick={handleFitToView}>
+          <Scan className="size-3.5" />
+        </button>
+        <div className="mx-0.5 h-4 w-px bg-border" />
         <button
           type="button"
           className="flex size-7 items-center justify-center rounded hover:bg-muted"
-          onClick={() => setZoom((z) => clampZoom(z * 0.9))}
+          onClick={() =>
+            zoomAtPoint(0.9, {
+              x: (containerRef.current?.clientWidth ?? 0) / 2,
+              y: (containerRef.current?.clientHeight ?? 0) / 2,
+            })
+          }
         >
           −
         </button>
@@ -402,7 +551,12 @@ export function Canvas({
         <button
           type="button"
           className="flex size-7 items-center justify-center rounded hover:bg-muted"
-          onClick={() => setZoom((z) => clampZoom(z * 1.1))}
+          onClick={() =>
+            zoomAtPoint(1.1, {
+              x: (containerRef.current?.clientWidth ?? 0) / 2,
+              y: (containerRef.current?.clientHeight ?? 0) / 2,
+            })
+          }
         >
           +
         </button>
