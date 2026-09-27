@@ -1,7 +1,9 @@
 import "server-only";
+import { randomUUID } from "node:crypto";
 import { prisma } from "@/lib/prisma";
 import { generateCardCode } from "@/lib/codes";
 import { cardPublicUrl } from "@/lib/card-url";
+import { appBaseUrl } from "@/lib/app-url";
 import { createGuestCompany } from "@/services/company.service";
 import { decrementBlankChipStock } from "@/lib/site-settings";
 import { createCampaign, updateCampaign, assignCampaign } from "@/services/campaign.service";
@@ -357,4 +359,66 @@ export async function getInProgressOrderForCompany(companyId: string) {
     where: { companyId, status: { notIn: ["DELIVERED", "CANCELED"] } },
     orderBy: { createdAt: "desc" },
   });
+}
+
+export interface DirectSaleInput {
+  productId: string;
+  destinationUrl: string;
+  customerName: string;
+  customerEmail: string;
+  customerDocument: string;
+  customerPhone: string;
+}
+
+/**
+ * Venda direta (C14, ADR-089) — o dono vende o cartão físico por fora do
+ * site (pessoalmente, PIX, o que for) e registra aqui pra entrar no MESMO
+ * pipeline de um pedido online: um `StoreOrder` de verdade, `status: PAID`
+ * desde a criação (o dinheiro já foi recebido fora do Stripe), com um
+ * `stripeCheckoutSessionId` sintético só para satisfazer a coluna única —
+ * nunca um Stripe de verdade por trás. `provisionStoreOrder` roda na
+ * sequência, dentro da mesma chamada — os cartões (e a empresa GUEST, se o
+ * e-mail for novo) existem imediatamente, prontos pra compartilhar o link de
+ * edição com o cliente ali mesmo na hora da venda. Reaproveita 100% da
+ * lógica de provisionamento/checklist/e-mail já existente — nunca um
+ * segundo caminho para "cartão existe" fora do que a loja online já faz.
+ */
+export async function createDirectSaleOrder(input: DirectSaleInput) {
+  const product = getStoreProduct(input.productId);
+  if (!product) throw new StoreOrderProvisionError("Produto não encontrado", 404);
+
+  const order = await prisma.storeOrder.create({
+    data: {
+      stripeCheckoutSessionId: `direct_${randomUUID()}`,
+      customerEmail: input.customerEmail,
+      customerName: input.customerName,
+      customerDocument: input.customerDocument,
+      customerPhone: input.customerPhone,
+      orderType: "CARD_ONLY",
+      productId: product.id,
+      quantity: product.quantity,
+      destinationUrl: input.destinationUrl,
+      amountTotalCents: product.unitPriceCents * product.quantity,
+      status: "PAID",
+    },
+  });
+
+  await provisionStoreOrder(order.id);
+  const provisioned = await prisma.storeOrder.findUniqueOrThrow({ where: { id: order.id } });
+
+  // Link de EDIÇÃO (portal /meu-cartao, ADR-080) — nunca o link público
+  // de resolução (/r/[code]): é o que o cliente usa pra trocar o destino
+  // sozinho depois, o mesmo que a loja online manda por e-mail. Achado
+  // real testando ao vivo: a primeira versão devolvia o link público por
+  // engano, reaproveitando a resposta de `/api/admin/orders/[id]/provision`.
+  const cards = await prisma.nFCCard.findMany({
+    where: { id: { in: provisioned.provisionedCardIds } },
+    select: { editToken: true },
+  });
+  const editLinks = cards
+    .map((c) => c.editToken)
+    .filter((t): t is string => !!t)
+    .map((token) => `${appBaseUrl()}/meu-cartao/${token}`);
+
+  return { order: provisioned, editLinks };
 }

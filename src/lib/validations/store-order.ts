@@ -30,3 +30,15 @@ export const customerPhoneSchema = z
   .min(10, "Informe o telefone com DDD")
   .max(20)
   .refine(isValidBrazilianPhone, "Informe um telefone brasileiro válido, com DDD");
+
+/** Venda direta (C14, ADR-089) — mesma exigência de dado do checkout online
+ * (CPF/CNPJ e telefone validados de verdade); o canal de venda muda, a
+ * necessidade de nota fiscal e contato não. */
+export const directSaleSchema = z.object({
+  productId: z.string(),
+  destinationUrl: z.string().url("Informe um link válido (ex: https://...)"),
+  customerName: z.string().trim().min(2, "Nome muito curto").max(120),
+  customerEmail: z.string().trim().email("E-mail inválido"),
+  customerDocument: customerDocumentSchema,
+  customerPhone: customerPhoneSchema,
+});

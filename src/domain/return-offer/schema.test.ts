@@ -42,8 +42,8 @@ describe("schema do Retorno", () => {
     expect(offer).not.toMatch(/\bpin\s+String/);
   });
 
-  it("o interruptor do piloto começa desligado e o geral começa ligado", () => {
-    expect(model("Company")).toMatch(/returnPilotEnabled\s+Boolean\s+@default\(false\)/);
+  it("o interruptor do piloto e o geral começam ligados (C14/ADR-089 — o Retorno deixou de ser piloto)", () => {
+    expect(model("Company")).toMatch(/returnPilotEnabled\s+Boolean\s+@default\(true\)/);
     expect(model("SiteSettings")).toMatch(/returnOfferEnabled\s+Boolean\s+@default\(true\)/);
   });
 

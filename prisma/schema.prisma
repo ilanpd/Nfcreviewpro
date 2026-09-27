@@ -432,9 +432,18 @@ model Company {
   // uma cobrança atrasada nem os 90 dias de leitura depois de cancelar. Ver
   // domain/billing (tier efetivo) e ADR-078.
   subscriptionStatusChangedAt DateTime?
-  // Piloto do Retorno (ADR-078): só o Admin liga. Enquanto falso, o cartão da
-  // empresa se comporta como antes do Retorno, mesmo no Starter.
-  returnPilotEnabled          Boolean       @default(false)
+  // Piloto do Retorno (ADR-078, default revisado no C14/ADR-089) — nasceu
+  // "falso, só o Admin liga" enquanto o Retorno ainda era validado. Desde o
+  // C8 o marketing promete "Faça cada cliente voltar" pra todo Starter; uma
+  // empresa nova ficar sem o recurso que ela comprou até o Admin lembrar de
+  // ligar na mão virou o problema, não a segurança. Default vira `true` —
+  // continua exigindo assinatura ativa + brinde configurado + PIN definido
+  // antes do brinde aparecer de verdade (nada muda nessa trava), e o
+  // toggle manual em /admin/empresas/[id] continua existindo como
+  // interruptor de exceção (desligar uma empresa específica), não mais
+  // como porta de entrada obrigatória. Empresas já existentes não mudam —
+  // é só o valor pra CRIAÇÃO nova.
+  returnPilotEnabled          Boolean       @default(true)
   // E-mails transacionais/reengajamento (C9/F6, ADR-084) — mesmo padrão
   // idempotente de `StoreOrder.confirmationEmailSentAt`: cada campo só é
   // preenchido depois de um envio confirmado (`sent: true`), nunca antes, e

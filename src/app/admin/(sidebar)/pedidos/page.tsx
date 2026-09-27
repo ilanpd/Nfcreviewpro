@@ -5,6 +5,7 @@ import { formatCentsToBRL } from "@/lib/store-products";
 import { KpiCard } from "@nfc-os/ui";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { PedidosTabs } from "./pedidos-tabs";
+import { DirectSaleDialog } from "./direct-sale-dialog";
 
 /**
  * Transformação do Painel Admin (13/09/2026) — uma única query traz TODO
@@ -37,12 +38,15 @@ export default async function AdminOrdersPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Pedidos da loja</h1>
-        <p className="text-sm text-muted-foreground">
-          Pagamento → provisionamento é automático. Arraste um cartão para a coluna seguinte para marcar cada etapa da
-          produção física, ou use a Tabela para uma visão completa e pesquisável de todos os pedidos.
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">Pedidos da loja</h1>
+          <p className="text-sm text-muted-foreground">
+            Pagamento → provisionamento é automático. Arraste um cartão para a coluna seguinte para marcar cada etapa
+            da produção física, ou use a Tabela para uma visão completa e pesquisável de todos os pedidos.
+          </p>
+        </div>
+        <DirectSaleDialog />
       </div>
 
       {disputedOrders.length > 0 ? (
