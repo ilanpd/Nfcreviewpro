@@ -47,6 +47,10 @@ next-env.d.ts
 # Claude Code runtime/session state (not project configuration)
 .claude/scheduled_tasks.lock
 
+# Material de planejamento e artefatos gerados (PDFs/HTML de plano, prompts) —
+# não faz parte do produto; nunca entra em commit.
+/scratch/
+
 
 .vercel
 .env*

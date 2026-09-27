@@ -27,11 +27,28 @@ const nextConfig: NextConfig = {
   // desenvolvimento local sobre HTTP). `preload` deliberadamente omitido —
   // exige submissão manual a hstspreload.org, um passo do lado do domínio
   // de produção, não algo que o código sozinho pode ativar. Ver ADR-045.
+  //
+  // Os quatro headers abaixo foram adicionados na Auditoria Nível
+  // Bilionário (11/09/2026) — nenhum deles existia antes, e nenhum tem
+  // custo de compatibilidade real: `X-Content-Type-Options` impede o
+  // navegador de "adivinhar" um tipo de conteúdo diferente do declarado
+  // (vetor clássico de XSS via upload/arquivo servido); `X-Frame-Options`
+  // é o equivalente legado do `frame-ancestors` do CSP acima — mantido
+  // para navegadores que ainda não honram CSP nível 2; `Referrer-Policy`
+  // evita vazar a URL completa (que pode incluir `uniqueCode` de cartão)
+  // como referrer para um terceiro; `Permissions-Policy` desliga APIs de
+  // navegador que este produto nunca usa (câmera/microfone/geolocalização).
   async headers() {
     return [
       {
         source: "/(.*)",
-        headers: [{ key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains" }],
+        headers: [
+          { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains" },
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "X-Frame-Options", value: "DENY" },
+          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+          { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
+        ],
       },
     ];
   },

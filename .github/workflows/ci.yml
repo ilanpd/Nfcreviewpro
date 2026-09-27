@@ -1,0 +1,27 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    env:
+      # `prisma7.config.ts` lê DIRECT_URL (não DATABASE_URL) para o CLI —
+      # e já é desenhado para funcionar mesmo sem credenciais reais (ver
+      # comentário nesse arquivo). Setado só por clareza; nenhum passo
+      # abaixo abre uma conexão real de banco/Stripe/Clerk — vitest.config.ts
+      # testa só lógica pura de domain/lib.
+      DIRECT_URL: "postgresql://user:pass@localhost:5432/db"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx tsc --noEmit
+      - run: npm run lint
+      - run: npm run test
