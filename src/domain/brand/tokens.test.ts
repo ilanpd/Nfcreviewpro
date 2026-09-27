@@ -69,15 +69,17 @@ describe.each([
 });
 
 describe("lib/brand.ts espelha o CSS", () => {
-  it("âmbar, grafite e tinta iguais nos dois lugares", () => {
-    expect(resolve(LIGHT, "brand").toUpperCase()).toBe(BRAND.colors.amber);
-    expect(resolve(DARK, "brand").toUpperCase()).toBe(BRAND.colors.amberOnDark);
+  it("violeta, grafite e tinta iguais nos dois lugares", () => {
+    expect(resolve(LIGHT, "brand").toUpperCase()).toBe(BRAND.colors.violet);
+    expect(resolve(DARK, "brand").toUpperCase()).toBe(BRAND.colors.violetOnDark);
     expect(resolve(LIGHT, "foreground").toUpperCase()).toBe(BRAND.colors.ink);
     expect(resolve(LIGHT, "muted-foreground").toUpperCase()).toBe(BRAND.colors.graphite);
   });
 
-  it("o âmbar puro sozinho NÃO serve de texto no claro (é por isso que existe --brand-ink)", () => {
-    expect(contrastRatio(BRAND.colors.amber, BRAND.colors.paper)).toBeLessThan(4.5);
-    expect(contrastRatio(resolve(LIGHT, "brand-ink"), BRAND.colors.paper)).toBeGreaterThanOrEqual(4.5);
+  it("o violeta puro sozinho não passa 4,5:1 contra TODA superfície clara (por isso --brand-ink existe separado, mais escuro)", () => {
+    expect(contrastRatio(BRAND.colors.violet, BRAND.colors.paper)).toBeGreaterThanOrEqual(4.5);
+    const ink = resolve(LIGHT, "brand-ink");
+    expect(contrastRatio(ink, BRAND.colors.paper)).toBeGreaterThanOrEqual(4.5);
+    expect(ink.toUpperCase()).not.toBe(BRAND.colors.violet.toUpperCase());
   });
 });

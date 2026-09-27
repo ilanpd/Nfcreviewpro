@@ -41,7 +41,8 @@ describe("marca Pulse (ADR-077)", () => {
 
   it("o nome e os textos derivados saem de lib/brand.ts", () => {
     expect(BRAND.name).toBe("Pulse");
-    expect(copyright(2026)).toBe("© 2026 Pulse. Todos os direitos reservados.");
+    expect(BRAND.fullName).toBe("Pulse Smart Link");
+    expect(copyright(2026)).toBe("© 2026 Pulse Smart Link. Todos os direitos reservados.");
     expect(pageTitle("Loja")).toBe("Loja — Pulse");
   });
 

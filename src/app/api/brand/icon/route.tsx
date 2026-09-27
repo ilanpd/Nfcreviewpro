@@ -35,7 +35,7 @@ export async function GET(req: NextRequest) {
   const colors = buildBrandColorSet(brand?.primaryColor ?? DEFAULT_PRIMARY_COLOR, brand?.secondaryColor);
   const initial = (brand?.name ?? BRAND.name).trim().charAt(0).toUpperCase();
   const background = brand ? colors.primary : BRAND.colors.ink;
-  const glyph = brand ? colors.onPrimary : BRAND.colors.amberOnDark;
+  const glyph = brand ? colors.onPrimary : BRAND.colors.violetOnDark;
 
   return new ImageResponse(
     (

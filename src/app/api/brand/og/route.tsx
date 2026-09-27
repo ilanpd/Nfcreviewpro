@@ -15,10 +15,10 @@ export async function GET(req: NextRequest) {
   const brand = await resolveBrandByHost(req.headers.get("host"));
   const colors = buildBrandColorSet(brand?.primaryColor ?? DEFAULT_PRIMARY_COLOR, brand?.secondaryColor);
   const name = brand?.name ?? BRAND.name;
-  // Domínio raiz: identidade do produto (grafite + âmbar). Empresa com marca
-  // própria continua 100% com as cores dela.
+  // Domínio raiz: identidade do produto (preto profundo + violeta). Empresa
+  // com marca própria continua 100% com as cores dela.
   const background = brand ? colors.secondary : BRAND.colors.ink;
-  const tileBackground = brand ? colors.primary : BRAND.colors.amber;
+  const tileBackground = brand ? colors.primary : BRAND.colors.violet;
   const tileColor = brand ? colors.onPrimary : BRAND.colors.ink;
   const nameColor = brand ? colors.primary : BRAND.colors.paper;
 

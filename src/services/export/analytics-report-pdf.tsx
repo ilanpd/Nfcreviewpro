@@ -4,9 +4,10 @@ import type { AnalyticsReportData } from "../export-engine.service";
 import type { KpiValue } from "@/domain/analytics/types";
 
 // PDF não consome variáveis CSS: o acento vem das cores em hex de
-// `lib/brand.ts` (as mesmas do CSS, conferidas em teste). Âmbar só em filete e
-// borda; o título usa a tinta, porque âmbar puro não tem contraste de texto.
-const ACCENT = BRAND.colors.amber;
+// `lib/brand.ts` (as mesmas do CSS, conferidas em teste). Violeta só em
+// filete e borda; o título usa a tinta, porque violeta puro sozinho não tem
+// o mesmo contraste de leitura que a tinta.
+const ACCENT = BRAND.colors.violet;
 const MUTED = "#6B7280";
 const BORDER = "#E5E7EB";
 

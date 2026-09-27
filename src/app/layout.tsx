@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { BRAND } from "@/lib/brand";
-import { Bricolage_Grotesque, Instrument_Sans, IBM_Plex_Mono } from "next/font/google";
+import { Space_Grotesk, Inter, IBM_Plex_Mono } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 import { ThemeProvider } from "next-themes";
 import { isDevRuntimeEnabled } from "@/lib/dev-runtime/config";
@@ -8,18 +8,23 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 
-// Tipografia Pulse (ADR-077): títulos em Bricolage Grotesque, texto em
-// Instrument Sans, códigos e números em IBM Plex Mono. Só o subconjunto latino
-// (português não precisa de mais), com `display: swap` para o texto aparecer
-// antes da fonte chegar.
-const bricolage = Bricolage_Grotesque({
-  variable: "--font-bricolage",
+// Tipografia Pulse Smart Link (C11, ADR-086) — Bricolage Grotesque/Instrument
+// Sans (ADR-077) saíram de propósito: legíveis, mas sem a precisão técnica
+// que a nova direção visual pede. Space Grotesk assina os títulos (a mesma
+// geometria angulosa de tech premium usada por produtos como o próprio
+// Vercel), Inter carrega o corpo do texto (o padrão de facto de interface
+// "invisível" — Linear, Stripe, Notion) — o stack de fallback inclui
+// `-apple-system`, que resolve pra SF Pro de verdade em qualquer dispositivo
+// Apple, sem precisar embutir uma fonte com licença restrita. IBM Plex Mono
+// (ADR-077) continua para números e código: não fazia parte do problema.
+const spaceGrotesk = Space_Grotesk({
+  variable: "--font-space-grotesk",
   subsets: ["latin"],
   display: "swap",
 });
 
-const instrumentSans = Instrument_Sans({
-  variable: "--font-instrument-sans",
+const inter = Inter({
+  variable: "--font-inter",
   subsets: ["latin"],
   display: "swap",
 });
@@ -63,14 +68,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   // `<ClerkProvider>` (que exige chaves reais para inicializar no cliente)
   // fica de fora inteiramente, de propósito e permanentemente — nunca mais
   // removido/religado à mão a cada fase. Ver ADR-052.
-  // Dark mode (Fase 14) — os tokens `.dark` existem desde a Fase 4.5
-  // (ADR-023) mas nunca tinham sido ligados (`forcedTheme="light"` travava
-  // tudo — ADR-047). `enableSystem` continua desligado de propósito: uma
-  // ferramenta de trabalho não deveria trocar de tema sozinha por causa do
-  // SO de quem está usando — só quando a pessoa escolhe, via o toggle. Ver
-  // ADR-061.
+  // Dark mode (Fase 14, ADR-023/047/061) — `enableSystem` continua desligado
+  // de propósito: uma ferramenta de trabalho não deveria trocar de tema
+  // sozinha por causa do SO de quem está usando, só quando a pessoa escolhe
+  // pelo toggle. `defaultTheme` vira "dark" no C11 (ADR-086): a nova direção
+  // visual (preto profundo/grafite/violeta) foi desenhada escura-primeiro —
+  // luz continua uma opção completa e testada, nunca de segunda classe, só
+  // deixa de ser a primeira impressão de quem nunca escolheu nada ainda.
   const body = (
-    <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
+    <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
       <TooltipProvider delayDuration={200}>
         {children}
         <Toaster position="top-center" richColors />
@@ -81,7 +87,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html
       lang="pt-BR"
-      className={`${bricolage.variable} ${instrumentSans.variable} ${plexMono.variable} h-full antialiased`}
+      className={`${spaceGrotesk.variable} ${inter.variable} ${plexMono.variable} h-full antialiased`}
       suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col bg-background text-foreground">

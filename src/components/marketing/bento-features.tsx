@@ -1,25 +1,22 @@
 "use client";
 
-import { Gift, Smartphone, MessageCircleHeart, LifeBuoy, BarChart3, Building2 } from "lucide-react";
+import { Gift, Smartphone, MessageCircleHeart, LifeBuoy } from "lucide-react";
 import { BentoCard, BentoGrid } from "@/components/ui/bento-grid";
 import { formatVoucherCode } from "@/domain/return-offer/code";
 
 /**
- * Seis capacidades REAIS do produto — nunca recursos inventados para a
+ * Quatro capacidades REAIS do produto — nunca recursos inventados para a
  * Landing parecer mais completa do que é. Os números/exemplos dentro de
  * cada mockup são ilustrativos (mesma convenção do "Rocket Rides" da
  * Stripe: uma prévia de produto, não uma promessa de resultado).
  *
- * C10 (ADR-085) — reescrito porque as 6 telas antigas eram 100%
- * recursos do Pro/Business (Analytics, Heatmap, Playbooks, API, White
- * Label, ROI Mode) — nenhuma mencionava o Retorno nem o cartão físico,
- * que são literalmente o que o Starter vende hoje (Pulse virou Starter
- * First, Pro/Business congelados). Um visitante lia a home inteira sendo
- * vendido em recursos que o próprio plano que ele assinaria não inclui —
- * prejudica venda (expectativa errada) e experiência (frustração pós-
- * cadastro). Agora: 4 blocos são o que o Starter realmente entrega hoje,
- * e os 2 últimos viram um convite honesto pra crescer — rotulados "No
- * Pro"/"No Business", nunca escondidos, mas nunca a promessa principal.
+ * C11 (ADR-086) — os dois blocos "quando crescer" (Analytics/Playbooks no
+ * Pro, API/marca própria no Business) do C10 saíram: a operação hoje é
+ * 100% Starter (Pro/Business congelados, sem venda ativa) — uma landing
+ * pré-lançamento anunciando upgrade de plano que ninguém pode comprar
+ * ainda é exatamente a "caixa que não faz sentido para o MVP" que a
+ * direção visual pediu para cortar. Cada bloco que resta é uma coisa que
+ * o cliente Starter realmente usa no primeiro dia — nada mais.
  */
 
 function RetornoBackground() {
@@ -96,51 +93,6 @@ function HelpBackground() {
   );
 }
 
-function GrowthBadge({ label }: { label: string }) {
-  return (
-    <span className="absolute right-4 top-4 rounded-full border border-border/60 bg-background/90 px-2.5 py-1 text-[11px] font-medium text-muted-foreground shadow-subtle backdrop-blur-sm">
-      {label}
-    </span>
-  );
-}
-
-function AnalyticsGrowthBackground() {
-  const bars = [40, 65, 50, 80, 60, 95, 70];
-  return (
-    <div className="absolute inset-0 flex items-start justify-center overflow-hidden p-5 pt-16">
-      <GrowthBadge label="No Pro" />
-      <div className="w-full max-w-sm rounded-xl border border-border/60 bg-background/90 p-4 shadow-premium backdrop-blur-sm">
-        <p className="mb-3 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Exemplo ilustrativo</p>
-        <div className="flex h-16 items-end gap-1.5">
-          {bars.map((h, i) => (
-            <div
-              key={i}
-              className="flex-1 rounded-t-sm bg-brand/70"
-              style={{ height: `${h}%`, animation: `bento-bar-rise 0.6s var(--ease-spring) ${i * 0.06}s backwards` }}
-            />
-          ))}
-        </div>
-        <p className="mt-3 text-xs text-muted-foreground">Analytics, Mapa de Mesas e Playbooks automáticos</p>
-      </div>
-    </div>
-  );
-}
-
-function ApiGrowthBackground() {
-  return (
-    <div className="absolute inset-0 flex items-start justify-center p-5 pt-14">
-      <GrowthBadge label="No Business" />
-      <div className="w-full rounded-lg bg-[#0B0E14] p-4 font-mono text-[11px] leading-relaxed shadow-premium">
-        <p className="text-emerald-400">POST /api/v1/campaigns</p>
-        <p className="text-slate-400">
-          {"{"} <span className="text-sky-300">&quot;type&quot;</span>: <span className="text-amber-300">&quot;GOOGLE_REVIEW&quot;</span> {"}"}
-        </p>
-        <p className="text-slate-500">200 OK · marca própria em cada tela</p>
-      </div>
-    </div>
-  );
-}
-
 const FEATURES = [
   {
     name: "Retorno: o brinde que traz o cliente de volta",
@@ -178,24 +130,6 @@ const FEATURES = [
     background: <HelpBackground />,
     className: "md:col-span-1 md:row-span-1",
   },
-  {
-    name: "Quando crescer: Analytics, Mapa de Mesas e Playbooks",
-    description: "Automação, heatmap de mesas e recomendações com um clique — libera no Pro, quando fizer sentido pro seu volume.",
-    Icon: BarChart3,
-    href: "/#planos",
-    cta: "Ver planos",
-    background: <AnalyticsGrowthBackground />,
-    className: "md:col-span-1 md:row-span-1",
-  },
-  {
-    name: "Quando crescer: API pública e marca própria",
-    description: "Múltiplas unidades, domínio e login com a sua cara, integrações via API — libera no Business.",
-    Icon: Building2,
-    href: "/#planos",
-    cta: "Ver planos",
-    background: <ApiGrowthBackground />,
-    className: "md:col-span-2 md:row-span-1",
-  },
 ] as const;
 
 export function BentoFeatures() {
@@ -206,8 +140,7 @@ export function BentoFeatures() {
           Feito pra fazer o cliente voltar, não só avaliar
         </h2>
         <p className="mt-4 text-muted-foreground">
-          O cartão físico, o brinde do Retorno e o canal de feedback já vêm no Starter — o mesmo motor cresce com
-          você quando chegar a hora do Pro ou do Business.
+          O cartão físico, o brinde do Retorno e o canal de feedback — tudo incluído, desde o primeiro dia.
         </p>
       </div>
 

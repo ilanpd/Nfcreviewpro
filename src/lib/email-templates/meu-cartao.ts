@@ -12,7 +12,7 @@ export function personalLinkRecoveryEmailHtml(links: { name: string; url: string
       <tr>
         <td style="padding:10px 0;border-bottom:1px solid #E3E5E8;">
           <p style="margin:0 0 4px;color:#16191C;font-size:14px;font-weight:600;">${link.name}</p>
-          <a href="${link.url}" style="color:#93520D;font-size:13px;word-break:break-all;">${link.url}</a>
+          <a href="${link.url}" style="color:#5A47D6;font-size:13px;word-break:break-all;">${link.url}</a>
         </td>
       </tr>`
     )

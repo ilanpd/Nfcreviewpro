@@ -16,17 +16,17 @@ const SWATCHES: { token: string; label: string; onToken?: string }[] = [
   { token: "background", label: "Fundo", onToken: "foreground" },
   { token: "card", label: "Cartão", onToken: "card-foreground" },
   { token: "muted", label: "Suave", onToken: "muted-foreground" },
-  { token: "brand", label: "Âmbar (acento)", onToken: "brand-foreground" },
-  { token: "brand-subtle", label: "Âmbar suave", onToken: "brand-ink" },
+  { token: "brand", label: "Violeta (acento)", onToken: "brand-foreground" },
+  { token: "brand-subtle", label: "Violeta suave", onToken: "brand-ink" },
   { token: "secondary", label: "Secundário", onToken: "secondary-foreground" },
 ];
 
 const HEX_TEXT_PAIRS: [string, string, string][] = [
   ["Tinta sobre branco", BRAND.colors.ink, BRAND.colors.paper],
   ["Grafite médio sobre branco", BRAND.colors.graphite, BRAND.colors.paper],
-  ["Tinta sobre âmbar", BRAND.colors.ink, BRAND.colors.amber],
-  ["Tinta sobre âmbar (escuro)", BRAND.colors.ink, BRAND.colors.amberOnDark],
-  ["Âmbar puro sobre branco (só ícone, nunca texto)", BRAND.colors.amber, BRAND.colors.paper],
+  ["Branco sobre violeta (texto de botão)", BRAND.colors.paper, BRAND.colors.violet],
+  ["Tinta profunda sobre violeta claro (texto de botão no escuro)", BRAND.colors.ink, BRAND.colors.violetOnDark],
+  ["Violeta puro sobre branco (ícone, nunca texto solto)", BRAND.colors.violet, BRAND.colors.paper],
 ];
 
 /**
