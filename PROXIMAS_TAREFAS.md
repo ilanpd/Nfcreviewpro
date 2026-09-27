@@ -306,6 +306,10 @@ Encontradas durante os ciclos C0 e C1 e não corrigidas na hora (fora do escopo 
 - [ ] **Envio real de e-mail nunca testado** — nem a confirmação de pedido nem a recuperação de link pessoal foram enviados de verdade em nenhum ambiente (Resend não configurado). Testar assim que o domínio do remetente estiver pronto.
 - [ ] **Dicionário de métricas ainda não existe** — `health-score.ts`, `attention-radar.ts`, ranking/insights/heatmap/previsão/funil/playbooks e a Visão geral continuam lendo `RatingEvent`/`redirectedGoogle`, que só têm dado de antes do C6 (cartões com o Retorno ativo não geram `RatingEvent` novo). Migrar no C9 — até lá, esses números ficam parados para empresas no Retorno.
 
+- [x] ~~Painel do dono sem tela para o Retorno~~ — resolvido no C7: `/dashboard/retorno` (ADR-081).
+- [ ] **F5 segue aberta depois do C7** — falta: menu do painel agrupado por plano ("Cresça com o Pro"); a Visão geral (`/dashboard`) trocar os KPIs antigos pelos 3 números do Retorno + receita estimada + checklist de ativação; "Mensagens" virar página própria (hoje dentro de Analytics, `components/dashboard/feedback-list.tsx` já pronto — é só extrair a rota); "Cartões" ganhar "destino principal" editável de verdade (hoje é só a campanha CARD, sem UI dedicada) e placa/QR para imprimir; "Configurações" perder o texto de "Link de avaliação do Google" onde já não é a única saída; onboarding de 2 campos com brinde sugerido por segmento (decisão D5 do plano).
+- [ ] **Mensagem "Retorno pausado" para quem nunca configurou nada** — `ownerAvailabilityMessage("PAUSED")` fala em "brindes já emitidos continuam valendo", que não faz sentido para uma empresa que nunca ativou o Retorno. Distinguir "nunca configurado" de "pausado depois de já ter rodado" quando a Visão geral entrar (não é o mesmo texto do checklist de ativação que falta).
+
 ## Backlog (não iniciado)
 
 - Fase 9.5 — Marketplace & Integrações (registrada em `ROADMAP.md`, não projetada)
