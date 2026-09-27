@@ -5,6 +5,18 @@ import type { LiveEvent } from "@/domain/live/types";
 
 const ASSIGNMENT_ACTIONS = ["CAMPAIGN_ASSIGNED", "CAMPAIGN_UNASSIGNED"] as const;
 
+/** O cartão de uma mensagem privada: vem da nota (mensagens antigas) ou da
+ * visita (mensagens enviadas sem a pergunta de nota, ADR-078). Sem nenhum dos
+ * dois não há de que cartão falar, e o evento fica de fora do feed. */
+function feedbackCard(f: {
+  ratingEvent: { cardId: string; visit: { card: { name: string } } } | null;
+  visit: { cardId: string; card: { name: string } } | null;
+}): { cardId: string; cardName: string } | null {
+  if (f.ratingEvent) return { cardId: f.ratingEvent.cardId, cardName: f.ratingEvent.visit.card.name };
+  if (f.visit) return { cardId: f.visit.cardId, cardName: f.visit.card.name };
+  return null;
+}
+
 /**
  * Tudo que aconteceu numa empresa desde `since` — a fonte de dados do feed
  * de eventos do Live Mode e do Command Center. Não inventa uma tabela nova
@@ -29,7 +41,12 @@ export async function listRecentEvents(companyId: string, since: Date, limit = 5
     }),
     prisma.privateFeedback.findMany({
       where: { companyId, createdAt: { gt: since } },
-      select: { id: true, createdAt: true, ratingEvent: { select: { cardId: true, visit: { select: { card: { select: { name: true } } } } } } },
+      select: {
+        id: true,
+        createdAt: true,
+        ratingEvent: { select: { cardId: true, visit: { select: { card: { select: { name: true } } } } } },
+        visit: { select: { cardId: true, card: { select: { name: true } } } },
+      },
       orderBy: { createdAt: "desc" },
       take: limit,
     }),
@@ -44,7 +61,10 @@ export async function listRecentEvents(companyId: string, since: Date, limit = 5
   const events: LiveEvent[] = [
     ...redirects.map((r) => formatRedirectEvent({ id: r.id, cardId: r.cardId, cardName: r.card.name, campaignType: r.campaign?.type ?? null, createdAt: r.createdAt })),
     ...ratings.map((r) => formatRatingEvent({ id: r.id, cardId: r.cardId, cardName: r.visit.card.name, stars: r.stars, redirectedGoogle: r.redirectedGoogle, createdAt: r.createdAt })),
-    ...feedbacks.map((f) => formatFeedbackEvent({ id: f.id, cardId: f.ratingEvent.cardId, cardName: f.ratingEvent.visit.card.name, createdAt: f.createdAt })),
+    ...feedbacks.flatMap((f) => {
+      const card = feedbackCard(f);
+      return card ? [formatFeedbackEvent({ id: f.id, cardId: card.cardId, cardName: card.cardName, createdAt: f.createdAt })] : [];
+    }),
     ...assignmentChanges.map((a) => formatAssignmentAuditEvent(a)),
   ];
 
@@ -80,7 +100,13 @@ export async function listGlobalRecentEvents(since: Date, limit = 50): Promise<L
     }),
     prisma.privateFeedback.findMany({
       where: { createdAt: { gt: since } },
-      select: { id: true, createdAt: true, company: { select: { name: true } }, ratingEvent: { select: { cardId: true, visit: { select: { card: { select: { name: true } } } } } } },
+      select: {
+        id: true,
+        createdAt: true,
+        company: { select: { name: true } },
+        ratingEvent: { select: { cardId: true, visit: { select: { card: { select: { name: true } } } } } },
+        visit: { select: { cardId: true, card: { select: { name: true } } } },
+      },
       orderBy: { createdAt: "desc" },
       take: limit,
     }),
@@ -107,7 +133,12 @@ export async function listGlobalRecentEvents(since: Date, limit = 50): Promise<L
   const events: LiveEvent[] = [
     ...redirects.map((r) => withCompany(formatRedirectEvent({ id: r.id, cardId: r.cardId, cardName: r.card.name, campaignType: r.campaign?.type ?? null, createdAt: r.createdAt }), r.company.name)),
     ...ratings.map((r) => withCompany(formatRatingEvent({ id: r.id, cardId: r.cardId, cardName: r.visit.card.name, stars: r.stars, redirectedGoogle: r.redirectedGoogle, createdAt: r.createdAt }), r.company.name)),
-    ...feedbacks.map((f) => withCompany(formatFeedbackEvent({ id: f.id, cardId: f.ratingEvent.cardId, cardName: f.ratingEvent.visit.card.name, createdAt: f.createdAt }), f.company.name)),
+    ...feedbacks.flatMap((f) => {
+      const card = feedbackCard(f);
+      return card
+        ? [withCompany(formatFeedbackEvent({ id: f.id, cardId: card.cardId, cardName: card.cardName, createdAt: f.createdAt }), f.company.name)]
+        : [];
+    }),
     ...assignmentChanges.map((a) => formatAssignmentAuditEvent(a)),
     ...paidOrders.map((o) => formatStoreOrderEvent({ id: o.id, customerName: o.customerName, stage: "paid", createdAt: o.createdAt })),
     ...deliveredOrders.map((o) => formatStoreOrderEvent({ id: o.id, customerName: o.customerName, stage: "delivered", createdAt: o.deliveredAt! })),

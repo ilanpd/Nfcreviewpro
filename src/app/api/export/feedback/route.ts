@@ -12,12 +12,12 @@ export async function GET() {
 
     const rows = feedback.map((f) => ({
       data: f.createdAt.toISOString(),
-      nota: f.ratingEvent.stars,
+      nota: f.ratingEvent?.stars ?? "",
       nome: f.name ?? "",
       telefone: f.phone ?? "",
       mensagem: f.message,
       resolvido: f.resolved ? "sim" : "não",
-      dispositivo: f.ratingEvent.visit.device ?? "",
+      dispositivo: (f.ratingEvent?.visit ?? f.visit)?.device ?? "",
     }));
 
     const csv = toCsv(rows, [

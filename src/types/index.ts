@@ -19,10 +19,13 @@ export type ZoneListItem = Awaited<ReturnType<typeof listZones>>[number];
 export type TableCardItem = Awaited<ReturnType<typeof listCardsForMap>>[number];
 export type TableMapCampaignItem = Awaited<ReturnType<typeof listActiveCampaignsForMap>>[number];
 
+type VisitContext = Pick<Visit, "device" | "browser" | "createdAt">;
+
+/** Uma mensagem privada. `ratingEvent` é nulo nas mensagens enviadas sem a
+ * pergunta de nota (Retorno, ADR-078); nesse caso o contexto vem de `visit`. */
 export type FeedbackWithContext = PrivateFeedback & {
-  ratingEvent: RatingEvent & {
-    visit: Pick<Visit, "device" | "browser" | "createdAt">;
-  };
+  ratingEvent: (RatingEvent & { visit: VisitContext }) | null;
+  visit: VisitContext | null;
 };
 
 export interface DashboardSummary {

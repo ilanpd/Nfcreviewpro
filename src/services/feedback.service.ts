@@ -67,7 +67,10 @@ export function listFeedback(companyId: string, resolved?: boolean, options?: { 
     },
     orderBy: { createdAt: "desc" },
     take: options?.take,
-    include: { ratingEvent: { include: { visit: { select: { device: true, browser: true, createdAt: true } } } } },
+    include: {
+      ratingEvent: { include: { visit: { select: { device: true, browser: true, createdAt: true } } } },
+      visit: { select: { device: true, browser: true, createdAt: true } },
+    },
   });
 }
 

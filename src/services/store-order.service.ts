@@ -170,6 +170,10 @@ export async function provisionStoreOrder(orderId: string) {
     // compra NUNCA entrava em vigor de verdade, o cartão sempre caía no
     // fallback de avaliação Google independente do que o cliente pediu.
     await updateCampaign(companyId, campaign.id, { status: "ACTIVE" });
+    // Campanha do sistema, não do dono (ADR-078): o construtor do Pro não a
+    // oferece para edição e a conversão ao assinar o Starter a reconhece. A
+    // origem não faz parte do que o usuário pode enviar, por isso é gravada aqui.
+    await prisma.campaign.update({ where: { id: campaign.id }, data: { origin: "SYSTEM_DIRECT" } });
     for (const card of cards) {
       await assignCampaign(ctx, campaign.id, { scope: "CARD", cardId: card.id });
     }

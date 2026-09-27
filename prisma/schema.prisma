@@ -77,6 +77,29 @@ enum CampaignType {
   AI_MENU
 }
 
+// Retorno (Pulse, ADR-078) — ciclo de vida de um brinde. `EXPIRED` é
+// materializado por limpeza periódica, mas a leitura nunca depende dele: a
+// validade é sempre conferida contra `expiresAt` na hora (vencimento na
+// leitura), então um brinde vencido nunca resgata mesmo sem a limpeza ter
+// rodado. `VOIDED` é anulação manual (erro de resgate, fraude).
+enum VoucherStatus {
+  ISSUED
+  REDEEMED
+  EXPIRED
+  VOIDED
+}
+
+// Quem criou a campanha. `USER` é tudo o que o dono monta no painel.
+// `SYSTEM_DIRECT` é o redirecionamento inicial do cartão avulso (criado ao
+// provisionar o pedido) e `SYSTEM_RETURN` é a campanha COUPON do Retorno:
+// campanhas do sistema não aparecem para edição no construtor do Pro e são as
+// que a conversão ao assinar o Starter transforma no lugar, sem recriar cartão.
+enum CampaignOrigin {
+  USER
+  SYSTEM_DIRECT
+  SYSTEM_RETURN
+}
+
 // Ordered by specificity, most to least: CARD > ZONE > BRANCH > COMPANY >
 // ORGANIZATION — see resolution-engine/resolve.ts's
 // compareBySpecificityThenPriorityThenRecency. ORGANIZATION (Phase 4) is the
@@ -350,44 +373,44 @@ model Organization {
 }
 
 model Company {
-  id                       String        @id @default(cuid())
-  organizationId           String?
-  organization             Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
-  name                     String
-  slug                     String        @unique
-  logoUrl                  String?
+  id                          String        @id @default(cuid())
+  organizationId              String?
+  organization                Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  name                        String
+  slug                        String        @unique
+  logoUrl                     String?
   // Preparação para White Label (Fase 10, ainda não implementada) — mesmo
   // padrão de `logoUrl`: nulo até a fase construir a UI de upload e o
   // `<link rel="icon">` dinâmico que a lê. Ver ADR-039.
-  faviconUrl               String?
-  whatsapp                 String
-  googleReviewUrl          String
-  primaryColor             String        @default("#0F172A")
+  faviconUrl                  String?
+  whatsapp                    String
+  googleReviewUrl             String
+  primaryColor                String        @default("#0F172A")
   // White Label (Fase 10) — cor secundária opcional; sem ela, a UI de marca
   // deriva um tom neutro de `primaryColor` (ver domain/white-label/color.ts),
   // nunca inventa uma cor sem relação com a marca escolhida.
-  secondaryColor           String?
+  secondaryColor              String?
   // `domain` já existia desde uma fase anterior (ver ADR-039) — sem uso até
   // agora. Nesta fase ganha um leitor de verdade: `domainVerifiedAt` é nulo
   // até uma checagem real de DNS (TXT) confirmar posse do domínio; o
   // DomainResolver nunca resolve branding por um domínio não verificado
   // (ver ADR-042).
-  domain                   String?       @unique
-  domainVerifiedAt         DateTime?
+  domain                      String?       @unique
+  domainVerifiedAt            DateTime?
   // Token aleatório por tentativa de verificação — o empresário publica
   // `_nfcos-challenge.<domínio> TXT "<domainVerificationToken>"` no DNS;
   // `verifyDomainOwnership` confirma via uma consulta DNS-over-HTTPS real
   // antes de `domainVerifiedAt` ser preenchido. Nunca reaproveita um
   // segredo de outra finalidade (ex.: IP_HASH_SALT) — token de posse de
   // domínio é uma preocupação própria. Ver ADR-042.
-  domainVerificationToken  String?
+  domainVerificationToken     String?
   // Tela de login com marca própria (Fase 10) — ambos opcionais, nulos até
   // configurados; sem eles a tela de login mostra o padrão do produto.
-  loginHeadline            String?
-  loginBackgroundUrl       String?
-  plan                     PlanType      @default(STARTER)
+  loginHeadline               String?
+  loginBackgroundUrl          String?
+  plan                        PlanType      @default(STARTER)
   // Motor de Ativação (Fase 18) — ver comentário do enum AccountType.
-  accountType              AccountType   @default(CUSTOMER)
+  accountType                 AccountType   @default(CUSTOMER)
   // Billing (Stripe) — nulos até o primeiro checkout. `stripeCustomerId` é
   // criado uma vez e reaproveitado em toda assinatura futura da empresa;
   // `stripeSubscriptionStatus` espelha literalmente o `status` do Subscription
@@ -396,27 +419,35 @@ model Company {
   // Stripe. `plan` acima continua sendo a fonte da verdade para limites/
   // features do produto; o webhook do Stripe é o único escritor de `plan`
   // depois do checkout inicial. Ver ADR-062.
-  stripeCustomerId         String?       @unique
-  stripeSubscriptionId     String?       @unique
-  stripeSubscriptionStatus String?
+  stripeCustomerId            String?       @unique
+  stripeSubscriptionId        String?       @unique
+  stripeSubscriptionStatus    String?
+  // Quando `stripeSubscriptionStatus` mudou pela última vez (escrito só pelo
+  // webhook do Stripe). Sem isto não dá para contar a tolerância de 7 dias de
+  // uma cobrança atrasada nem os 90 dias de leitura depois de cancelar. Ver
+  // domain/billing (tier efetivo) e ADR-078.
+  subscriptionStatusChangedAt DateTime?
+  // Piloto do Retorno (ADR-078): só o Admin liga. Enquanto falso, o cartão da
+  // empresa se comporta como antes do Retorno, mesmo no Starter.
+  returnPilotEnabled          Boolean       @default(false)
   // IANA identifier. Used by the Rule Engine to evaluate DAY_OF_WEEK/
   // TIME_WINDOW/DATE_RANGE rules in the business's local time, not the
   // server's — a "Friday 18:00" Happy Hour rule must mean 6pm in the
   // restaurant, not 6pm UTC. Defaults to Brazil since every string in this
   // product is already pt-BR; a real timezone picker is a Settings UI
   // nicety, not a Phase 3 blocker.
-  timezone                 String        @default("America/Sao_Paulo")
+  timezone                    String        @default("America/Sao_Paulo")
   // ROI Mode (Fase 7) — configuração opcional, definida uma vez pelo
   // empresário em Configurações, que transforma toques/conversões em
   // dinheiro estimado. Os três campos só existem juntos (nulos até o
   // empresário configurar pela primeira vez); o Analytics Engine só calcula
   // receita influenciada quando os três estão preenchidos — nunca estima
   // com valores parciais ou inventados. Ver ADR-029.
-  roiAvgTicket             Float?
-  roiReturnRate            Float?
-  roiNewCustomerValue      Float?
-  createdAt                DateTime      @default(now())
-  updatedAt                DateTime      @updatedAt
+  roiAvgTicket                Float?
+  roiReturnRate               Float?
+  roiNewCustomerValue         Float?
+  createdAt                   DateTime      @default(now())
+  updatedAt                   DateTime      @updatedAt
 
   users                   User[]
   cards                   NFCCard[]
@@ -440,6 +471,8 @@ model Company {
   playbookExecutions      PlaybookExecution[]
   autoPilotSetting        AutoPilotSetting?
   supportRequests         SupportRequest[]
+  rewardOffer             RewardOffer?
+  vouchers                Voucher[]
 
   @@index([organizationId])
 }
@@ -558,6 +591,7 @@ model NFCCard {
   campaignAssignments CampaignAssignment[]
   redirectLogs        RedirectLog[]
   ruleExecutionLogs   RuleExecutionLog[]
+  vouchers            Voucher[]
 
   @@index([companyId])
   @@index([branchId])
@@ -701,12 +735,19 @@ model Visit {
   ipHash    String
   country   String?
   city      String?
+  // Cookie `pv` do Retorno (ADR-078): identificador aleatório do aparelho,
+  // definido pelo servidor. Serve só de atalho para reconhecer o celular; quem
+  // dá direito ao brinde é o código. Nunca dado pessoal declarado.
+  visitorId String?
   createdAt DateTime @default(now())
 
-  ratingEvent RatingEvent?
+  ratingEvent      RatingEvent?
+  privateFeedbacks PrivateFeedback[]
+  vouchers         Voucher[]
 
   @@index([companyId, createdAt])
   @@index([cardId, createdAt])
+  @@index([companyId, visitorId])
 }
 
 model RatingEvent {
@@ -727,20 +768,104 @@ model RatingEvent {
 }
 
 model PrivateFeedback {
-  id             String      @id @default(cuid())
-  ratingEventId  String      @unique
-  ratingEvent    RatingEvent @relation(fields: [ratingEventId], references: [id], onDelete: Cascade)
+  id             String       @id @default(cuid())
+  // Retorno (ADR-078): "Falar com a gente" passa a existir sem a pergunta de
+  // nota, então o vínculo com a nota vira opcional (Postgres aceita vários
+  // nulos numa coluna única) e a mensagem se liga à visita.
+  ratingEventId  String?      @unique
+  ratingEvent    RatingEvent? @relation(fields: [ratingEventId], references: [id], onDelete: Cascade)
+  visitId        String?
+  visit          Visit?       @relation(fields: [visitId], references: [id], onDelete: SetNull)
   companyId      String
-  company        Company     @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  company        Company      @relation(fields: [companyId], references: [id], onDelete: Cascade)
   name           String?
   phone          String?
   message        String
-  resolved       Boolean     @default(false)
+  resolved       Boolean      @default(false)
   whatsappSentAt DateTime?
-  createdAt      DateTime    @default(now())
+  createdAt      DateTime     @default(now())
 
   @@index([companyId, createdAt])
   @@index([companyId, resolved])
+  @@index([visitId])
+}
+
+// --- Retorno (Pulse, C4 / ADR-078) ---
+// O brinde de próxima visita: emitido a quem toca o cartão, resgatado com o
+// código mais o PIN da loja. Sem aplicativo, cadastro ou telefone. As regras
+// (liberação no dia seguinte, validade, carência, tentativas de PIN, motivos de
+// recusa) vivem em domain/return-offer, puras e testadas; estas tabelas só
+// guardam o estado.
+
+// A configuração do brinde de uma empresa. Uma por empresa. Sem `pinHash` o
+// brinde não pode ser resgatado, então o serviço recusa ativá-lo antes de haver PIN.
+model RewardOffer {
+  id           String    @id @default(cuid())
+  companyId    String    @unique
+  company      Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  // O que o cliente ganha, como aparece na tela ("Hidratação grátis").
+  title        String
+  description  String?
+  // Quantos dias o brinde vale a partir do dia em que é liberado (padrão 14;
+  // barbearia e salão têm ciclo de 2 a 4 semanas, restaurante pode pedir 7).
+  windowDays   Int       @default(14)
+  // Dias entre a emissão de um brinde e a emissão do próximo ao mesmo
+  // aparelho: limita o custo por cliente.
+  cooldownDays Int       @default(30)
+  // PIN de 4 dígitos da loja, só como hash. Nunca o valor.
+  pinHash      String?
+  pinUpdatedAt DateTime?
+  // Botão principal da tela do Retorno. Nulo = o link de avaliação do Google
+  // da empresa. Ao assinar o Starter, recebe o destino que o dono escolheu na
+  // compra do cartão avulso, então nada do que ele configurou se perde.
+  primaryUrl   String?
+  // Teto de brindes emitidos por dia (fuso da empresa). Nulo = sem teto; sem
+  // valor padrão até o piloto mostrar qual faz sentido.
+  dailyCap     Int?
+  // Pausa do dono. Falso = nenhum brinde novo é emitido; os já emitidos
+  // continuam valendo até vencer.
+  active       Boolean   @default(false)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  vouchers Voucher[]
+}
+
+model Voucher {
+  id           String        @id @default(cuid())
+  companyId    String
+  company      Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  offerId      String
+  offer        RewardOffer   @relation(fields: [offerId], references: [id], onDelete: Cascade)
+  // Cartão em que o toque aconteceu; nulo se o cartão for excluído depois (o
+  // brinde continua valendo, é da empresa).
+  cardId       String?
+  card         NFCCard?      @relation(fields: [cardId], references: [id], onDelete: SetNull)
+  visitId      String?
+  visit        Visit?        @relation(fields: [visitId], references: [id], onDelete: SetNull)
+  // Cookie `pv` do aparelho que recebeu o brinde (atalho de reconhecimento).
+  visitorId    String?
+  // 6 caracteres sem vogais nem 0, 1, I, L, O (ex.: K7X4QM, mostrado como
+  // K7X-4QM), único por empresa. O código É o brinde: vale em qualquer aparelho.
+  code         String
+  // Foto do texto do brinde na emissão: o dono pode mudar o brinde depois sem
+  // reescrever o que o cliente já recebeu.
+  title        String
+  status       VoucherStatus @default(ISSUED)
+  issuedAt     DateTime      @default(now())
+  // Libera no dia seguinte (fuso da empresa) para o cliente não tocar e
+  // resgatar na mesma visita.
+  availableAt  DateTime
+  expiresAt    DateTime
+  redeemedAt   DateTime?
+  voidedAt     DateTime?
+  voidedReason String?
+
+  @@unique([companyId, code])
+  @@index([companyId, status, expiresAt])
+  @@index([companyId, visitorId, issuedAt])
+  @@index([companyId, issuedAt])
+  @@index([companyId, redeemedAt])
 }
 
 // --- Campaign Resolution Engine (Phase 1) ---
@@ -775,6 +900,8 @@ model Campaign {
   // integração de gasto de anúncio neste produto) — o Analytics Engine
   // mostra "configure o custo desta campanha" em vez de inventar um número.
   estimatedCost    Float?
+  // Ver o comentário do enum CampaignOrigin (ADR-078).
+  origin           CampaignOrigin @default(USER)
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt
 
@@ -1195,6 +1322,10 @@ model SiteSettings {
   // não uma trava de sistema).
   blankChipStock        Int      @default(0)
   lowStockThreshold     Int      @default(20)
+  // Interruptor geral do Retorno (ADR-078). Falso desliga a emissão e o
+  // resgate para todas as empresas na hora, sem deploy nem migração: o cartão
+  // volta ao comportamento anterior (destino direto ou tela de avaliação).
+  returnOfferEnabled    Boolean  @default(true)
   updatedAt             DateTime @updatedAt
   updatedByEmail        String?
 }

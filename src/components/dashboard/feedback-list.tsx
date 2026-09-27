@@ -78,11 +78,15 @@ export function FeedbackList({
                     {new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short" }).format(f.createdAt)}
                   </TableCell>
                   <TableCell>
-                    <SmartBadge
-                      tone="neutral"
-                      icon={<Star className="fill-amber-400 text-amber-400" />}
-                      label={String(f.ratingEvent.stars)}
-                    />
+                    {f.ratingEvent ? (
+                      <SmartBadge
+                        tone="neutral"
+                        icon={<Star className="fill-amber-400 text-amber-400" />}
+                        label={String(f.ratingEvent.stars)}
+                      />
+                    ) : (
+                      <span className="text-xs text-muted-foreground">—</span>
+                    )}
                   </TableCell>
                   <TableCell>
                     <div className="text-sm">{f.name || "Não informado"}</div>
