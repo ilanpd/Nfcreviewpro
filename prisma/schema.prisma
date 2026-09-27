@@ -435,6 +435,23 @@ model Company {
   // Piloto do Retorno (ADR-078): só o Admin liga. Enquanto falso, o cartão da
   // empresa se comporta como antes do Retorno, mesmo no Starter.
   returnPilotEnabled          Boolean       @default(false)
+  // E-mails transacionais/reengajamento (C9/F6, ADR-084) — mesmo padrão
+  // idempotente de `StoreOrder.confirmationEmailSentAt`: cada campo só é
+  // preenchido depois de um envio confirmado (`sent: true`), nunca antes, e
+  // sua presença é o que impede reenvio automático duplicado numa nova
+  // tentativa/retry do webhook ou do cron. `billingPastDueEmailSentAt` é
+  // zerado de volta a nulo quando a assinatura volta a "active"/"trialing" —
+  // um novo atraso futuro precisa poder avisar de novo.
+  returnActivatedEmailSentAt     DateTime?
+  subscriptionWelcomeEmailSentAt DateTime?
+  billingPastDueEmailSentAt      DateTime?
+  subscriptionCanceledEmailSentAt DateTime?
+  // Reengajamento D+7/D+30 (J7 do plano): só dispara para quem ainda não
+  // ativou o Retorno. `reengagementD30EmailSentAt` preenchido travas os dois
+  // lembretes para sempre (ver domain/return-offer/reengagement.ts) — nunca
+  // manda o lembrete de 7 dias depois do de 30.
+  reengagementD7EmailSentAt  DateTime?
+  reengagementD30EmailSentAt DateTime?
   // IANA identifier. Used by the Rule Engine to evaluate DAY_OF_WEEK/
   // TIME_WINDOW/DATE_RANGE rules in the business's local time, not the
   // server's — a "Friday 18:00" Happy Hour rule must mean 6pm in the
@@ -532,6 +549,25 @@ model SupportRequest {
 
   @@index([companyId, createdAt])
   @@index([status, createdAt])
+}
+
+// Página pública /contato (C9/F6) — para quem escreve ANTES de ter conta
+// (visitante, cliente final de uma empresa, imprensa/parceria): sem
+// `companyId`, de propósito. Diferente de `SupportRequest` (sempre um
+// cliente já logado, dentro de uma empresa) — misturar os dois exigiria
+// `companyId` opcional em `SupportRequest` e reescrever toda query de lá.
+// A notificação por e-mail (`sendEmail`, best-effort) é só um aviso — esta
+// linha é o registro de verdade, sobrevive mesmo sem domínio de e-mail
+// verificado ainda.
+model ContactMessage {
+  id          String    @id @default(cuid())
+  name        String
+  email       String
+  message     String
+  createdAt   DateTime  @default(now())
+  respondedAt DateTime?
+
+  @@index([createdAt])
 }
 
 // RECTANGLE/CIRCLE only — matches the two shapes every reference floor-plan
