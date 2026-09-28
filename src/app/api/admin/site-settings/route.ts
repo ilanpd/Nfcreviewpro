@@ -5,14 +5,15 @@ import { currentUser } from "@clerk/nextjs/server";
 import { isSuperAdmin } from "@/lib/super-admin";
 import { getSiteSettings, updateSiteSettings } from "@/lib/site-settings";
 import { handleApiError } from "@/lib/api-error";
+import { httpUrlSchema } from "@/lib/validations/http-url";
 
 const overrideSchema = z.object({
-  imageUrl: z.string().url().optional().or(z.literal("")),
+  imageUrl: httpUrlSchema().optional().or(z.literal("")),
   unitPriceCents: z.number().int().min(0).optional(),
 });
 
 const bodySchema = z.object({
-  heroVideoUrl: z.string().url().optional().or(z.literal("")),
+  heroVideoUrl: httpUrlSchema().optional().or(z.literal("")),
   storeProductOverrides: z.record(z.string(), overrideSchema).optional(),
   blankChipStock: z.number().int().min(0).optional(),
   lowStockThreshold: z.number().int().min(0).optional(),
