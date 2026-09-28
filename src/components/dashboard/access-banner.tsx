@@ -11,8 +11,8 @@ export function AccessBanner({ notice }: { notice: AccessNotice }) {
       <AlertTitle>{notice.title}</AlertTitle>
       <AlertDescription>
         {notice.description}{" "}
-        <a href="/dashboard/settings" className="font-medium underline underline-offset-4">
-          Gerenciar assinatura
+        <a href={notice.cta?.href ?? "/dashboard/settings"} className="font-medium underline underline-offset-4">
+          {notice.cta?.label ?? "Gerenciar assinatura"}
         </a>
       </AlertDescription>
     </Alert>

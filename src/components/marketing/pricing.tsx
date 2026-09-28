@@ -59,7 +59,7 @@ export function Pricing() {
                     Em breve
                   </Button>
                 ) : (
-                  <Link href={`/sign-up?plan=${plan.id}`} className="mt-8">
+                  <Link href={`/comecar?plan=${plan.id}`} className="mt-8">
                     <Button className="w-full" variant={plan.highlighted ? "default" : "outline"}>
                       Assinar {plan.name}
                     </Button>

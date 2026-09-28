@@ -15,27 +15,42 @@ import type { PlanType } from "@/generated/prisma/client";
 export default async function OnboardingPlanPage({
   searchParams,
 }: {
-  searchParams: Promise<{ plan?: string; cardProductId?: string }>;
+  searchParams: Promise<{ plan?: string; cardProductId?: string; hasCard?: string }>;
 }) {
   const ctx = await getAuthContext();
   if (!ctx) redirect("/onboarding");
 
-  const { plan, cardProductId } = await searchParams;
+  const { plan, cardProductId, hasCard } = await searchParams;
   const initialPlan = plan && plan in PLANS ? (plan as PlanType) : undefined;
   const initialCardProductId = cardProductId && getStoreProduct(cardProductId) ? cardProductId : undefined;
 
-  const cardCount = await prisma.nFCCard.count({ where: { companyId: ctx.companyId } });
+  const [cardCount, company] = await Promise.all([
+    prisma.nFCCard.count({ where: { companyId: ctx.companyId } }),
+    prisma.company.findUniqueOrThrow({ where: { id: ctx.companyId }, select: { stripeSubscriptionId: true } }),
+  ]);
+  // C15 (Fluxo 6) — quem já teve uma assinatura antes (cancelada, agora
+  // reativando) não está "ativando pela primeira vez": copy diferente,
+  // nunca reoferece cartão (hasExistingCards já cobre isso).
+  const isReactivation = company.stripeSubscriptionId !== null;
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-muted/30 p-4">
       <div className="w-full max-w-4xl space-y-6">
         <div className="space-y-2 text-center">
-          <h1 className="text-2xl font-semibold tracking-tight">Escolha seu plano</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">{isReactivation ? "Reative sua assinatura" : "Escolha seu plano"}</h1>
           <p className="text-sm text-muted-foreground">
-            Sua empresa já está criada — falta só ativar a assinatura para começar a usar o {BRAND.name}.
+            {isReactivation
+              ? "Sua assinatura está inativa — reative para continuar usando o Pulse."
+              : `Sua empresa já está criada — falta só ativar a assinatura para começar a usar o ${BRAND.name}.`}
           </p>
         </div>
-        <PlanSelector initialPlan={initialPlan} initialCardProductId={initialCardProductId} hasExistingCards={cardCount > 0} cardCount={cardCount} />
+        <PlanSelector
+          initialPlan={initialPlan}
+          initialCardProductId={initialCardProductId}
+          hasExistingCards={cardCount > 0}
+          cardCount={cardCount}
+          hasCard={hasCard === "1"}
+        />
       </div>
     </div>
   );

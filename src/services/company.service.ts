@@ -47,7 +47,15 @@ async function invalidateCompanyBrandCaches(company: { slug: string; domain: str
 }
 
 export async function updateCompany(companyId: string, input: UpdateCompanyInput) {
-  const company = await prisma.company.update({ where: { id: companyId }, data: input });
+  let company = await prisma.company.update({ where: { id: companyId }, data: input });
+  // C15 — auto-cura: `activatedAt` marca "o dono já preencheu WhatsApp e
+  // Google", não literalmente "passou pela tela /onboarding/ativar". Editar
+  // os dois direto em Configurações (em vez de usar a tela dedicada) tem que
+  // contar igual, senão `ActivationBanner` fica preso pra sempre numa
+  // empresa que já está, na prática, completa.
+  if (!company.activatedAt && company.whatsapp && company.googleReviewUrl) {
+    company = await prisma.company.update({ where: { id: companyId }, data: { activatedAt: new Date() } });
+  }
   await invalidateCompany(companyId);
   await invalidateCompanyBrandCaches(company);
   return company;
@@ -106,7 +114,13 @@ export async function verifyDomainOwnership(companyId: string): Promise<DomainVe
   return { verified: true };
 }
 
-/** Creates a company for a brand-new Clerk user and makes them its OWNER. */
+/**
+ * Creates a company for a brand-new Clerk user and makes them its OWNER.
+ * C15 — só o nome (`OnboardingInput` reduzido): WhatsApp/Google/cor ficam
+ * nulos aqui de propósito, preenchidos depois em `/onboarding/ativar`
+ * (pós-pagamento). `ActivationBanner` no dashboard lê `activatedAt` (nulo)
+ * pra nunca deixar essa etapa passar despercebida pelo dono.
+ */
 export async function createCompanyForNewUser(params: {
   clerkId: string;
   email: string;
@@ -124,13 +138,7 @@ export async function createCompanyForNewUser(params: {
 
   return prisma.$transaction(async (tx) => {
     const company = await tx.company.create({
-      data: {
-        name: input.name,
-        slug,
-        whatsapp: input.whatsapp,
-        googleReviewUrl: input.googleReviewUrl,
-        primaryColor: input.primaryColor,
-      },
+      data: { name: input.name, slug },
     });
 
     await tx.user.create({
@@ -191,6 +199,13 @@ export async function createGuestCompany(params: { name: string; whatsapp: strin
  * mesmos registros — nunca recriados. Retorna `null` quando não há nenhuma
  * empresa convidada para reivindicar (o caminho normal de um cadastro
  * totalmente novo).
+ *
+ * C15 — `whatsapp`/`googleReviewUrl` do convidado NUNCA são preservados na
+ * promoção: são só o placeholder inerte de `createGuestCompany`
+ * (`destinationUrl` do pedido, nunca um Google de verdade), e o onboarding
+ * não coleta mais esses campos aqui. Zerados de propósito (`null`) — o
+ * recém-promovido passa por `/onboarding/ativar` como qualquer assinante
+ * novo, pra preencher valores reais, nunca herdar um placeholder.
  */
 export async function claimGuestCompany(params: { clerkId: string; email: string; input: OnboardingInput }) {
   const { clerkId, email, input } = params;
@@ -211,9 +226,8 @@ export async function claimGuestCompany(params: { clerkId: string; email: string
       data: {
         accountType: "CUSTOMER",
         name: input.name,
-        whatsapp: input.whatsapp,
-        googleReviewUrl: input.googleReviewUrl,
-        primaryColor: input.primaryColor,
+        whatsapp: null,
+        googleReviewUrl: null,
       },
     });
     await tx.user.create({

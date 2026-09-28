@@ -38,20 +38,27 @@ describe("dashboardGateTarget", () => {
 
 describe("accessNotice", () => {
   it("assinatura em dia e sem acesso não têm aviso", () => {
-    expect(accessNotice(access("active"))).toBeNull();
-    expect(accessNotice(access(null))).toBeNull();
-    expect(accessNotice(access("canceled", 200))).toBeNull();
+    expect(accessNotice(access("active"), "active")).toBeNull();
+    expect(accessNotice(access(null), null)).toBeNull();
+    expect(accessNotice(access("canceled", 200), "canceled")).toBeNull();
   });
 
   it("tolerância: aviso amarelo com a data limite", () => {
-    const notice = accessNotice(access("past_due", 2))!;
+    const notice = accessNotice(access("past_due", 2), "past_due")!;
     expect(notice.tone).toBe("warning");
     expect(notice.description).toContain("02/10/2026");
   });
 
-  it("só leitura: aviso crítico, dizendo que os brindes já emitidos continuam valendo", () => {
-    const notice = accessNotice(access("canceled", 10))!;
+  it("só leitura por cobrança atrasada (past_due/unpaid): Portal resolve, sem CTA de reativação", () => {
+    const notice = accessNotice(access("past_due", 10), "past_due")!;
     expect(notice.tone).toBe("critical");
     expect(notice.description).toContain("brindes já emitidos continuam valendo");
+    expect(notice.cta).toBeUndefined();
+  });
+
+  it("só leitura por assinatura cancelada de vez: Portal não resolve, CTA manda reativar", () => {
+    const notice = accessNotice(access("canceled", 10), "canceled")!;
+    expect(notice.tone).toBe("critical");
+    expect(notice.cta).toEqual({ href: "/onboarding/plan", label: "Reativar assinatura" });
   });
 });

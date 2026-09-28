@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { BRAND } from "@/lib/brand";
 import Link from "next/link";
 import { ArrowRight, Check, CreditCard } from "lucide-react";
@@ -31,6 +32,18 @@ const ACCENTS = ["var(--muted-foreground)", "var(--brand)", "var(--accent-premiu
  */
 export function StoreProductGrid({ products }: { products: StoreProduct[] }) {
   const [selected, setSelected] = useState<StoreProduct | null>(null);
+  const searchParams = useSearchParams();
+
+  // C15 — vindo da tela de descoberta (`/comecar?produto=single`, Fluxo 1):
+  // abre o diálogo já focado no produto certo, sem o visitante precisar
+  // escolher de novo o que acabou de responder.
+  useEffect(() => {
+    const produto = searchParams.get("produto");
+    if (!produto) return;
+    const match = products.find((p) => p.id === produto);
+    if (match) setSelected(match);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <section id="produtos" className="bg-muted/30 py-20">

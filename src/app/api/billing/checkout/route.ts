@@ -110,7 +110,11 @@ export async function POST(req: NextRequest) {
       billing_address_collection: cardProduct ? "required" : undefined,
       subscription_data: { metadata: { companyId: company.id, plan } },
       metadata: { companyId: company.id, plan },
-      success_url: `${appUrl}/dashboard?billing=success`,
+      // C15 — "primeiro comprei, agora vamos ativar seu negócio": antes ia
+      // direto pro painel (o `?billing=success` era decorativo — nada no
+      // código o lê). Agora passa por `/onboarding/ativar` pra pedir
+      // WhatsApp/Google/cor, que o onboarding parou de pedir antes de pagar.
+      success_url: `${appUrl}/onboarding/ativar`,
       cancel_url: `${appUrl}/onboarding/plan?billing=canceled`,
       allow_promotion_codes: true,
     });

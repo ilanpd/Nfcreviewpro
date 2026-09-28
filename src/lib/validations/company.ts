@@ -41,8 +41,20 @@ export const claimDomainSchema = z.object({
 
 export type ClaimDomainInput = z.infer<typeof claimDomainSchema>;
 
+// C15 — reduzido ao mínimo essencial pra decidir se cria empresa (nome, só
+// isso). WhatsApp/Google/cor migraram pra `activateCompanySchema`: o pedido
+// original é explícito — "primeiro comprei, agora vamos ativar seu
+// negócio", nunca configurar tudo antes de entender o produto.
 export const onboardingSchema = z.object({
   name: z.string().trim().min(2, "Informe o nome da empresa").max(80),
+});
+
+// C15 — a tela `/onboarding/ativar` (pós-pagamento confirmado). Diferente de
+// `updateCompanySchema` (Configurações, tudo opcional — edições parciais são
+// normais lá): aqui os três são OBRIGATÓRIOS, porque é o passo que marca
+// `Company.activatedAt` — aceitar um formulário vazio esvaziaria o sentido
+// da ativação.
+export const activateCompanySchema = z.object({
   whatsapp: z.string().trim().min(10, "Informe o WhatsApp com DDD").max(20),
   googleReviewUrl: z.string().trim().url("Informe um link válido do Google"),
   primaryColor: z
@@ -54,3 +66,4 @@ export const onboardingSchema = z.object({
 
 export type UpdateCompanyInput = z.infer<typeof updateCompanySchema>;
 export type OnboardingInput = z.infer<typeof onboardingSchema>;
+export type ActivateCompanyInput = z.infer<typeof activateCompanySchema>;

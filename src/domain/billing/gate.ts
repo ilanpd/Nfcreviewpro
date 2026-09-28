@@ -21,14 +21,27 @@ export interface AccessNotice {
   tone: "warning" | "critical";
   title: string;
   description: string;
+  /** C15 (Fluxo 6) — quando ausente, `AccessBanner` usa o link fixo padrão
+   * ("Gerenciar assinatura" → Configurações/Portal). Só existe quando o
+   * Portal de Cobrança NÃO resolve o problema (assinatura já cancelada/
+   * `unpaid` de vez, não só um cartão pra atualizar). */
+  cta?: { href: string; label: string };
 }
 
 function dateLabel(date: Date): string {
   return new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit", year: "numeric" }).format(date);
 }
 
-/** O aviso do topo do painel: só nos estados em que algo mudou para o dono. */
-export function accessNotice(access: AccessDecision): AccessNotice | null {
+const REACTIVATE_CTA = { href: "/onboarding/plan", label: "Reativar assinatura" };
+
+/**
+ * O aviso do topo do painel: só nos estados em que algo mudou para o dono.
+ * `rawStatus` (C15) é o `stripeSubscriptionStatus` literal, não só o
+ * `AccessState` derivado — é o que diferencia "cobrança atrasada, o Portal
+ * resolve" de "assinatura já morta, só um novo checkout resolve" (o Portal
+ * de Cobrança gerencia uma assinatura viva; não recria uma cancelada).
+ */
+export function accessNotice(access: AccessDecision, rawStatus: string | null): AccessNotice | null {
   if (access.state === "GRACE" && access.endsAt) {
     return {
       tone: "warning",
@@ -37,10 +50,15 @@ export function accessNotice(access: AccessDecision): AccessNotice | null {
     };
   }
   if (access.state === "READ_ONLY" && access.endsAt) {
+    // GRACE só existe pra past_due/unpaid (ver resolveAccess); READ_ONLY
+    // pode vir dos dois OU de canceled/paused (fim de assinatura de verdade)
+    // — só nesse segundo caso o Portal não ajuda em nada.
+    const stillHasLiveSubscription = rawStatus === "past_due" || rawStatus === "unpaid";
     return {
       tone: "critical",
       title: "Assinatura inativa: painel só para consulta",
       description: `Você vê seus dados, mas não altera nada nem emite brindes novos. Os brindes já emitidos continuam valendo. Reative até ${dateLabel(access.endsAt)} para não perder o acesso.`,
+      cta: stillHasLiveSubscription ? undefined : REACTIVATE_CTA,
     };
   }
   return null;

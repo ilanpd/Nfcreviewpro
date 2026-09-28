@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { SiteHeader } from "@/components/marketing/site-header";
 import { pageTitle } from "@/lib/brand";
 import { SiteFooter } from "@/components/marketing/site-footer";
@@ -20,7 +21,12 @@ export default async function StorePage() {
       <SiteHeader />
       <main className="flex-1">
         <StoreHero />
-        <StoreProductGrid products={products} />
+        {/* C15 — `StoreProductGrid` lê `?produto=` (vindo de `/comecar`) via
+            `useSearchParams()`, que exige um limite de Suspense pra não
+            travar a pré-renderização estática do resto da página. */}
+        <Suspense fallback={null}>
+          <StoreProductGrid products={products} />
+        </Suspense>
       </main>
       <SiteFooter />
     </div>

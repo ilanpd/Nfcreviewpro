@@ -55,7 +55,7 @@ export function Hero({ heroVideoUrl }: { heroVideoUrl?: string | null }) {
 
           <BlurFade delay={0.15}>
             <div className="mt-10 flex flex-wrap items-center justify-center gap-3 lg:justify-start">
-              <Link href="/sign-up">
+              <Link href="/comecar">
                 <MagneticButton size="lg" className="gap-2">
                   Começar grátis
                   <ArrowRight className="size-4" />

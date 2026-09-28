@@ -19,7 +19,7 @@ export function Cta() {
             Configure sua empresa em minutos e receba seu primeiro cartão NFC pronto para uso.
           </p>
           <div className="mt-8 inline-block">
-            <Link href="/sign-up">
+            <Link href="/comecar">
               <Button size="lg" className="gap-2">
                 Começar grátis
                 <ArrowRight className="size-4" />

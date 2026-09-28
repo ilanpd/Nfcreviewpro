@@ -4,6 +4,7 @@ import { getAuthContext } from "@/lib/auth";
 import { billingGateEnforced } from "@/lib/billing-gate";
 import { accessNotice, dashboardGateTarget } from "@/domain/billing/gate";
 import { AccessBanner } from "@/components/dashboard/access-banner";
+import { ActivationBanner } from "@/components/dashboard/activation-banner";
 import { isDevRuntimeEnabled } from "@/lib/dev-runtime/config";
 import { getCompanyById } from "@/services/company.service";
 import { getInProgressOrderForCompany } from "@/services/store-order.service";
@@ -24,12 +25,14 @@ export default async function DashboardLayout({ children }: { children: React.Re
   // Painel só com assinatura (ADR-079). Só age com BILLING_GATE_ENFORCE=1.
   const gateTarget = dashboardGateTarget(ctx.access, billingGateEnforced());
   if (gateTarget) redirect(gateTarget);
-  const notice = accessNotice(ctx.access);
 
   const [company, inProgressOrder] = await Promise.all([
     getCompanyById(ctx.companyId),
     getInProgressOrderForCompany(ctx.companyId),
   ]);
+  // C15 (Fluxo 6) — `stripeSubscriptionStatus` bruto, não só o `AccessState`
+  // derivado: é o que diferencia "Portal resolve" de "precisa reativar".
+  const notice = accessNotice(ctx.access, company.stripeSubscriptionStatus);
 
   return (
     <BrandProvider brand={companyToBrandConfig(company)}>
@@ -72,6 +75,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
           </header>
           <main className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto p-4 sm:p-6">
             {notice ? <AccessBanner notice={notice} /> : null}
+            {!company.activatedAt ? <ActivationBanner /> : null}
             {inProgressOrder ? <OrderStatusBanner order={inProgressOrder} /> : null}
             {children}
           </main>

@@ -44,7 +44,7 @@ export function SiteHeader() {
           <Link href="/sign-in">
             <Button variant="ghost">Entrar</Button>
           </Link>
-          <Link href="/sign-up">
+          <Link href="/comecar">
             <Button>Começar grátis</Button>
           </Link>
         </div>
@@ -80,7 +80,7 @@ export function SiteHeader() {
               Entrar
             </Button>
           </Link>
-          <Link href="/sign-up" onClick={() => setMobileOpen(false)}>
+          <Link href="/comecar" onClick={() => setMobileOpen(false)}>
             <Button className="w-full">Começar grátis</Button>
           </Link>
         </div>
