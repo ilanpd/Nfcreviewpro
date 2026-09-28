@@ -73,7 +73,7 @@ export function DiscoveryOptions({ plan, cardPriceCents }: { plan: PlanType; car
             <div className="flex items-start justify-between gap-2">
               <span className="flex size-11 items-center justify-center rounded-xl bg-brand-subtle text-brand-ink">{option.icon}</span>
               {option.recommended ? (
-                <span className="rounded-full bg-brand px-2.5 py-1 text-[11px] font-medium text-brand-foreground">Mais escolhido</span>
+                <span className="rounded-full bg-brand px-2.5 py-1 text-[11px] font-medium text-brand-foreground">Recomendado</span>
               ) : null}
             </div>
             <h2 className="text-base font-semibold leading-tight">{option.title}</h2>
