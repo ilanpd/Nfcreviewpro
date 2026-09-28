@@ -7,7 +7,7 @@ import { PUBLIC_STATES } from "@/domain/return-offer/public-screen";
 interface DemoCardProps {
   code: string;
   company: { name: string; logoUrl: string | null; primaryColor: string };
-  primaryUrl: string;
+  primaryUrl: string | null;
   title: string;
   timeZone: string;
   windowDays: number;

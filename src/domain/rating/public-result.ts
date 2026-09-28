@@ -9,7 +9,8 @@
  */
 export interface PublicRatingResult {
   ratingEventId: string;
-  googleReviewUrl: string;
+  // C15 — nulo até a empresa completar `/onboarding/ativar`.
+  googleReviewUrl: string | null;
 }
 
 export function buildPublicRatingResult(input: PublicRatingResult): PublicRatingResult {

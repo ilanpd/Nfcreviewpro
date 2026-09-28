@@ -56,7 +56,8 @@ export interface ReturnContext {
     name: string;
     plan: "STARTER" | "PRO" | "BUSINESS";
     timezone: string;
-    googleReviewUrl: string;
+    // C15 — nulo até a empresa completar `/onboarding/ativar`.
+    googleReviewUrl: string | null;
     returnPilotEnabled: boolean;
   };
   offer: RewardOffer | null;
@@ -302,7 +303,8 @@ export interface OfferSettingsView {
   } | null;
   availability: OfferAvailability;
   access: Pick<AccessDecision, "state" | "canWrite" | "endsAt">;
-  googleReviewUrl: string;
+  // C15 — nulo até a empresa completar `/onboarding/ativar`.
+  googleReviewUrl: string | null;
   pilotEnabled: boolean;
 }
 

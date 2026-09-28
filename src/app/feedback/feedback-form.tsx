@@ -39,7 +39,9 @@ export function FeedbackForm({ origin, primaryColor }: FeedbackFormProps) {
         throw new Error(data.error ?? "Não foi possível enviar sua mensagem");
       }
       const { whatsappUrl } = await res.json();
-      router.push(`/thank-you?type=feedback&wa=${encodeURIComponent(whatsappUrl)}`);
+      // C15 — empresa ainda não ativada: sem WhatsApp configurado, não tem
+      // link nenhum pra oferecer (`wa` some da URL, `thank-you` já trata isso).
+      router.push(whatsappUrl ? `/thank-you?type=feedback&wa=${encodeURIComponent(whatsappUrl)}` : "/thank-you?type=feedback");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Erro inesperado");
       setSubmitting(false);

@@ -388,8 +388,13 @@ model Company {
   // padrão de `logoUrl`: nulo até a fase construir a UI de upload e o
   // `<link rel="icon">` dinâmico que a lê. Ver ADR-039.
   faviconUrl                  String?
-  whatsapp                    String
-  googleReviewUrl             String
+  // C15 — passaram de obrigatórios pra opcionais: o onboarding deixou de
+  // pedir isso ANTES do pagamento (o pedido original é só o nome da
+  // empresa). Ficam preenchidos só depois, na tela de ativação pós-compra
+  // (`/onboarding/ativar`) — nulos entre a criação da empresa e esse passo,
+  // nunca uma string vazia fingindo ser um valor real.
+  whatsapp                    String?
+  googleReviewUrl             String?
   primaryColor                String        @default("#0F172A")
   // White Label (Fase 10) — cor secundária opcional; sem ela, a UI de marca
   // deriva um tom neutro de `primaryColor` (ver domain/white-label/color.ts),
@@ -477,6 +482,13 @@ model Company {
   roiAvgTicket                Float?
   roiReturnRate               Float?
   roiNewCustomerValue         Float?
+  // C15 — "primeiro comprei, agora vamos ativar seu negócio": preenchido só
+  // quando o dono completa `/onboarding/ativar` (WhatsApp, Google, cor) DEPOIS
+  // do pagamento confirmado. Nulo = empresa criada mas ainda não ativada;
+  // `ActivationBanner` no dashboard lê isto pra nunca deixar uma empresa
+  // "pela metade" invisível ao dono. Nunca reescrito numa edição comum de
+  // Configurações depois (rota própria, `POST /api/company/activate`).
+  activatedAt                 DateTime?
   createdAt                   DateTime      @default(now())
   updatedAt                   DateTime      @updatedAt
 

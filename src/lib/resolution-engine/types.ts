@@ -15,8 +15,10 @@ export interface PublicCompanyInfo {
   name: string;
   logoUrl: string | null;
   primaryColor: string;
-  googleReviewUrl: string;
-  whatsapp: string;
+  // C15 — nulos até a empresa completar `/onboarding/ativar` (pós-pagamento).
+  // Todo consumidor precisa de um fallback explícito, nunca assumir preenchido.
+  googleReviewUrl: string | null;
+  whatsapp: string | null;
   timezone: string;
 }
 

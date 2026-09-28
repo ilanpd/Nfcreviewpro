@@ -17,7 +17,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ edi
     if (lookup.status === "GRADUATED") return NextResponse.json({ error: "Esta empresa já é assinante — use o painel" }, { status: 409 });
 
     const { card } = lookup;
-    const { destinationUrl } = await getCardDestination(card.id, card.company.googleReviewUrl);
+    const { destinationUrl } = await getCardDestination(card.id, card.company.googleReviewUrl ?? "");
     const visitsThisMonth = await countCardTouchesThisMonth(card.id);
     return NextResponse.json({ name: card.name, destinationUrl, visitsThisMonth });
   } catch (error) {

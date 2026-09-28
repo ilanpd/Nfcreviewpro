@@ -60,6 +60,9 @@ describe("pickPrimaryUrl", () => {
     expect(pickPrimaryUrl({ offerPrimaryUrl: null, directCampaignUrl: null, googleReviewUrl: google })).toBe(google);
     expect(pickPrimaryUrl({ offerPrimaryUrl: "", directCampaignUrl: "", googleReviewUrl: google })).toBe(google);
   });
+  it("empresa ainda não ativada (C15) e sem nenhum destino: null, nunca uma string vazia fingindo ser um link", () => {
+    expect(pickPrimaryUrl({ offerPrimaryUrl: null, directCampaignUrl: null, googleReviewUrl: null })).toBeNull();
+  });
 });
 
 describe("primaryButtonLabel", () => {

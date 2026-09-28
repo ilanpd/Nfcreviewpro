@@ -40,14 +40,17 @@ export function decideCardExperience(input: {
  * O botão principal da tela: a escolha explícita do dono no painel; senão o
  * destino que ele escolheu ao comprar o cartão (o redirecionamento inicial);
  * senão o link de avaliação do Google da empresa. O mesmo para todo cliente,
- * sempre.
+ * sempre. Pode devolver `null` (C15): uma empresa criada mas ainda não
+ * ativada (`/onboarding/ativar`) pode não ter nenhum dos três — o cartão só
+ * chega fisicamente ao cliente depois de fabricado/enviado, o que já dá
+ * tempo real pro dono ativar, mas a tela nunca pode presumir isso.
  */
 export function pickPrimaryUrl(input: {
   offerPrimaryUrl: string | null;
   directCampaignUrl: string | null;
-  googleReviewUrl: string;
-}): string {
-  return input.offerPrimaryUrl || input.directCampaignUrl || input.googleReviewUrl;
+  googleReviewUrl: string | null;
+}): string | null {
+  return input.offerPrimaryUrl || input.directCampaignUrl || input.googleReviewUrl || null;
 }
 
 /** O domínio é exatamente `domain` ou um subdomínio dele (nunca só um sufixo de texto). */

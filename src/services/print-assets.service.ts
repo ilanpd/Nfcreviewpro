@@ -21,7 +21,7 @@ import { buildPrintPlateCopy } from "@/domain/return-offer/print-plate-copy";
  * genérico "Toque aqui" + link do Google, nunca quebra a geração do PDF: uma
  * placa sempre honesta é melhor que nenhuma placa.
  */
-async function resolvePlateCopy(companyId: string, cardCode: string, googleReviewUrl: string) {
+async function resolvePlateCopy(companyId: string, cardCode: string, googleReviewUrl: string | null) {
   try {
     const [decision, returnContext] = await Promise.all([resolveDestination(cardCode, null), loadReturnContext(companyId)]);
     if (decision.outcome === "NOT_FOUND") throw new Error("cartão não encontrado no motor de resolução");
@@ -48,11 +48,11 @@ async function resolvePlateCopy(companyId: string, cardCode: string, googleRevie
     return buildPrintPlateCopy({
       returnActive: experience.kind === "RETURN",
       offerTitle: returnContext?.offer?.title ?? null,
-      destinationLabel: primaryButtonLabel(primaryUrl),
+      destinationLabel: primaryButtonLabel(primaryUrl ?? ""),
     });
   } catch (err) {
     console.error("[print-assets] falha ao calcular o texto da placa, usando o padrão", err);
-    return buildPrintPlateCopy({ returnActive: false, offerTitle: null, destinationLabel: primaryButtonLabel(googleReviewUrl) });
+    return buildPrintPlateCopy({ returnActive: false, offerTitle: null, destinationLabel: primaryButtonLabel(googleReviewUrl ?? "") });
   }
 }
 

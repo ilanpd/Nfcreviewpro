@@ -18,7 +18,9 @@ interface CardScreenProps {
   company: { name: string; logoUrl: string | null; primaryColor: string };
   /** RETURN: com o brinde. BUTTONS: só os dois botões (Retorno pausado, sem campanha). */
   mode: "RETURN" | "BUTTONS";
-  primaryUrl: string;
+  /** `null` (C15): empresa criada mas ainda sem nenhum destino configurado
+   * (nem campanha, nem Google) — só "Falar com a gente" aparece. */
+  primaryUrl: string | null;
   /**
    * Só o modo de teste do dono: a mesma tela, respondendo com as regras do
    * domínio e sem gravar nada. Tudo serializável, porque vem de um componente
@@ -125,16 +127,18 @@ export function CardScreen({ code, company, mode, primaryUrl, demo }: CardScreen
       ) : null}
 
       <div className="grid w-full gap-3">
-        <a
-          href={primaryUrl}
-          rel="noopener"
-          onClick={() => api.trackPrimaryClick(visitId)}
-          className="inline-flex h-12 items-center justify-center gap-2 rounded-xl px-5 text-base font-medium shadow-sm transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-          style={brandColor ? { backgroundColor: brandColor, color: readableTextColor(brandColor) } : { backgroundColor: "var(--primary)", color: "var(--primary-foreground)" }}
-        >
-          {primaryButtonLabel(primaryUrl)}
-          <ExternalLink className="size-4" aria-hidden />
-        </a>
+        {primaryUrl ? (
+          <a
+            href={primaryUrl}
+            rel="noopener"
+            onClick={() => api.trackPrimaryClick(visitId)}
+            className="inline-flex h-12 items-center justify-center gap-2 rounded-xl px-5 text-base font-medium shadow-sm transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+            style={brandColor ? { backgroundColor: brandColor, color: readableTextColor(brandColor) } : { backgroundColor: "var(--primary)", color: "var(--primary-foreground)" }}
+          >
+            {primaryButtonLabel(primaryUrl)}
+            <ExternalLink className="size-4" aria-hidden />
+          </a>
+        ) : null}
         <Button asChild variant="outline" className="h-12 gap-2 rounded-xl text-base">
           <Link href={feedbackHref}>
             <MessageCircle className="size-4" aria-hidden />

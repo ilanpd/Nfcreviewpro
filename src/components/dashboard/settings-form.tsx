@@ -14,8 +14,11 @@ export function SettingsForm({ company }: { company: Company }) {
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
     name: company.name,
-    whatsapp: company.whatsapp,
-    googleReviewUrl: company.googleReviewUrl,
+    // C15 — os dois podem vir nulos (empresa criada mas ainda não ativada
+    // via `/onboarding/ativar`); campo controlado precisa de string, nunca
+    // `null`, mas o valor real gravado no banco continua nulo até salvar.
+    whatsapp: company.whatsapp ?? "",
+    googleReviewUrl: company.googleReviewUrl ?? "",
   });
 
   async function handleSubmit(e: React.FormEvent) {

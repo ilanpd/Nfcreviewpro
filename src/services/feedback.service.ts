@@ -23,7 +23,8 @@ export class FeedbackError extends Error {
 
 interface FeedbackTarget {
   companyId: string;
-  whatsapp: string;
+  // C15 — nulo até a empresa completar `/onboarding/ativar`.
+  whatsapp: string | null;
   cardId: string | null;
   cardName: string;
   ratingEventId: string | null;
@@ -88,15 +89,20 @@ async function resolveTarget(input: CreateFeedbackInput): Promise<FeedbackTarget
 export async function createFeedback(input: CreateFeedbackInput) {
   const target = await resolveTarget(input);
 
-  const whatsappUrl = buildFeedbackWhatsappUrl({
-    whatsapp: target.whatsapp,
-    stars: target.stars,
-    message: input.message,
-    name: input.name,
-    phone: input.phone,
-    cardName: target.cardName,
-    createdAt: new Date(),
-  });
+  // C15 — empresa ainda não ativada (`whatsapp` nulo): a mensagem é salva
+  // normalmente e o dono é avisado por e-mail (abaixo); só não existe um
+  // link de WhatsApp pronto pra oferecer ao cliente agora.
+  const whatsappUrl = target.whatsapp
+    ? buildFeedbackWhatsappUrl({
+        whatsapp: target.whatsapp,
+        stars: target.stars,
+        message: input.message,
+        name: input.name,
+        phone: input.phone,
+        cardName: target.cardName,
+        createdAt: new Date(),
+      })
+    : null;
 
   const feedback = await prisma.privateFeedback.create({
     data: {

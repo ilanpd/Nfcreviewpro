@@ -19,7 +19,7 @@ export default async function MeuCartaoPage({ params }: { params: Promise<{ edit
   if (lookup.status === "GRADUATED") redirect("/dashboard");
 
   const { card } = lookup;
-  const { destinationUrl } = await getCardDestination(card.id, card.company.googleReviewUrl);
+  const { destinationUrl } = await getCardDestination(card.id, card.company.googleReviewUrl ?? "");
   const visitsThisMonth = await countCardTouchesThisMonth(card.id);
 
   return (
