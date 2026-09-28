@@ -54,11 +54,17 @@ export function Pricing() {
                     </li>
                   ))}
                 </ul>
-                <Link href={`/sign-up?plan=${plan.id}`} className="mt-8">
-                  <Button className="w-full" variant={plan.highlighted ? "default" : "outline"}>
-                    Assinar {plan.name}
+                {plan.salesActive === false ? (
+                  <Button className="mt-8 w-full" variant="outline" disabled>
+                    Em breve
                   </Button>
-                </Link>
+                ) : (
+                  <Link href={`/sign-up?plan=${plan.id}`} className="mt-8">
+                    <Button className="w-full" variant={plan.highlighted ? "default" : "outline"}>
+                      Assinar {plan.name}
+                    </Button>
+                  </Link>
+                )}
               </div>
             </BlurFade>
           ))}

@@ -8,6 +8,7 @@ import { prisma } from "@/lib/prisma";
 import { handleApiError } from "@/lib/api-error";
 import { getAuthContext } from "@/lib/auth";
 import { customerDocumentSchema, customerPhoneSchema } from "@/lib/validations/store-order";
+import { cardLimitForPlan } from "@/lib/plans";
 
 const storeCheckoutSchema = z.object({
   productId: z.string(),
@@ -47,6 +48,35 @@ export async function POST(req: NextRequest) {
     // — nunca uma pergunta "você tem conta?" no checkout, o mesmo padrão dos
     // grandes e-commerces (conta é opcional, nunca bloqueia a compra).
     const ctx = await getAuthContext().catch(() => null);
+
+    // C15 — achado real de auditoria: um assinante já logado (CUSTOMER, não
+    // GUEST) conseguia comprar aqui mais cartões do que o próprio plano
+    // permite usar (ex.: Starter, `cardLimit: 1`, comprando um `pack-20`) —
+    // `createCard` (fluxo do dashboard) sempre checou isso, esta rota nunca
+    // checou. Só se aplica a CUSTOMER: um convidado (`GUEST`, sem
+    // assinatura) sempre pôde comprar em lote livremente, de propósito
+    // (`services/card.service.ts`, comentário de `createCard`) — nunca
+    // bloquear isso.
+    if (ctx) {
+      const company = await prisma.company.findUnique({ where: { id: ctx.companyId }, select: { plan: true, accountType: true } });
+      if (company?.accountType === "CUSTOMER") {
+        const limit = cardLimitForPlan(company.plan);
+        if (limit !== null) {
+          const currentCount = await prisma.nFCCard.count({ where: { companyId: ctx.companyId } });
+          if (currentCount + baseProduct.quantity > limit) {
+            return NextResponse.json(
+              {
+                error:
+                  limit === 1
+                    ? `Seu plano permite ${limit} cartão. Você já tem ${currentCount}. Para adicionar mais, faça upgrade.`
+                    : `Seu plano permite até ${limit} cartões. Você já tem ${currentCount} e essa compra passaria do limite. Para adicionar mais, faça upgrade.`,
+              },
+              { status: 409 }
+            );
+          }
+        }
+      }
+    }
 
     const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
     const amountTotalCents = product.unitPriceCents * product.quantity;

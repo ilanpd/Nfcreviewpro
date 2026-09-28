@@ -2,25 +2,50 @@
 
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Gift, Nfc, Smartphone, Star } from "lucide-react";
+import { CheckCircle2, ExternalLink, Gift, Nfc, Smartphone } from "lucide-react";
 import { motionTokens, usePrefersReducedMotion } from "@nfc-os/animations";
 import { formatVoucherCode } from "@/domain/return-offer/code";
 import { cn } from "@/lib/utils";
+import { PhoneFrame } from "./phone-frame";
 
-type Phase = "approach" | "tap" | "result";
+type Phase = "approach" | "tap" | "reveal" | "redeem" | "success" | "redirect";
 type Flow = "avulso" | "starter";
 
-const PHASE_DURATIONS: Record<Phase, number> = {
-  approach: 1400,
-  tap: 550,
-  result: 2600,
+interface Beat {
+  phase: Phase;
+  duration: number;
+}
+
+// Roteiro real de cada fluxo (C15) — não é mais um "resultado" único: reflete
+// exatamente `src/app/r/[code]/card-screen.tsx`. No Starter, o código do
+// brinde já aparece revelado (nunca escondido atrás de uma escolha prévia) e
+// o botão de destino continua sempre visível junto — o único passo realmente
+// sequencial é o resgate (PIN da loja → sucesso). No avulso, sem Retorno
+// ativo, o toque é um redirecionamento HTTP direto — por isso a cena fica
+// curta de propósito, sem inventar uma tela que o produto não mostra.
+const SEQUENCES: Record<Flow, Beat[]> = {
+  starter: [
+    { phase: "approach", duration: 1400 },
+    { phase: "tap", duration: 550 },
+    { phase: "reveal", duration: 2600 },
+    { phase: "redeem", duration: 2000 },
+    { phase: "success", duration: 2000 },
+  ],
+  avulso: [
+    { phase: "approach", duration: 1400 },
+    { phase: "tap", duration: 550 },
+    { phase: "redirect", duration: 2400 },
+  ],
 };
 
-const NEXT_PHASE: Record<Phase, Phase> = {
-  approach: "tap",
-  tap: "result",
-  result: "approach",
-};
+// Com `prefers-reduced-motion`, cada fluxo trava no quadro mais informativo
+// (o argumento de venda), nunca no meio de uma transição.
+const FROZEN_STEP: Record<Flow, number> = { starter: 2, avulso: 2 };
+
+const FLOW_LABELS: { id: Flow; label: string }[] = [
+  { id: "starter", label: "Plano Starter" },
+  { id: "avulso", label: "Cartão avulso" },
+];
 
 function GoogleG({ className }: { className?: string }) {
   // Ícone oficial do Google ("G" colorido) — SVG inline, sem dependência
@@ -36,87 +61,191 @@ function GoogleG({ className }: { className?: string }) {
   );
 }
 
-const FLOWS: {
-  id: Flow;
-  label: string;
-  result: { icon: React.ReactNode; title: string; subtitle: string; footer: React.ReactNode };
-}[] = [
-  {
-    id: "starter",
-    label: "Plano Starter",
-    result: {
-      icon: (
-        <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-brand text-brand-foreground">
-          <Gift className="size-3.5" />
-        </span>
-      ),
-      title: "Brinde",
-      subtitle: "próxima visita",
-      footer: (
-        <div className="mt-2 flex items-center justify-between rounded-md border border-dashed border-white/15 px-1.5 py-1">
-          <span className="font-mono text-[9px] font-semibold tracking-wide text-white/90">{formatVoucherCode("K7X4QM")}</span>
-          <Star className="size-2.5 fill-brand text-brand" />
-        </div>
-      ),
-    },
-  },
-  {
-    id: "avulso",
-    label: "Cartão avulso",
-    result: {
-      icon: (
-        <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-white p-1">
-          <GoogleG className="size-full" />
-        </span>
-      ),
-      title: "Avaliação",
-      subtitle: "direto no Google",
-      footer: (
-        <div className="mt-2 flex items-center gap-0.5 rounded-md border border-dashed border-white/15 px-1.5 py-1.5">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <Star key={i} className="size-3 fill-amber-400 text-amber-400" />
-          ))}
-        </div>
-      ),
-    },
-  },
-];
+/** Os 4 pontinhos do PIN preenchendo um a um — só decorativo, nunca lê nem grava nada de verdade. */
+function PinDots() {
+  const [filled, setFilled] = useState(0);
+  useEffect(() => {
+    if (filled >= 4) return;
+    const timer = setTimeout(() => setFilled((f) => f + 1), 240);
+    return () => clearTimeout(timer);
+  }, [filled]);
+  return (
+    <div className="flex items-center justify-center gap-1.5 py-0.5">
+      {Array.from({ length: 4 }).map((_, i) => (
+        <span
+          key={i}
+          className={cn(
+            "size-2 rounded-full border transition-colors duration-150",
+            i < filled ? "border-brand bg-brand" : "border-white/25 bg-transparent"
+          )}
+        />
+      ))}
+    </div>
+  );
+}
 
 /**
- * O mockup vivo do Hero (C11/C12, ADR-086/087) — não é um vídeo (nenhum
- * roteiro, ator ou gravação existe ainda), é uma cena real do que a
- * animação promete mostrar. Duas versões de verdade, alternáveis (C12):
- * "Cartão avulso" (sem assinatura — o toque leva direto pra avaliação no
- * Google, o argumento de venda do produto mais simples) e "Plano Starter"
- * (a experiência Pulse completa, com o brinde do Retorno). Nunca uma
- * animação fictícia — as duas refletem exatamente `decideCardExperience`
- * (domain/return-offer/experience.ts): sem Retorno ativo, o destino
- * primário é sempre o botão configurado (Google, no caso mais comum).
- * Loop de 3 fases por `setTimeout` encadeado (evita drift de `setInterval`);
- * com `prefers-reduced-motion`, para no quadro do resultado.
+ * Conteúdo da "tela do celular" para cada fase — o argumento de venda inteiro
+ * mora aqui. É uma função pura (não um componente JSX chamado como
+ * `<PhaseContent/>`) de propósito: `AnimatePresence` só rastreia
+ * corretamente entrada/saída de quem é seu FILHO DIRETO — um componente
+ * wrapper entre `<AnimatePresence>` e o `motion.div` real (mesmo repassando
+ * a `key` pra ele) já causou, na prática, fases anteriores ficarem
+ * "grudadas" na tela ao trocar de fluxo. Chamar como função devolve o
+ * `motion.div` como filho direto de verdade.
+ */
+function phaseContent(flowId: Flow, phase: Phase) {
+  if (phase === "approach" || phase === "tap") {
+    return (
+      <motion.div
+        key="idle"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="flex flex-col items-center gap-2 text-center"
+      >
+        <span className="relative flex size-9 items-center justify-center rounded-full bg-brand/20">
+          <span className="absolute inset-0 animate-ping rounded-full bg-brand/30" style={{ animationDuration: "1.8s" }} />
+          <Smartphone className="relative size-4 text-brand" strokeWidth={1.75} />
+        </span>
+        <p className="text-[10px] leading-tight text-white/50">Aproxime o cartão…</p>
+      </motion.div>
+    );
+  }
+
+  const enter = { opacity: 0, y: 8, scale: 0.94 };
+  const center = { opacity: 1, y: 0, scale: 1 };
+  const leave = { opacity: 0, y: -6 };
+  const transition = { duration: motionTokens.duration.slow, ease: motionTokens.easing.spring };
+
+  if (phase === "reveal") {
+    return (
+      <motion.div
+        key={`${flowId}-reveal`}
+        initial={enter}
+        animate={center}
+        exit={leave}
+        transition={transition}
+        className="w-full space-y-1.5 rounded-xl border border-white/10 bg-white/[0.06] p-2.5 text-left"
+      >
+        <div className="flex items-center gap-1.5">
+          <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-brand text-brand-foreground">
+            <Gift className="size-3.5" />
+          </span>
+          <div className="min-w-0">
+            <p className="text-[8px] font-medium uppercase tracking-wide text-brand">Brinde liberado</p>
+            <p className="truncate text-[10px] font-semibold leading-tight text-white">Sobremesa grátis</p>
+          </div>
+        </div>
+        <div className="rounded-md bg-black/30 px-2 py-1.5 text-center">
+          <p className="font-mono text-xs font-semibold tracking-[0.15em] text-white">{formatVoucherCode("K7X4QM")}</p>
+        </div>
+        <div className="rounded-md bg-brand px-2 py-1 text-center text-[9px] font-semibold text-brand-foreground">Resgatar agora</div>
+        <p className="pt-0.5 text-center text-[8px] leading-tight text-white/35">ou avalie no Google, quando quiser</p>
+      </motion.div>
+    );
+  }
+
+  if (phase === "redeem") {
+    return (
+      <motion.div
+        key={`${flowId}-redeem`}
+        initial={enter}
+        animate={center}
+        exit={leave}
+        transition={transition}
+        className="w-full space-y-1 rounded-xl border border-white/10 bg-white/[0.06] p-2.5 text-center"
+      >
+        <p className="text-[10px] font-semibold text-white">Confirme o resgate</p>
+        <p className="text-[8px] leading-tight text-white/45">Peça pro atendente digitar o PIN</p>
+        <PinDots />
+        <div className="rounded-md bg-brand px-2 py-1 text-[9px] font-semibold text-brand-foreground">Confirmar resgate</div>
+      </motion.div>
+    );
+  }
+
+  if (phase === "success") {
+    return (
+      <motion.div
+        key={`${flowId}-success`}
+        initial={enter}
+        animate={center}
+        exit={leave}
+        transition={transition}
+        className="flex w-full flex-col items-center gap-1 rounded-xl border border-emerald-400/25 bg-emerald-500/10 p-3 text-center"
+      >
+        <CheckCircle2 className="size-5 text-emerald-400" strokeWidth={1.75} />
+        <p className="text-[10px] font-semibold text-white">Brinde resgatado</p>
+        <p className="text-[8px] text-white/50">Obrigado pela visita!</p>
+      </motion.div>
+    );
+  }
+
+  // redirect (avulso): sem Retorno ativo, o toque é um redirecionamento HTTP
+  // direto — nenhuma tela intermediária é renderizada de verdade, por isso a
+  // cena é só um lampejo do destino real, nunca uma tela cheia de estrelas.
+  return (
+    <motion.div
+      key={`${flowId}-redirect`}
+      initial={enter}
+      animate={center}
+      exit={leave}
+      transition={transition}
+      className="flex w-full flex-col items-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.06] p-3 text-center"
+    >
+      <span className="flex size-7 items-center justify-center rounded-full bg-white p-1">
+        <GoogleG className="size-full" />
+      </span>
+      <p className="text-[10px] font-semibold leading-tight text-white">
+        Avaliação
+        <span className="block font-normal text-white/45">direto no Google</span>
+      </p>
+      <div className="flex items-center gap-1 text-[8px] text-white/35">
+        <ExternalLink className="size-2.5" />
+        Sem tela extra — direto pro destino
+      </div>
+    </motion.div>
+  );
+}
+
+/**
+ * O mockup vivo do Hero (C11/C12/C15, ADR-086/087/089) — não é um vídeo
+ * (nenhum roteiro, ator ou gravação existe ainda), é uma cena real do que a
+ * animação promete mostrar. Reescrita no C15 pra parar de simplificar o
+ * fluxo do Starter como "toque → brinde": agora reproduz exatamente
+ * `src/app/r/[code]/card-screen.tsx` — o código do brinde revelado de
+ * imediato (nunca atrás de uma escolha prévia), com o botão de destino
+ * sempre coexistindo, e o único passo realmente sequencial (resgate com PIN
+ * na loja) como o clímax visual da cena. O fluxo avulso permanece curto de
+ * propósito: sem Retorno ativo, o toque é um redirecionamento HTTP direto,
+ * sem tela própria — encurtar essa cena é honestidade, não preguiça. Loop
+ * por `setTimeout` encadeado (evita drift de `setInterval`); com
+ * `prefers-reduced-motion`, trava no quadro mais informativo de cada fluxo.
  */
 export function HeroMockup() {
   const reducedMotion = usePrefersReducedMotion();
   const [flowId, setFlowId] = useState<Flow>("starter");
-  const [phase, setPhase] = useState<Phase>(reducedMotion ? "result" : "approach");
-  const flow = FLOWS.find((f) => f.id === flowId)!;
+  const [step, setStep] = useState(reducedMotion ? FROZEN_STEP.starter : 0);
+  const sequence = SEQUENCES[flowId];
+  const beat = sequence[step] ?? sequence[0];
+  const phase = beat.phase;
 
   useEffect(() => {
     if (reducedMotion) return;
-    const timer = setTimeout(() => setPhase((p) => NEXT_PHASE[p]), PHASE_DURATIONS[phase]);
+    const timer = setTimeout(() => setStep((s) => (s + 1) % sequence.length), beat.duration);
     return () => clearTimeout(timer);
-  }, [phase, reducedMotion]);
+  }, [step, sequence, beat.duration, reducedMotion]);
 
   function selectFlow(id: Flow) {
     if (id === flowId) return;
     setFlowId(id);
-    setPhase(reducedMotion ? "result" : "approach");
+    setStep(reducedMotion ? FROZEN_STEP[id] : 0);
   }
 
   return (
     <div className="flex flex-col items-center gap-5">
       <div className="flex gap-1.5 rounded-full border border-border/60 bg-muted/40 p-1">
-        {FLOWS.map((f) => (
+        {FLOW_LABELS.map((f) => (
           <button
             key={f.id}
             type="button"
@@ -140,49 +269,11 @@ export function HeroMockup() {
         />
 
         <div className="relative flex h-full w-full items-center justify-center gap-6 sm:gap-12">
-          {/* Celular */}
-          <div className="relative flex h-64 w-32 shrink-0 flex-col overflow-hidden rounded-[1.75rem] border border-white/10 bg-[#0A0A0C] shadow-premium sm:h-72 sm:w-36">
-            <div aria-hidden className="absolute left-1/2 top-2 h-1.5 w-10 -translate-x-1/2 rounded-full bg-white/15" />
-            <div className="relative flex flex-1 items-center justify-center overflow-hidden p-3 pt-6">
-              <AnimatePresence mode="wait">
-                {phase !== "result" ? (
-                  <motion.div
-                    key="idle"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    className="flex flex-col items-center gap-2 text-center"
-                  >
-                    <span className="relative flex size-9 items-center justify-center rounded-full bg-brand/20">
-                      <span className="absolute inset-0 animate-ping rounded-full bg-brand/30" style={{ animationDuration: "1.8s" }} />
-                      <Smartphone className="relative size-4 text-brand" strokeWidth={1.75} />
-                    </span>
-                    <p className="text-[10px] leading-tight text-white/50">Aproxime o cartão…</p>
-                  </motion.div>
-                ) : (
-                  <motion.div
-                    key={`result-${flow.id}`}
-                    initial={{ opacity: 0, y: 8, scale: 0.94 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: -6 }}
-                    transition={{ duration: motionTokens.duration.slow, ease: motionTokens.easing.spring }}
-                    className="w-full rounded-xl border border-white/10 bg-white/[0.06] p-2.5 backdrop-blur-sm"
-                  >
-                    <div className="flex items-center gap-1.5">
-                      {flow.result.icon}
-                      <p className="text-[10px] font-semibold leading-tight text-white">
-                        {flow.result.title}
-                        <span className="block font-normal text-white/45">{flow.result.subtitle}</span>
-                      </p>
-                    </div>
-                    {flow.result.footer}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          </div>
+          <PhoneFrame className="h-64 w-32 sm:h-72 sm:w-36">
+            <AnimatePresence mode="wait">{phaseContent(flowId, phase)}</AnimatePresence>
+          </PhoneFrame>
 
-          {/* Cartão físico */}
+          {/* Cartão físico — só visível durante approach/tap; nas fases seguintes já "entrou" no celular. */}
           <motion.div
             className="absolute flex h-20 w-32 items-center justify-center rounded-xl border border-white/10 bg-gradient-to-br from-[#1B1B1F] to-[#0A0A0C] shadow-elevated sm:h-24 sm:w-36"
             animate={
@@ -194,7 +285,7 @@ export function HeroMockup() {
             }
             transition={
               phase === "approach"
-                ? { duration: PHASE_DURATIONS.approach / 1000, ease: motionTokens.easing.standard }
+                ? { duration: SEQUENCES[flowId][0].duration / 1000, ease: motionTokens.easing.standard }
                 : { duration: motionTokens.duration.slow, ease: motionTokens.easing.spring }
             }
             style={{ right: "18%" }}

@@ -8,6 +8,14 @@ export interface PlanDefinition {
   cardLimit: number | null; // null = unlimited
   features: string[];
   highlighted?: boolean;
+  /**
+   * C15 — achado real de auditoria: os CTAs de Pro/Business na home levavam
+   * a um checkout que responde 503 (`stripePriceIdForPlan` sem price id
+   * configurado — planos congelados, sem venda ativa). Antes disso era só um
+   * comentário; agora é dado tipado que a própria UI lê pra nunca prometer
+   * um checkout que falha. `undefined`/`true` = à venda.
+   */
+  salesActive?: boolean;
 }
 
 export const PLANS: Record<PlanType, PlanDefinition> = {
@@ -38,6 +46,7 @@ export const PLANS: Record<PlanType, PlanDefinition> = {
     priceLabel: "R$89/mês",
     priceMonthly: 89,
     cardLimit: 10,
+    salesActive: false,
     features: [
       "Até 10 cartões",
       "Retorno: brinde para o cliente voltar",
@@ -56,6 +65,7 @@ export const PLANS: Record<PlanType, PlanDefinition> = {
     priceLabel: "R$199/mês",
     priceMonthly: 199,
     cardLimit: null,
+    salesActive: false,
     features: [
       "Cartões ilimitados",
       "Retorno: brinde para o cliente voltar",

@@ -9,6 +9,8 @@ import { Faq } from "@/components/marketing/faq";
 import { Cta } from "@/components/marketing/cta";
 import { SiteFooter } from "@/components/marketing/site-footer";
 import { getSiteSettings } from "@/lib/site-settings";
+import { cardPublicUrl } from "@/lib/card-url";
+import { generateQrSvg } from "@/lib/qrcode";
 
 /**
  * Jornada comercial (C12, ADR-087): Hero (promessa) → prova de valor
@@ -19,6 +21,12 @@ import { getSiteSettings } from "@/lib/site-settings";
  */
 export default async function LandingPage() {
   const settings = await getSiteSettings().catch(() => null);
+  // C15 — o tile "Cartão NFC + QR Code" do Bento mostra um QR real, gerado
+  // pelo mesmo caminho de `/api/qr/[code]` (`cardPublicUrl` é a única função
+  // autorizada a montar o endereço `/r/<código>`, ADR-076) — nunca uma
+  // imagem estática fingindo ser um QR. Computado uma vez aqui (servidor),
+  // não no bundle do cliente.
+  const illustrativeQrSvg = await generateQrSvg(cardPublicUrl("K7X4QM"), 96);
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -27,7 +35,7 @@ export default async function LandingPage() {
         <Hero heroVideoUrl={settings?.heroVideoUrl} />
         <DataShowcase />
         <HowItWorks />
-        <BentoFeatures />
+        <BentoFeatures qrSvg={illustrativeQrSvg} />
         <Comparison />
         <Pricing />
         <Faq />
