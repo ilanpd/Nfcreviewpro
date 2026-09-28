@@ -37,7 +37,7 @@ export function Pricing() {
                 {plan.highlighted ? (
                   <>
                     <span className="mb-4 w-fit rounded-full bg-brand px-3 py-1 text-xs font-medium text-brand-foreground">
-                      Mais popular
+                      Recomendado
                     </span>
                   </>
                 ) : null}

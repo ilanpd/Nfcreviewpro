@@ -202,7 +202,7 @@ export function BentoFeatures({ qrSvg }: { qrSvg: string }) {
       description: "Toque ou escaneie — funciona em qualquer celular, sem instalar nada.",
       Icon: Smartphone,
       href: "/comecar",
-      cta: "Começar grátis",
+      cta: "Começar agora",
       background: <CardTapBackground qrSvg={qrSvg} />,
       className: "row-span-2 md:col-span-1 md:row-span-2",
     },

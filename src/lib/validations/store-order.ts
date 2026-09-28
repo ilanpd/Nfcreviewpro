@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { isValidCpfOrCnpj, isValidBrazilianPhone } from "@/domain/validation/br-documents";
+import { httpUrlSchema } from "@/lib/validations/http-url";
 
 /**
  * Motor de Ativação (Fase 18) — CPF (11 dígitos) ou CNPJ (14 dígitos).
@@ -36,7 +37,7 @@ export const customerPhoneSchema = z
  * necessidade de nota fiscal e contato não. */
 export const directSaleSchema = z.object({
   productId: z.string(),
-  destinationUrl: z.string().url("Informe um link válido (ex: https://...)"),
+  destinationUrl: httpUrlSchema(),
   customerName: z.string().trim().min(2, "Nome muito curto").max(120),
   customerEmail: z.string().trim().email("E-mail inválido"),
   customerDocument: customerDocumentSchema,

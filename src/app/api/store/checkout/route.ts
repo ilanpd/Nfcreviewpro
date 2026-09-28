@@ -8,11 +8,12 @@ import { prisma } from "@/lib/prisma";
 import { handleApiError } from "@/lib/api-error";
 import { getAuthContext } from "@/lib/auth";
 import { customerDocumentSchema, customerPhoneSchema } from "@/lib/validations/store-order";
+import { httpUrlSchema } from "@/lib/validations/http-url";
 import { cardLimitForPlan } from "@/lib/plans";
 
 const storeCheckoutSchema = z.object({
   productId: z.string(),
-  destinationUrl: z.string().url("Informe um link válido (ex: https://...)"),
+  destinationUrl: httpUrlSchema(),
   customerName: z.string().trim().min(2, "Nome muito curto").max(120),
   customerEmail: z.string().email("E-mail inválido"),
   customerDocument: customerDocumentSchema,

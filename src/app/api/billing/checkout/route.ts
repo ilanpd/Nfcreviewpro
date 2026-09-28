@@ -7,6 +7,7 @@ import { PLANS, cardLimitForPlan, stripePriceIdForPlan } from "@/lib/plans";
 import { getStoreProduct, applyStoreProductOverrides } from "@/lib/store-products";
 import { getSiteSettings } from "@/lib/site-settings";
 import { customerDocumentSchema, customerPhoneSchema } from "@/lib/validations/store-order";
+import { httpUrlSchema } from "@/lib/validations/http-url";
 import { prisma } from "@/lib/prisma";
 import { handleApiError } from "@/lib/api-error";
 import type Stripe from "stripe";
@@ -20,7 +21,7 @@ const checkoutSchema = z
   .object({
     plan: z.enum(["STARTER", "PRO", "BUSINESS"]),
     cardProductId: z.string().optional(),
-    destinationUrl: z.string().url("Informe um link válido").optional(),
+    destinationUrl: httpUrlSchema("Informe um link válido (ex: https://...)").optional(),
     customerDocument: customerDocumentSchema.optional(),
     customerPhone: customerPhoneSchema.optional(),
   })

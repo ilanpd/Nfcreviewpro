@@ -30,7 +30,7 @@ export function StoreHero() {
 
         <BlurFade delay={0.05}>
           <h1 className="text-4xl font-semibold tracking-tight text-balance sm:text-6xl">
-            Um cartão, qualquer destino — pronto em minutos
+            Um cartão, qualquer destino — e você troca quando quiser
           </h1>
         </BlurFade>
 

@@ -33,7 +33,7 @@ export const STORE_PRODUCTS: StoreProduct[] = [
     description: "Para um restaurante, salão ou loja com várias mesas/pontos de contato.",
     quantity: 20,
     unitPriceCents: 3900,
-    badge: "Mais popular",
+    badge: "Recomendado",
     highlighted: true,
   },
   {

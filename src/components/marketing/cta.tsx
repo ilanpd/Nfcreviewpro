@@ -21,7 +21,7 @@ export function Cta() {
           <div className="mt-8 inline-block">
             <Button asChild size="lg" className="gap-2">
               <Link href="/comecar">
-                Começar grátis
+                Começar agora
                 <ArrowRight className="size-4" />
               </Link>
             </Button>

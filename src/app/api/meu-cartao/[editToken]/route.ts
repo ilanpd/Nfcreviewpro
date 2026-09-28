@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { handleApiError } from "@/lib/api-error";
+import { httpUrlSchema } from "@/lib/validations/http-url";
 import { findGuestCard, getCardDestination, countCardTouchesThisMonth, updateCardDestination } from "@/services/meu-cartao.service";
 
 /**
@@ -25,7 +26,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ edi
   }
 }
 
-const patchSchema = z.object({ destinationUrl: z.string().url("Informe um link válido (ex: https://...)") });
+const patchSchema = z.object({ destinationUrl: httpUrlSchema() });
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ editToken: string }> }) {
   try {

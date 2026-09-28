@@ -45,7 +45,7 @@ export function SiteHeader() {
             <Link href="/sign-in">Entrar</Link>
           </Button>
           <Button asChild>
-            <Link href="/comecar">Começar grátis</Link>
+            <Link href="/comecar">Começar agora</Link>
           </Button>
         </div>
 
@@ -82,7 +82,7 @@ export function SiteHeader() {
           </Button>
           <Button asChild className="w-full">
             <Link href="/comecar" onClick={() => setMobileOpen(false)}>
-              Começar grátis
+              Começar agora
             </Link>
           </Button>
         </div>

@@ -1,17 +1,18 @@
 import { z } from "zod";
+import { httpUrlSchema } from "@/lib/validations/http-url";
 
 const hexColorSchema = z.string().trim().regex(/^#([0-9a-fA-F]{6})$/, "Cor inválida");
 
 export const updateCompanySchema = z.object({
   name: z.string().trim().min(2).max(80).optional(),
-  logoUrl: z.string().trim().url().optional().or(z.literal("")),
+  logoUrl: httpUrlSchema().optional().or(z.literal("")),
   whatsapp: z
     .string()
     .trim()
     .min(10, "Informe o WhatsApp com DDD")
     .max(20)
     .optional(),
-  googleReviewUrl: z.string().trim().url("Informe um link válido do Google").optional(),
+  googleReviewUrl: httpUrlSchema("Informe um link válido do Google").optional(),
   primaryColor: hexColorSchema.optional(),
   // ROI Mode (Fase 7) — os três só fazem sentido juntos, mas são validados
   // e salvos individualmente (o formulário de Configurações permite editar
@@ -23,10 +24,10 @@ export const updateCompanySchema = z.object({
   // White Label (Fase 10) — faviconUrl existe na coluna desde a Fase 9
   // (ver ADR-039), mas nunca tinha chegado a um schema de validação nem a
   // um formulário; corrigido aqui junto com os campos novos desta fase.
-  faviconUrl: z.string().trim().url().optional().or(z.literal("")),
+  faviconUrl: httpUrlSchema().optional().or(z.literal("")),
   secondaryColor: hexColorSchema.nullable().optional(),
   loginHeadline: z.string().trim().max(120).optional().or(z.literal("")),
-  loginBackgroundUrl: z.string().trim().url().optional().or(z.literal("")),
+  loginBackgroundUrl: httpUrlSchema().optional().or(z.literal("")),
 });
 
 const HOSTNAME_REGEX = /^(?!-)[a-z0-9-]{1,63}(?<!-)(\.(?!-)[a-z0-9-]{1,63}(?<!-))+$/;
@@ -56,7 +57,7 @@ export const onboardingSchema = z.object({
 // da ativação.
 export const activateCompanySchema = z.object({
   whatsapp: z.string().trim().min(10, "Informe o WhatsApp com DDD").max(20),
-  googleReviewUrl: z.string().trim().url("Informe um link válido do Google"),
+  googleReviewUrl: httpUrlSchema("Informe um link válido do Google"),
   primaryColor: z
     .string()
     .trim()

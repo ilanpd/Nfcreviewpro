@@ -68,6 +68,13 @@ describe("POST /api/billing/checkout", () => {
     expect(mocks.createOrder).not.toHaveBeenCalled();
   });
 
+  it("destino do cartão com esquema perigoso (data:) é recusado antes de qualquer sessão ou pedido", async () => {
+    const res = await post({ plan: "STARTER", cardProductId: "single", ...CARD_FIELDS, destinationUrl: "data:text/html,<script>alert(1)</script>" });
+    expect(res.status).toBeGreaterThanOrEqual(400);
+    expect(mocks.sessionsCreate).not.toHaveBeenCalled();
+    expect(mocks.createOrder).not.toHaveBeenCalled();
+  });
+
   it("Starter + 50 cartões também é recusado", async () => {
     const res = await post({ plan: "STARTER", cardProductId: "pack-50", ...CARD_FIELDS });
     expect(res.status).toBe(400);

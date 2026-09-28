@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { findForbiddenRewardTerm, forbiddenRewardMessage } from "@/domain/return-offer/compliance";
 import { isWeakPin } from "@/domain/return-offer/pin";
+import { isHttpUrl } from "@/lib/validations/http-url";
 
 /** Texto do brinde: livre, mas nunca citando avaliação (ver domain/return-offer/compliance.ts). */
 const rewardText = (min: number, max: number) =>
@@ -14,18 +15,7 @@ const rewardText = (min: number, max: number) =>
       if (term) ctx.addIssue({ code: "custom", message: forbiddenRewardMessage(term) });
     });
 
-const httpUrl = z
-  .string()
-  .trim()
-  .max(500)
-  .refine((value) => {
-    try {
-      const url = new URL(value);
-      return url.protocol === "https:" || url.protocol === "http:";
-    } catch {
-      return false;
-    }
-  }, "Informe um link começando com https://");
+const httpUrl = z.string().trim().max(500).refine(isHttpUrl, "Informe um link começando com https://");
 
 export const offerInputSchema = z.object({
   title: rewardText(3, 60),

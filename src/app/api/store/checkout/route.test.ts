@@ -34,13 +34,13 @@ vi.mock("@/lib/api-error", () => ({
 
 import { POST } from "./route";
 
-function buy(productId: string) {
+function buy(productId: string, destinationUrl = "https://instagram.com/bella") {
   return POST(
     new NextRequest("http://localhost/api/store/checkout", {
       method: "POST",
       body: JSON.stringify({
         productId,
-        destinationUrl: "https://instagram.com/bella",
+        destinationUrl,
         customerName: "Bella Vista",
         customerEmail: "dono@example.com",
         customerDocument: "11122233396",
@@ -109,6 +109,13 @@ describe("POST /api/store/checkout — limite do plano só pra assinante logado"
 
     expect((await buy("pack-20")).status).toBe(200);
     expect(mocks.countCards).not.toHaveBeenCalled();
+  });
+
+  it("destino com esquema perigoso (javascript:) é recusado antes de qualquer sessão ou pedido", async () => {
+    const res = await buy("single", "javascript:alert(1)");
+    expect(res.status).toBeGreaterThanOrEqual(400);
+    expect(mocks.sessionsCreate).not.toHaveBeenCalled();
+    expect(mocks.createOrder).not.toHaveBeenCalled();
   });
 
   it("quem nem está logado compra qualquer pacote (Fluxo 1, a Loja pública)", async () => {

@@ -60,7 +60,7 @@ export function Hero({ heroVideoUrl }: { heroVideoUrl?: string | null }) {
                   HTML inválido, dois tab stops e leitura dobrada em leitor de tela. */}
               <MagneticButton asChild size="lg" className="gap-2">
                 <Link href="/comecar">
-                  Começar grátis
+                  Começar agora
                   <ArrowRight className="size-4" />
                 </Link>
               </MagneticButton>
