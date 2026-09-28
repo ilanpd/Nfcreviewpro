@@ -347,7 +347,21 @@ Encontradas durante os ciclos C0 e C1 e não corrigidas na hora (fora do escopo 
 - [ ] **Ação sua: domínio de e-mail verificado** — SPF, DKIM, DMARC no Resend. Sem isso, todo e-mail deste produto continua só logado, nunca entregue de verdade.
 - [ ] **Registrado, não implementado (C15, ADR-090): Fluxo 5 (upgrade Starter→Pro/Business)** — sem tela nova quando for reativado; o Portal de Cobrança + o webhook `customer.subscription.updated` já resolvem sozinhos, só falta configurar os Prices no Stripe.
 - [ ] **Registrado, não implementado (C15, ADR-090): eliminar campos custom de nome/e-mail no checkout da Loja** — deixar o Stripe coletar nativamente é tecnicamente possível, mas é o item de maior risco de regressão do C15 inteiro (muda o momento em que `StoreOrder` recebe dados reais). Fica pra um ciclo isolado.
-- [ ] **Ação sua: aplicar a migração + backfill do C15 em Produção** — `Company.whatsapp`/`googleReviewUrl` viram opcionais, `Company.activatedAt` novo. Depois da migração, rodar em Produção o mesmo backfill já aplicado em Staging (`UPDATE "Company" SET "activatedAt" = "createdAt" WHERE "activatedAt" IS NULL AND "whatsapp" IS NOT NULL AND "googleReviewUrl" IS NOT NULL;`) — sem isso, todo cliente real já configurado veria o banner de ativação por engano.
+- [ ] **⚠️ Ação sua, bloqueante: aplicar migrações + backfill em Produção antes do próximo deploy do C15/C14** — o código do C15 já foi publicado uma vez e teve que ser revertido (`vercel rollback`) porque a coluna `Company.activatedAt` ainda não existe em Produção — quebraria o painel inteiro (`getCompanyById` e outras queries sem `select` estreito). Produção está de volta ao C14 agora, estável. Rode isto no SQL Editor do Supabase (projeto de Produção), nesta ordem, antes de pedir o próximo deploy:
+  ```sql
+  -- 1) Migração C14 (pendente desde aquele ciclo)
+  ALTER TABLE "Company" ALTER COLUMN "returnPilotEnabled" SET DEFAULT true;
+
+  -- 2) Migração C15
+  ALTER TABLE "Company" ADD COLUMN "activatedAt" TIMESTAMP(3),
+  ALTER COLUMN "whatsapp" DROP NOT NULL,
+  ALTER COLUMN "googleReviewUrl" DROP NOT NULL;
+
+  -- 3) Backfill C15 — sem isso, todo cliente real já configurado veria o banner de ativação por engano
+  UPDATE "Company" SET "activatedAt" = "createdAt"
+  WHERE "activatedAt" IS NULL AND "whatsapp" IS NOT NULL AND "googleReviewUrl" IS NOT NULL;
+  ```
+  Depois de rodar, me avise pra eu confirmar e refazer o deploy do C15.
 
 ## Backlog (não iniciado)
 
