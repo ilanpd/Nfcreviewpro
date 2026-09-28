@@ -347,33 +347,17 @@ Encontradas durante os ciclos C0 e C1 e não corrigidas na hora (fora do escopo 
 - [ ] **Ação sua: domínio de e-mail verificado** — SPF, DKIM, DMARC no Resend. Sem isso, todo e-mail deste produto continua só logado, nunca entregue de verdade.
 - [ ] **Registrado, não implementado (C15, ADR-090): Fluxo 5 (upgrade Starter→Pro/Business)** — sem tela nova quando for reativado; o Portal de Cobrança + o webhook `customer.subscription.updated` já resolvem sozinhos, só falta configurar os Prices no Stripe.
 - [ ] **Registrado, não implementado (C15, ADR-090): eliminar campos custom de nome/e-mail no checkout da Loja** — deixar o Stripe coletar nativamente é tecnicamente possível, mas é o item de maior risco de regressão do C15 inteiro (muda o momento em que `StoreOrder` recebe dados reais). Fica pra um ciclo isolado.
-- [ ] **⚠️ Ação sua, bloqueante: aplicar migrações + backfill em Produção antes do próximo deploy do C15/C14** — o código do C15 já foi publicado uma vez e teve que ser revertido (`vercel rollback`) porque a coluna `Company.activatedAt` ainda não existe em Produção — quebraria o painel inteiro (`getCompanyById` e outras queries sem `select` estreito). Produção está de volta ao C14 agora, estável. Rode isto no SQL Editor do Supabase (projeto de Produção), nesta ordem, antes de pedir o próximo deploy:
+- [x] **Migrações C14 + C15 e backfill aplicados em Produção (28/09/2026)** — conferido direto no banco (só leitura): `Company.activatedAt` existe, `whatsapp`/`googleReviewUrl` são opcionais, `returnPilotEnabled` tem default `true`, 13/13 empresas com `activatedAt`. Smoke test das queries de `Company` sem `select` (as que quebraram no 1º deploy) passou. **C15 no ar em Produção**, verificado ao vivo (`/comecar`, `/loja?produto=single`, `/robots.txt`, `/sitemap.xml`, página de teste do cartão lendo dado real, `/dashboard` redirecionando pro login).
+- [ ] **Ação sua (1 minuto, não afeta o site): registrar as 2 migrações no histórico do Prisma em Produção.** O SQL que você rodou aplicou o schema, mas as duas linhas em `_prisma_migrations` (a 4ª parte do SQL, adicionada depois) não entraram — por isso `npm run predeploy` ainda acusa "pendente". Sem isso, um `prisma migrate deploy` futuro tentaria reaplicar e falharia em "coluna já existe". No SQL Editor do Supabase (Produção):
   ```sql
-  BEGIN;
-
-  -- 1) Migração C14 (pendente desde aquele ciclo)
-  ALTER TABLE "Company" ALTER COLUMN "returnPilotEnabled" SET DEFAULT true;
-
-  -- 2) Migração C15
-  ALTER TABLE "Company" ADD COLUMN "activatedAt" TIMESTAMP(3),
-  ALTER COLUMN "whatsapp" DROP NOT NULL,
-  ALTER COLUMN "googleReviewUrl" DROP NOT NULL;
-
-  -- 3) Backfill C15 — sem isso, todo cliente real já configurado veria o banner de ativação por engano
-  UPDATE "Company" SET "activatedAt" = "createdAt"
-  WHERE "activatedAt" IS NULL AND "whatsapp" IS NOT NULL AND "googleReviewUrl" IS NOT NULL;
-
-  -- 4) Registra as duas migrações no histórico do Prisma (mesmos checksums do Staging).
-  --    Sem isto, `prisma migrate status/deploy` continuaria achando que estão pendentes
-  --    (e um `migrate deploy` futuro tentaria reaplicar e falharia em "coluna já existe").
   INSERT INTO "_prisma_migrations" (id, checksum, finished_at, migration_name, logs, started_at, applied_steps_count)
   VALUES
     (gen_random_uuid()::text, '5a0d6da2624d5f775a5173d008517b9c27920bb805904e72b502cbf2ba13d3cb', now(), '20260927201454_c14_return_pilot_default_true', NULL, now(), 1),
     (gen_random_uuid()::text, 'c538800dd48cf01bb6dd29df420d55d6e38dc3290c69933f2a9de304793208db', now(), '20260928000618_c15_activation_flow', NULL, now(), 1);
-
-  COMMIT;
   ```
-  Depois de rodar, me avise. Eu confirmo com `npm run predeploy` (leitura só — deve responder "deploy liberado") e refaço o deploy do C15. **Regra nova (trava em código):** `npm run predeploy` (`scripts/predeploy-check.mjs`) falha se houver migração pendente em Produção — rodar antes de todo `vercel --prod`.
+  **Regra de deploy (trava em código):** `npm run predeploy` (`scripts/predeploy-check.mjs`) falha se houver migração pendente em Produção. **Atenção operacional:** depois de um `vercel rollback`, um novo `vercel --prod` NÃO vira o site atual sozinho — é preciso `vercel promote <url do deploy novo>` (aprendido no C15).
+- [ ] **Antes do primeiro lote de cartões físicos: domínio definitivo do cartão (ADR-076).** Hoje `NEXT_PUBLIC_APP_URL` é `nfc-os-production.vercel.app` (provisório): o endereço gravado no chip e impresso no QR é permanente — com o domínio provisório, o cartão quebra se o projeto for recriado. Definir `NEXT_PUBLIC_CARD_BASE_URL` (domínio próprio) e `CARD_URL_REQUIRE_FINAL=1` antes de gravar/imprimir qualquer coisa. Ver `DEPLOY_SETUP.md`.
+- [ ] **Ação sua: `RESEND_API_KEY` não existe em Produção** — nenhum e-mail transacional (confirmação de pedido, boas-vindas, brinde ativado, cobrança) é entregue de verdade hoje, só logado. Junto com o domínio verificado (SPF/DKIM/DMARC), é pré-requisito pros primeiros clientes.
 
 ## Backlog (não iniciado)
 
