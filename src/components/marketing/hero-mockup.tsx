@@ -267,11 +267,12 @@ export function HeroMockup() {
 
   return (
     <div className="flex flex-col items-center gap-5">
-      <div className="flex gap-1.5 rounded-full border border-border/60 bg-muted/40 p-1">
+      <div role="group" aria-label="Escolha qual demonstração ver" className="flex gap-1.5 rounded-full border border-border/60 bg-muted/40 p-1">
         {FLOW_LABELS.map((f) => (
           <button
             key={f.id}
             type="button"
+            aria-pressed={flowId === f.id}
             onClick={() => selectFlow(f.id)}
             className={cn(
               "rounded-full px-3.5 py-1.5 text-xs font-medium transition-colors",
@@ -283,7 +284,10 @@ export function HeroMockup() {
         ))}
       </div>
 
-      <div className="relative flex aspect-square w-full max-w-sm items-center justify-center sm:aspect-video sm:max-w-none">
+      {/* A cena é uma ilustração que troca de texto sozinha em loop: pra leitor
+          de tela, `aria-hidden` (o parágrafo do Hero já diz a mesma coisa em
+          texto estático) — nunca um trecho que muda enquanto se navega. */}
+      <div aria-hidden className="relative flex aspect-square w-full max-w-sm items-center justify-center sm:aspect-video sm:max-w-none">
         {/* Halo ambiente atrás da cena — mesma cor de marca, nunca decorativo à toa: marca "aqui acontece a ação". */}
         <div
           aria-hidden

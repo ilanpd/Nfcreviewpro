@@ -84,7 +84,7 @@ export function MeuCartaoForm({
           /onboarding/plan só bateria de volta pro /onboarding vazio. O
           cadastro com o mesmo e-mail do pedido já promove esta empresa GUEST
           pra CUSTOMER sozinho (claimGuestCompany), sem duplicar nada. */}
-      <UpgradePitchCard href="/sign-up?plan=STARTER" />
+      <UpgradePitchCard href="/sign-up?plan=STARTER&hasCard=1" />
     </div>
   );
 }

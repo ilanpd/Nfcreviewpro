@@ -41,12 +41,12 @@ export function SiteHeader() {
         </nav>
         <div className="hidden items-center gap-2 sm:flex">
           <ThemeToggle />
-          <Link href="/sign-in">
-            <Button variant="ghost">Entrar</Button>
-          </Link>
-          <Link href="/comecar">
-            <Button>Começar grátis</Button>
-          </Link>
+          <Button asChild variant="ghost">
+            <Link href="/sign-in">Entrar</Link>
+          </Button>
+          <Button asChild>
+            <Link href="/comecar">Começar grátis</Link>
+          </Button>
         </div>
 
         {/* Mobile (< sm): o header em uma linha só não cabe logo + 4 links +
@@ -75,14 +75,16 @@ export function SiteHeader() {
           ))}
         </nav>
         <div className="mt-4 flex flex-col gap-2 border-t border-border/60 pt-4">
-          <Link href="/sign-in" onClick={() => setMobileOpen(false)}>
-            <Button variant="outline" className="w-full">
+          <Button asChild variant="outline" className="w-full">
+            <Link href="/sign-in" onClick={() => setMobileOpen(false)}>
               Entrar
-            </Button>
-          </Link>
-          <Link href="/comecar" onClick={() => setMobileOpen(false)}>
-            <Button className="w-full">Começar grátis</Button>
-          </Link>
+            </Link>
+          </Button>
+          <Button asChild className="w-full">
+            <Link href="/comecar" onClick={() => setMobileOpen(false)}>
+              Começar grátis
+            </Link>
+          </Button>
         </div>
       </PremiumDrawer>
     </GlassNavbar>

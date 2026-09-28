@@ -161,7 +161,7 @@ export function PlaygroundView({ demoApiKey }: { demoApiKey: string }) {
         <h2 className="text-xl font-semibold">Pronto para integrar de verdade?</h2>
         <p className="mt-2 text-sm text-muted-foreground">Crie sua conta e gere sua primeira chave de API em minutos.</p>
         <Button asChild className="mt-4">
-          <Link href="/sign-up">Começar grátis</Link>
+          <Link href="/comecar">Começar grátis</Link>
         </Button>
       </section>
     </div>

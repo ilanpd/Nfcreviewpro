@@ -20,9 +20,11 @@ import type { PlanType } from "@/generated/prisma/client";
 export function OnboardingForm({
   initialPlan,
   initialCardProductId,
+  hasCard,
 }: {
   initialPlan?: PlanType;
   initialCardProductId?: string;
+  hasCard?: boolean;
 }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -50,6 +52,7 @@ export function OnboardingForm({
       const nextParams = new URLSearchParams();
       if (initialPlan) nextParams.set("plan", initialPlan);
       if (initialCardProductId) nextParams.set("cardProductId", initialCardProductId);
+      if (hasCard) nextParams.set("hasCard", "1");
       const query = nextParams.toString();
       router.push(query ? `/onboarding/plan?${query}` : "/onboarding/plan");
       router.refresh();

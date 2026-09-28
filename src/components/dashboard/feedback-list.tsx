@@ -45,11 +45,11 @@ export function FeedbackList({
     <div className="space-y-4">
       {showExport ? (
         <div className="flex justify-end">
-          <a href="/api/export/feedback">
-            <Button variant="outline" size="sm">
+          <Button asChild variant="outline" size="sm">
+            <a href="/api/export/feedback">
               <Download className="size-4" /> Exportar CSV
-            </Button>
-          </a>
+            </a>
+          </Button>
         </div>
       ) : null}
 

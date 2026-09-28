@@ -162,11 +162,11 @@ export function CardItem({ card, branches, zones, onUpdated, onDeleted, canManag
               <SmartBadge key={tag} label={tag} tone="neutral" />
             ))}
         </div>
-        <a href={cardQrPath(card.uniqueCode, { size: 1024, download: true })} aria-label="Baixar QR Code">
-          <Button variant="ghost" size="icon" className="size-8" tabIndex={-1}>
+        <Button asChild variant="ghost" size="icon" className="size-8">
+          <a href={cardQrPath(card.uniqueCode, { size: 1024, download: true })} aria-label="Baixar QR Code">
             <Download className="size-4" />
-          </Button>
-        </a>
+          </a>
+        </Button>
       </div>
     </PremiumCardShell>
   );

@@ -59,11 +59,9 @@ export function Pricing() {
                     Em breve
                   </Button>
                 ) : (
-                  <Link href={`/comecar?plan=${plan.id}`} className="mt-8">
-                    <Button className="w-full" variant={plan.highlighted ? "default" : "outline"}>
-                      Assinar {plan.name}
-                    </Button>
-                  </Link>
+                  <Button asChild className="mt-8 w-full" variant={plan.highlighted ? "default" : "outline"}>
+                    <Link href={`/comecar?plan=${plan.id}`}>Assinar {plan.name}</Link>
+                  </Button>
                 )}
               </div>
             </BlurFade>

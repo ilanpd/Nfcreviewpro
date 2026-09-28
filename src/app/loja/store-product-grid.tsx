@@ -234,14 +234,18 @@ function PurchaseDialog({ product, onOpenChange }: { product: StoreProduct | nul
           </p>
         </div>
       </form>
-      {product ? (
+      {/* C15 (ADR-090) — só o cartão de 1 unidade: o Starter permite 1 cartão,
+          então oferecer "assinar junto" a partir de um pacote de 20/50 mandava
+          um pedido que o próprio plano não deixa usar. E o cartão continua
+          sendo cobrado à parte (uma cobrança só, nunca "incluso de graça"). */}
+      {product && product.quantity === 1 ? (
         <div className="mt-4 rounded-lg border border-dashed border-brand/40 bg-brand-subtle/20 p-3 text-center text-xs">
           <p className="text-muted-foreground">Já sabe que quer usar o software?</p>
           <a
             href={`/sign-up?plan=STARTER&cardProductId=${product.id}`}
             className="mt-1 inline-flex items-center gap-1 font-medium text-brand-ink hover:underline"
           >
-            Assine com este cartão incluso <ArrowRight className="size-3.5" />
+            Assinar o Starter junto com este cartão <ArrowRight className="size-3.5" />
           </a>
         </div>
       ) : null}

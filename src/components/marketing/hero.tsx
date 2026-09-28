@@ -55,17 +55,18 @@ export function Hero({ heroVideoUrl }: { heroVideoUrl?: string | null }) {
 
           <BlurFade delay={0.15}>
             <div className="mt-10 flex flex-wrap items-center justify-center gap-3 lg:justify-start">
-              <Link href="/comecar">
-                <MagneticButton size="lg" className="gap-2">
+              {/* `asChild`: o Link É o botão (um só elemento interativo) — o padrão
+                  antigo `<Link><Button/></Link>` gerava `<a><button>` aninhado:
+                  HTML inválido, dois tab stops e leitura dobrada em leitor de tela. */}
+              <MagneticButton asChild size="lg" className="gap-2">
+                <Link href="/comecar">
                   Começar grátis
                   <ArrowRight className="size-4" />
-                </MagneticButton>
-              </Link>
-              <Link href="/#como-funciona">
-                <Button size="lg" variant="outline">
-                  Ver como funciona
-                </Button>
-              </Link>
+                </Link>
+              </MagneticButton>
+              <Button asChild size="lg" variant="outline">
+                <Link href="/#como-funciona">Ver como funciona</Link>
+              </Button>
             </div>
           </BlurFade>
         </div>

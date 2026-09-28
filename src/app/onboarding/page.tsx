@@ -10,12 +10,12 @@ import type { PlanType } from "@/generated/prisma/client";
 export default async function OnboardingPage({
   searchParams,
 }: {
-  searchParams: Promise<{ plan?: string; cardProductId?: string }>;
+  searchParams: Promise<{ plan?: string; cardProductId?: string; hasCard?: string }>;
 }) {
   const ctx = await getAuthContext();
   if (ctx) redirect("/dashboard");
 
-  const { plan, cardProductId } = await searchParams;
+  const { plan, cardProductId, hasCard } = await searchParams;
   const initialPlan = plan && plan in PLANS ? (plan as PlanType) : undefined;
   const initialCardProductId = cardProductId && getStoreProduct(cardProductId) ? cardProductId : undefined;
 
@@ -26,7 +26,7 @@ export default async function OnboardingPage({
           <h1 className="text-2xl font-semibold tracking-tight">Como se chama sua empresa?</h1>
           <p className="text-sm text-muted-foreground">Só isso por agora — o resto vem depois de escolher seu plano.</p>
         </div>
-        <OnboardingForm initialPlan={initialPlan} initialCardProductId={initialCardProductId} />
+        <OnboardingForm initialPlan={initialPlan} initialCardProductId={initialCardProductId} hasCard={hasCard === "1"} />
       </div>
     </div>
   );

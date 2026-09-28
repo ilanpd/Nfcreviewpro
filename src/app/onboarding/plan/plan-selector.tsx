@@ -42,8 +42,15 @@ const SINGLE_CARD_PRODUCT = STORE_PRODUCTS.find((p) => p.id === "single");
  */
 export function PlanSelector({ initialPlan, initialCardProductId, hasExistingCards, cardCount, hasCard }: PlanSelectorProps) {
   const [loadingPlan, setLoadingPlan] = useState<PlanType | null>(null);
+  // Qualquer intenção de cartão vinda da URL (`?cardProductId=`) vira o pacote
+  // de 1 unidade: um link antigo com `pack-20` não pode mais chegar aqui
+  // como uma seleção que nenhum botão mostra (e o servidor também recusa).
   const [cardProductId, setCardProductId] = useState<string | null>(
-    initialCardProductId ?? (hasCard || hasExistingCards ? null : (SINGLE_CARD_PRODUCT?.id ?? null))
+    hasCard
+      ? null
+      : initialCardProductId || !hasExistingCards
+        ? (SINGLE_CARD_PRODUCT?.id ?? null)
+        : null
   );
   const [destinationUrl, setDestinationUrl] = useState("");
   const [customerDocument, setCustomerDocument] = useState("");

@@ -3,7 +3,7 @@ import { BRAND } from "@/lib/brand";
 import { z } from "zod";
 import { requireAuthContext, requirePermission } from "@/lib/auth";
 import { stripe } from "@/lib/stripe";
-import { PLANS, stripePriceIdForPlan } from "@/lib/plans";
+import { PLANS, cardLimitForPlan, stripePriceIdForPlan } from "@/lib/plans";
 import { getStoreProduct, applyStoreProductOverrides } from "@/lib/store-products";
 import { getSiteSettings } from "@/lib/site-settings";
 import { customerDocumentSchema, customerPhoneSchema } from "@/lib/validations/store-order";
@@ -81,6 +81,20 @@ export async function POST(req: NextRequest) {
     if (input.cardProductId) {
       const baseProduct = getStoreProduct(input.cardProductId);
       if (!baseProduct) return NextResponse.json({ error: "Produto de cartão não encontrado" }, { status: 404 });
+      // C15 (ADR-090) — defesa no servidor, não só na UI: o pacote de cartões
+      // somado à assinatura nunca pode passar do que o plano permite usar
+      // (Starter: 1). Sem isto, um link antigo (`?cardProductId=pack-20`) ou
+      // uma chamada direta ainda criava um pedido de 20 cartões num plano
+      // que só deixa cadastrar 1 — o bug de auditoria que motivou o ciclo.
+      const planCardLimit = cardLimitForPlan(plan as PlanType);
+      if (planCardLimit !== null && baseProduct.quantity > planCardLimit) {
+        return NextResponse.json(
+          {
+            error: `O plano ${PLANS[plan as PlanType].name} permite ${planCardLimit} ${planCardLimit === 1 ? "cartão" : "cartões"}. Pacotes maiores continuam à venda na Loja.`,
+          },
+          { status: 400 }
+        );
+      }
       const settings = await getSiteSettings().catch(() => null);
       [cardProduct] = applyStoreProductOverrides([baseProduct], settings?.storeProductOverrides);
       cardAmountTotalCents = cardProduct.unitPriceCents * cardProduct.quantity;

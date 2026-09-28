@@ -95,7 +95,7 @@ export default async function StoreSuccessPage({
 
               {isGuestCompany && order ? (
                 <div className="mt-6 space-y-2">
-                  <UpgradePitchCard href="/sign-up?plan=STARTER" />
+                  <UpgradePitchCard href="/sign-up?plan=STARTER&hasCard=1" />
                   <p className="text-center text-xs text-muted-foreground">
                     Cadastre-se com o e-mail <span className="font-medium text-foreground">{order.customerEmail}</span>{" "}
                     e seu cartão já aparece automaticamente no painel — sem comprar de novo.

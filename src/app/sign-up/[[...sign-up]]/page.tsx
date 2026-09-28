@@ -20,11 +20,11 @@ import type { PlanType } from "@/generated/prisma/client";
 export default async function SignUpPage({
   searchParams,
 }: {
-  searchParams: Promise<{ plan?: string; cardProductId?: string }>;
+  searchParams: Promise<{ plan?: string; cardProductId?: string; hasCard?: string }>;
 }) {
   const host = (await headers()).get("host");
   const brand = await resolveBrandByHost(host);
-  const { plan, cardProductId } = await searchParams;
+  const { plan, cardProductId, hasCard } = await searchParams;
 
   const validPlan = plan && plan in PLANS ? (plan as PlanType) : null;
   const validCardProductId = cardProductId && getStoreProduct(cardProductId) ? cardProductId : null;
@@ -32,6 +32,10 @@ export default async function SignUpPage({
   const onboardingParams = new URLSearchParams();
   if (validPlan) onboardingParams.set("plan", validPlan);
   if (validCardProductId) onboardingParams.set("cardProductId", validCardProductId);
+  // C15 — a resposta "já tenho um cartão Pulse" da tela de descoberta
+  // (`/comecar`, Fluxo 2) tem que sobreviver ao cadastro; sem isto, o
+  // `PlanSelector` nunca chegava a saber e voltava a oferecer cartão.
+  if (hasCard === "1") onboardingParams.set("hasCard", "1");
   const query = onboardingParams.toString();
   const fallbackRedirectUrl = query ? `/onboarding?${query}` : "/onboarding";
 
