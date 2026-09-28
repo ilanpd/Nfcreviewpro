@@ -1,14 +1,20 @@
 import { z } from "zod";
 import type { CampaignType } from "@/generated/prisma/client";
 import { DESTINATION_META } from "@/domain/campaign/destination";
+import { httpUrlSchema } from "@/lib/validations/http-url";
 
 // Campaign.config is stored as untyped Json in the database — these schemas
 // are the runtime safety net between a hand-edited/seeded row (or the
 // dashboard's own write path) and both renderers that read it back:
 // lib/campaign-destination.ts (engine redirect + Builder preview).
 
+// Auditoria de 28/09/2026: `z.string().url()` aceita `javascript:`/`data:`/
+// `file:`. Este é o destino que `redirect()` usa de verdade em
+// `/r/[code]/page.tsx` — o caminho crítico NFC → Resolver → Campanha →
+// Destino, tocado por qualquer desconhecido que aproxima o celular do
+// cartão. Só http(s) — ver lib/validations/http-url.ts.
 export const urlRedirectConfigSchema = z.object({
-  url: z.string().url(),
+  url: httpUrlSchema(),
 });
 
 export const whatsappConfigSchema = z.object({
