@@ -10,13 +10,22 @@ import type { CardUrlKind } from "@/domain/card-url/classify";
  */
 
 const STUCK_PRODUCTION_DAYS = 3;
-const NEGATIVE_REVIEW_THRESHOLD = 3;
+const UNRESOLVED_FEEDBACK_THRESHOLD = 3;
 
 export interface AttentionRadarInput {
   stuckOrders: { id: string; customerName: string; daysStuck: number }[];
   lowStock: { blankChipStock: number; lowStockThreshold: number } | null;
   disputedOrders: { id: string; customerName: string; disputeStatus: string | null }[];
-  negativeReviewCompanies: { companyId: string; companyName: string; count: number }[];
+  /**
+   * "Falar com a gente" (`PrivateFeedback`) sem resposta do dono — auditoria
+   * de 28/09/2026: até aqui isto media `RatingEvent` com 1-2 estrelas, um
+   * sinal que zerou para sempre desde a ADR-080 (a tela pública deixou de
+   * pedir nota; nenhuma avaliação nova é gravada). Mensagem sem resposta é o
+   * sinal real equivalente disponível hoje — não classifica sentimento (o
+   * texto é livre), mas aponta exatamente o que o Admin pode agir: uma
+   * empresa deixando clientes sem retorno.
+   */
+  unresolvedFeedbackCompanies: { companyId: string; companyName: string; count: number }[];
   /** Fase 20 — chamados de `/dashboard/suporte` sem resposta há tempo
    * demais; quem já filtrou "mais velho que o limiar" é o chamador
    * (`services/admin-overview.service.ts`), esta função só formata. */
@@ -55,12 +64,12 @@ export function buildAttentionRadar(input: AttentionRadarInput): InsightCardEntr
     });
   }
 
-  for (const company of input.negativeReviewCompanies) {
-    if (company.count < NEGATIVE_REVIEW_THRESHOLD) continue;
+  for (const company of input.unresolvedFeedbackCompanies) {
+    if (company.count < UNRESOLVED_FEEDBACK_THRESHOLD) continue;
     insights.push({
-      id: `reviews:${company.companyId}`,
+      id: `feedback:${company.companyId}`,
       severity: "attention",
-      message: `${company.companyName} recebeu ${company.count} avaliações de 1-2 estrelas nos últimos 7 dias`,
+      message: `${company.companyName} tem ${company.count} mensagens de clientes sem resposta nos últimos 7 dias`,
     });
   }
 

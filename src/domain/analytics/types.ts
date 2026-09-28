@@ -20,7 +20,7 @@ export interface KpiValue {
   hint?: string;
 }
 
-export type FunnelStageKey = "APPROACH" | "PAGE_OPENED" | "CLICK" | "CONVERSION" | "REVIEW_PUBLISHED";
+export type FunnelStageKey = "APPROACH" | "PAGE_OPENED" | "CONVERSION";
 
 export interface FunnelStage {
   key: FunnelStageKey;
@@ -87,7 +87,7 @@ export interface RoiSummary {
   qualifyingInteractions: number;
 }
 
-export type TimelineEventKind = "CAMPAIGN_LIFECYCLE" | "AUDIT" | "TOUCH_SPIKE" | "REVIEW_RECORD";
+export type TimelineEventKind = "CAMPAIGN_LIFECYCLE" | "AUDIT" | "TOUCH_SPIKE" | "CONVERSION_RECORD";
 
 export interface ExecutiveTimelineEntry {
   id: string;

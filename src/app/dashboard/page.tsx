@@ -49,10 +49,11 @@ export default async function DashboardPage() {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard label="Total de acessos" value={summary.totalVisits.toLocaleString("pt-BR")} icon={BarChart3} />
         <StatCard
-          label="Cliques no Google"
-          value={summary.googleClicks.toLocaleString("pt-BR")}
+          label="Conversões"
+          value={summary.conversions.toLocaleString("pt-BR")}
           icon={MousePointerClick}
           accent="positive"
+          hint="Clicou no botão principal do cartão"
         />
         <StatCard label="Cartões ativos" value={summary.activeCards.toLocaleString("pt-BR")} icon={CreditCard} />
         <StatCard

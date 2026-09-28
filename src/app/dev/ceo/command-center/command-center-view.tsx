@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, MousePointerClick, Star, LayoutGrid as TablesIcon, Megaphone, AlertTriangle } from "lucide-react";
+import { ArrowLeft, MousePointerClick, Star, Target, LayoutGrid as TablesIcon, Megaphone, AlertTriangle } from "lucide-react";
 import {
   KpiCard,
   AnalyticsCard,
@@ -43,7 +43,7 @@ const TIMELINE_ICON: Record<ExecutiveTimelineEntry["kind"], React.ReactNode> = {
   CAMPAIGN_LIFECYCLE: <Megaphone className="size-3.5" />,
   AUDIT: <Star className="size-3.5" />,
   TOUCH_SPIKE: <MousePointerClick className="size-3.5" />,
-  REVIEW_RECORD: <Star className="size-3.5" />,
+  CONVERSION_RECORD: <Target className="size-3.5" />,
 };
 
 interface CommandCenterViewProps {
@@ -246,7 +246,7 @@ export function CommandCenterView({
       ) : null}
 
       <div className="grid gap-3 lg:grid-cols-2">
-        <AnalyticsCard title="Funil vivo" description={`Fluxo de avaliação, últimos ${ANALYTICS_DAYS} dias`}>
+        <AnalyticsCard title="Funil vivo" description={`Fluxo de conversão, últimos ${ANALYTICS_DAYS} dias`}>
           <FunnelChart stages={funnel} />
         </AnalyticsCard>
 

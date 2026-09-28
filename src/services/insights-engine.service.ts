@@ -2,6 +2,7 @@ import "server-only";
 import { subDays, startOfDay } from "date-fns";
 import { prisma } from "@/lib/prisma";
 import { analyticsCached } from "@/lib/analytics-cache";
+import { findConvertedVisits } from "@/lib/analytics/conversion";
 import { generateInsights, type CardPeakHourInput, type CampaignPerformanceInput, type ZoneComparisonInput } from "@/domain/analytics/insights";
 import { getLocalDateParts } from "@/domain/rules/timezone";
 import { getRanking } from "@/services/ranking-engine.service";
@@ -23,7 +24,7 @@ async function getZoneComparisonInputs(companyId: string, since: Date): Promise<
     prisma.nFCCard.findMany({ where: { companyId, zoneId: { not: null } }, select: { id: true, zoneId: true } }),
     prisma.zone.findMany({ where: { companyId }, select: { id: true, name: true } }),
     prisma.redirectLog.findMany({ where: { companyId, createdAt: { gte: since } }, select: { cardId: true } }),
-    prisma.ratingEvent.findMany({ where: { companyId, redirectedGoogle: true, createdAt: { gte: since } }, select: { cardId: true } }),
+    findConvertedVisits(companyId, since),
   ]);
 
   const zoneByCard = new Map(cards.map((c) => [c.id, c.zoneId!]));
@@ -61,7 +62,7 @@ async function getTopCardPeakHour(companyId: string, days: number, since: Date):
 
   const [company, rows] = await Promise.all([
     prisma.company.findUniqueOrThrow({ where: { id: companyId }, select: { timezone: true } }),
-    prisma.ratingEvent.findMany({ where: { companyId, cardId: top.id, redirectedGoogle: true, createdAt: { gte: since } }, select: { createdAt: true } }),
+    findConvertedVisits(companyId, since, top.id),
   ]);
 
   const hourCounts = new Map<number, number>();

@@ -1,24 +1,23 @@
 import "server-only";
 import { format, startOfDay, subDays } from "date-fns";
 import { prisma } from "@/lib/prisma";
+import { countConvertedVisitsTotal, findConvertedVisits } from "@/lib/analytics/conversion";
 import type { BreakdownItem, DashboardSummary, TimeseriesPoint } from "@/types";
 
 export async function getDashboardSummary(companyId: string): Promise<DashboardSummary> {
-  const [totalVisits, googleClicks, privateFeedbacks, activeCards, avgStars] = await Promise.all([
+  const [totalVisits, conversions, privateFeedbacks, activeCards] = await Promise.all([
     prisma.visit.count({ where: { companyId } }),
-    prisma.ratingEvent.count({ where: { companyId, redirectedGoogle: true } }),
+    countConvertedVisitsTotal(companyId),
     prisma.privateFeedback.count({ where: { companyId } }),
     prisma.nFCCard.count({ where: { companyId, active: true } }),
-    prisma.ratingEvent.aggregate({ where: { companyId }, _avg: { stars: true } }),
   ]);
 
   return {
     totalVisits,
-    googleClicks,
+    conversions,
     privateFeedbacks,
-    conversionRate: totalVisits > 0 ? googleClicks / totalVisits : 0,
+    conversionRate: totalVisits > 0 ? conversions / totalVisits : 0,
     activeCards,
-    averageStars: avgStars._avg.stars,
   };
 }
 
@@ -34,15 +33,12 @@ function bucketKey(date: Date) {
 export async function getAnalytics(companyId: string, days = 30) {
   const since = startOfDay(subDays(new Date(), days - 1));
 
-  const [visits, ratingEvents, feedbacks] = await Promise.all([
+  const [visits, conversionRows, feedbacks] = await Promise.all([
     prisma.visit.findMany({
       where: { companyId, createdAt: { gte: since } },
       select: { createdAt: true, device: true, browser: true, country: true, city: true },
     }),
-    prisma.ratingEvent.findMany({
-      where: { companyId, createdAt: { gte: since } },
-      select: { createdAt: true, redirectedGoogle: true },
-    }),
+    findConvertedVisits(companyId, since),
     prisma.privateFeedback.findMany({
       where: { companyId, createdAt: { gte: since } },
       select: { createdAt: true },
@@ -52,10 +48,10 @@ export async function getAnalytics(companyId: string, days = 30) {
   const timeseriesMap = new Map<string, TimeseriesPoint>();
   for (let i = 0; i < days; i++) {
     const date = bucketKey(subDays(new Date(), days - 1 - i));
-    timeseriesMap.set(date, { date, visits: 0, googleClicks: 0, feedbacks: 0 });
+    timeseriesMap.set(date, { date, visits: 0, conversions: 0, feedbacks: 0 });
   }
   for (const v of visits) timeseriesMap.get(bucketKey(v.createdAt))!.visits += 1;
-  for (const r of ratingEvents) if (r.redirectedGoogle) timeseriesMap.get(bucketKey(r.createdAt))!.googleClicks += 1;
+  for (const c of conversionRows) timeseriesMap.get(bucketKey(c.createdAt))!.conversions += 1;
   for (const f of feedbacks) timeseriesMap.get(bucketKey(f.createdAt))!.feedbacks += 1;
 
   const countBy = (values: (string | null)[]): BreakdownItem[] => {

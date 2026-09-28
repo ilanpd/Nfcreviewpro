@@ -6,7 +6,7 @@ import type { TimeseriesPoint } from "@/types";
 
 const chartConfig = {
   visits: { label: "Acessos", color: "var(--chart-1)" },
-  googleClicks: { label: "Cliques no Google", color: "var(--chart-2)" },
+  conversions: { label: "Conversões", color: "var(--chart-2)" },
 } satisfies ChartConfig;
 
 export function VisitsChart({ data }: { data: TimeseriesPoint[] }) {
@@ -18,9 +18,9 @@ export function VisitsChart({ data }: { data: TimeseriesPoint[] }) {
             <stop offset="5%" stopColor="var(--color-visits)" stopOpacity={0.35} />
             <stop offset="95%" stopColor="var(--color-visits)" stopOpacity={0} />
           </linearGradient>
-          <linearGradient id="fillGoogle" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="5%" stopColor="var(--color-googleClicks)" stopOpacity={0.35} />
-            <stop offset="95%" stopColor="var(--color-googleClicks)" stopOpacity={0} />
+          <linearGradient id="fillConversions" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="5%" stopColor="var(--color-conversions)" stopOpacity={0.35} />
+            <stop offset="95%" stopColor="var(--color-conversions)" stopOpacity={0} />
           </linearGradient>
         </defs>
         <CartesianGrid vertical={false} strokeDasharray="4 4" />
@@ -35,10 +35,10 @@ export function VisitsChart({ data }: { data: TimeseriesPoint[] }) {
         <ChartTooltip content={<ChartTooltipContent indicator="dot" />} />
         <Area dataKey="visits" type="monotone" fill="url(#fillVisits)" stroke="var(--color-visits)" strokeWidth={2} />
         <Area
-          dataKey="googleClicks"
+          dataKey="conversions"
           type="monotone"
-          fill="url(#fillGoogle)"
-          stroke="var(--color-googleClicks)"
+          fill="url(#fillConversions)"
+          stroke="var(--color-conversions)"
           strokeWidth={2}
         />
       </AreaChart>

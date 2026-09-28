@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import {
   MousePointerClick,
-  Star,
+  Target,
   MessageSquareText,
   Percent,
   TrendingUp,
@@ -71,14 +71,12 @@ const TIMELINE_ICON: Record<ExecutiveTimelineEntry["kind"], React.ReactNode> = {
   CAMPAIGN_LIFECYCLE: <Megaphone className="size-3.5" />,
   AUDIT: <Calendar className="size-3.5" />,
   TOUCH_SPIKE: <TrendingUp className="size-3.5" />,
-  REVIEW_RECORD: <Star className="size-3.5" />,
+  CONVERSION_RECORD: <Target className="size-3.5" />,
 };
 
 const KPI_ICON: Record<string, React.ReactNode> = {
   approaches_today: <MousePointerClick />,
   conversions: <Percent />,
-  reviews_generated: <Star />,
-  ctr: <MousePointerClick />,
   conversion_rate: <Percent />,
   weekly_growth: <Calendar />,
   monthly_growth: <CalendarRange />,
@@ -269,7 +267,7 @@ export function AnalyticsEnterpriseView({
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <AnalyticsCard title="Funil Inteligente" description="Do toque à avaliação publicada">
+        <AnalyticsCard title="Funil Inteligente" description="Do toque ao clique no destino">
           <FunnelChart stages={funnel} />
         </AnalyticsCard>
 
@@ -310,7 +308,7 @@ export function AnalyticsEnterpriseView({
             <div className="flex items-end gap-2">
               <div className="space-y-1">
                 <Label htmlFor="forecast-goal" className="text-xs text-muted-foreground">
-                  Meta de avaliações
+                  Meta de conversões
                 </Label>
                 <Input id="forecast-goal" type="number" min={1} value={goal} onChange={(e) => setGoal(Math.max(1, Number(e.target.value)))} className="w-32" />
               </div>

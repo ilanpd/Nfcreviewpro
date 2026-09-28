@@ -45,17 +45,26 @@ describe("generateVoucherCode", () => {
     expect(code).toBe(VOUCHER_CODE_ALPHABET[3].repeat(6));
   });
 
-  it("com aleatoriedade real: 5.000 códigos válidos, de 6 caracteres, sem repetição visível", () => {
-    const seen = new Set<string>();
-    for (let i = 0; i < 5000; i++) {
-      const code = generateVoucherCode((n) => randomBytes(n));
-      expect(code).toHaveLength(VOUCHER_CODE_LENGTH);
-      expect(normalizeVoucherCode(code)).toBe(code);
-      seen.add(code);
-    }
-    // 481 milhões de possibilidades: uma colisão em 5.000 sorteios é improvável demais para ser sorte.
-    expect(seen.size).toBeGreaterThan(4990);
-  });
+  it(
+    "com aleatoriedade real: 5.000 códigos válidos, de 6 caracteres, sem repetição visível",
+    () => {
+      const seen = new Set<string>();
+      for (let i = 0; i < 5000; i++) {
+        const code = generateVoucherCode((n) => randomBytes(n));
+        expect(code).toHaveLength(VOUCHER_CODE_LENGTH);
+        expect(normalizeVoucherCode(code)).toBe(code);
+        seen.add(code);
+      }
+      // 481 milhões de possibilidades: uma colisão em 5.000 sorteios é improvável demais para ser sorte.
+      expect(seen.size).toBeGreaterThan(4990);
+    },
+    // Achado de auditoria (28/09/2026): passa em ~2,6s isolado, mas junto do
+    // resto da suíte (500+ testes, vários workers disputando CPU) às vezes
+    // estourava os 5000ms padrão do Vitest — um flake de contenção, não uma
+    // regressão real de performance. Teto bem acima do observado, não um
+    // ajuste fino.
+    15000
+  );
 });
 
 describe("normalizeVoucherCode", () => {

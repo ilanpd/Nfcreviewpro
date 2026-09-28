@@ -30,17 +30,21 @@ export type FeedbackWithContext = PrivateFeedback & {
 
 export interface DashboardSummary {
   totalVisits: number;
-  googleClicks: number;
+  /** Cliques no botão principal do cartão (o destino do dono — Google,
+   * Instagram, WhatsApp, o brinde do Retorno...) — ver lib/analytics/conversion.ts.
+   * Chamava-se `googleClicks` quando só existia um destino possível; renomeado
+   * na auditoria de 28/09/2026 junto com a correção do sinal (contava
+   * `RatingEvent.redirectedGoogle`, obsoleto e sempre zero desde a ADR-080). */
+  conversions: number;
   privateFeedbacks: number;
-  conversionRate: number; // googleClicks / totalVisits
+  conversionRate: number; // conversions / totalVisits
   activeCards: number;
-  averageStars: number | null;
 }
 
 export interface TimeseriesPoint {
   date: string; // YYYY-MM-DD
   visits: number;
-  googleClicks: number;
+  conversions: number;
   feedbacks: number;
 }
 

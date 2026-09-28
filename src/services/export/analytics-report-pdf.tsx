@@ -66,7 +66,7 @@ export function AnalyticsReportPdf({ report }: { report: AnalyticsReportData }) 
           ))}
         </View>
 
-        <Text style={styles.sectionTitle}>Funil de avaliação</Text>
+        <Text style={styles.sectionTitle}>Funil de conversão</Text>
         {report.funnel.map((stage) => (
           <View key={stage.key} style={styles.row}>
             <Text style={styles.rowLabel}>{stage.label}</Text>

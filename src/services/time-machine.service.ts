@@ -1,5 +1,6 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
+import { CONVERTED_VISIT_WHERE } from "@/lib/analytics/conversion";
 import type { CampaignType } from "@/generated/prisma/client";
 
 /**
@@ -69,19 +70,19 @@ export async function getSnapshotAt(companyId: string, at: Date): Promise<TimeMa
 }
 
 export async function getWindowSummary(companyId: string, windowStart: Date, windowEnd: Date): Promise<TimeMachineSummary> {
-  const [totalTouches, ratings] = await Promise.all([
+  const [totalTouches, conversions] = await Promise.all([
     prisma.redirectLog.count({ where: { companyId, createdAt: { gte: windowStart, lte: windowEnd } } }),
-    prisma.ratingEvent.findMany({
-      where: { companyId, createdAt: { gte: windowStart, lte: windowEnd }, redirectedGoogle: true },
-      select: { cardId: true, visit: { select: { card: { select: { name: true } } } } },
+    prisma.visit.findMany({
+      where: { companyId, createdAt: { gte: windowStart, lte: windowEnd }, ...CONVERTED_VISIT_WHERE },
+      select: { cardId: true, card: { select: { name: true } } },
     }),
   ]);
 
   const counts = new Map<string, TimeMachineTopTable>();
-  for (const rating of ratings) {
-    const entry = counts.get(rating.cardId) ?? { cardId: rating.cardId, cardName: rating.visit.card.name, conversions: 0 };
+  for (const conversion of conversions) {
+    const entry = counts.get(conversion.cardId) ?? { cardId: conversion.cardId, cardName: conversion.card.name, conversions: 0 };
     entry.conversions += 1;
-    counts.set(rating.cardId, entry);
+    counts.set(conversion.cardId, entry);
   }
 
   const topTables = [...counts.values()].sort((a, b) => b.conversions - a.conversions).slice(0, 5);

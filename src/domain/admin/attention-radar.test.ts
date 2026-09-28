@@ -5,7 +5,7 @@ const EMPTY: AttentionRadarInput = {
   stuckOrders: [],
   lowStock: null,
   disputedOrders: [],
-  negativeReviewCompanies: [],
+  unresolvedFeedbackCompanies: [],
   stuckSupportRequests: [],
 };
 
@@ -40,5 +40,36 @@ describe("buildAttentionRadar — endereço do cartão (ADR-076)", () => {
     expect(radar[0].message).toContain("bloqueada");
     expect(radar[0].message).toContain("3 pedidos em produção");
     expect(radar[0].message).toContain("inválido");
+  });
+});
+
+describe("buildAttentionRadar — mensagens sem resposta (auditoria 28/09/2026)", () => {
+  it("abaixo do limiar (3), não alerta", () => {
+    const radar = buildAttentionRadar({ ...EMPTY, unresolvedFeedbackCompanies: [{ companyId: "co_1", companyName: "Bella Vista", count: 2 }] });
+    expect(radar).toEqual([]);
+  });
+
+  it("no limiar (3) ou acima, alerta com o nome da empresa e a contagem", () => {
+    const radar = buildAttentionRadar({ ...EMPTY, unresolvedFeedbackCompanies: [{ companyId: "co_1", companyName: "Bella Vista", count: 5 }] });
+    expect(radar).toHaveLength(1);
+    expect(radar[0].id).toBe("feedback:co_1");
+    expect(radar[0].severity).toBe("attention");
+    expect(radar[0].message).toBe("Bella Vista tem 5 mensagens de clientes sem resposta nos últimos 7 dias");
+  });
+
+  it("nunca menciona estrela ou avaliação — o sinal não é mais RatingEvent", () => {
+    const radar = buildAttentionRadar({ ...EMPTY, unresolvedFeedbackCompanies: [{ companyId: "co_1", companyName: "Bella Vista", count: 10 }] });
+    expect(radar[0].message).not.toMatch(/estrela|avalia/i);
+  });
+
+  it("várias empresas acima do limiar geram um alerta cada", () => {
+    const radar = buildAttentionRadar({
+      ...EMPTY,
+      unresolvedFeedbackCompanies: [
+        { companyId: "co_1", companyName: "Bella Vista", count: 3 },
+        { companyId: "co_2", companyName: "Padaria Sol", count: 4 },
+      ],
+    });
+    expect(radar.map((r) => r.id)).toEqual(["feedback:co_1", "feedback:co_2"]);
   });
 });

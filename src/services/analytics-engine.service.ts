@@ -2,6 +2,7 @@ import "server-only";
 import { startOfDay, startOfWeek, startOfMonth, subDays, subWeeks, subMonths } from "date-fns";
 import { prisma } from "@/lib/prisma";
 import { analyticsCached } from "@/lib/analytics-cache";
+import { countConvertedVisits, findConvertedVisits } from "@/lib/analytics/conversion";
 import { buildReviewFunnel } from "@/domain/analytics/funnel";
 import { compare, safeDivide } from "@/domain/analytics/math";
 import { computeRoiSummary } from "@/domain/analytics/roi";
@@ -11,22 +12,21 @@ import type { ComparisonResult, ExecutiveTimelineEntry, FunnelStage, KpiValue, R
 /**
  * Analytics Engine (Fase 7) — os números executivos centrais: KPIs, funil e
  * comparativos de período. Lê exatamente as tabelas que o produto já grava
- * (`RedirectLog`, `RatingEvent`, `Visit`) — nenhuma tabela de eventos nova.
- * Deliberadamente separado do Insights/Forecast/Ranking/Export Engine (ver
- * ADR-030): cada um pode evoluir, ser cacheado e (no limite) ser substituído
- * independentemente, ao custo de uma pequena sobreposição de consultas em
- * vez de uma camada de dados 100% compartilhada.
+ * (`RedirectLog`, `Visit`) — nenhuma tabela de eventos nova. Deliberadamente
+ * separado do Insights/Forecast/Ranking/Export Engine (ver ADR-030): cada um
+ * pode evoluir, ser cacheado e (no limite) ser substituído independentemente,
+ * ao custo de uma pequena sobreposição de consultas em vez de uma camada de
+ * dados 100% compartilhada.
  */
 
 async function countTouches(companyId: string, since: Date, until?: Date) {
   return prisma.redirectLog.count({ where: { companyId, createdAt: until ? { gte: since, lt: until } : { gte: since } } });
 }
 
-async function countConversions(companyId: string, since: Date, until?: Date) {
-  return prisma.ratingEvent.count({
-    where: { companyId, redirectedGoogle: true, createdAt: until ? { gte: since, lt: until } : { gte: since } },
-  });
-}
+// "Conversão" = ver lib/analytics/conversion.ts — sinal único, sem duplicar
+// aqui a consulta que já ficou obsoleta por um ciclo inteiro (auditoria de
+// 28/09/2026).
+const countConversions = countConvertedVisits;
 
 export async function getExecutiveKpis(companyId: string, days = 30): Promise<KpiValue[]> {
   return analyticsCached(`${companyId}:kpis:${days}`, () => computeExecutiveKpis(companyId, days));
@@ -41,27 +41,16 @@ async function computeExecutiveKpis(companyId: string, days: number): Promise<Kp
   const monthStart = startOfMonth(now);
   const lastMonthStart = subMonths(monthStart, 1);
 
-  const [
-    approachesToday,
-    touchesInRange,
-    conversionsInRange,
-    reviewsInRange,
-    pageOpensInRange,
-    touchesThisWeek,
-    touchesLastWeek,
-    touchesThisMonth,
-    touchesLastMonth,
-  ] = await Promise.all([
-    countTouches(companyId, todayStart),
-    countTouches(companyId, rangeStart),
-    countConversions(companyId, rangeStart),
-    prisma.ratingEvent.count({ where: { companyId, createdAt: { gte: rangeStart } } }),
-    prisma.visit.count({ where: { companyId, createdAt: { gte: rangeStart } } }),
-    countTouches(companyId, weekStart),
-    countTouches(companyId, lastWeekStart, weekStart),
-    countTouches(companyId, monthStart),
-    countTouches(companyId, lastMonthStart, monthStart),
-  ]);
+  const [approachesToday, touchesInRange, conversionsInRange, touchesThisWeek, touchesLastWeek, touchesThisMonth, touchesLastMonth] =
+    await Promise.all([
+      countTouches(companyId, todayStart),
+      countTouches(companyId, rangeStart),
+      countConversions(companyId, rangeStart),
+      countTouches(companyId, weekStart),
+      countTouches(companyId, lastWeekStart, weekStart),
+      countTouches(companyId, monthStart),
+      countTouches(companyId, lastMonthStart, monthStart),
+    ]);
 
   const weekGrowth = compare("Esta semana", "Semana anterior", touchesThisWeek, touchesLastWeek);
   const monthGrowth = compare("Este mês", "Mês anterior", touchesThisMonth, touchesLastMonth);
@@ -70,14 +59,6 @@ async function computeExecutiveKpis(companyId: string, days: number): Promise<Kp
   const kpis: KpiValue[] = [
     { key: "approaches_today", label: "Aproximações hoje", value: approachesToday, unit: "count" },
     { key: "conversions", label: "Conversões", value: conversionsInRange, unit: "count", hint: `Últimos ${days} dias` },
-    { key: "reviews_generated", label: "Avaliações geradas", value: reviewsInRange, unit: "count", hint: `Últimos ${days} dias` },
-    {
-      key: "ctr",
-      label: "CTR do fluxo de avaliação",
-      value: safeDivide(reviewsInRange, pageOpensInRange) * 100,
-      unit: "percent",
-      hint: "Avaliações enviadas / páginas abertas",
-    },
     {
       key: "conversion_rate",
       label: "Taxa de conversão",
@@ -106,14 +87,13 @@ export async function getFunnel(companyId: string, days = 30): Promise<FunnelSta
 async function computeFunnel(companyId: string, days: number): Promise<FunnelStage[]> {
   const since = subDays(startOfDay(new Date()), days - 1);
 
-  const [approaches, pageOpens, clicks, conversions] = await Promise.all([
+  const [approaches, pageOpens, conversions] = await Promise.all([
     prisma.redirectLog.count({ where: { companyId, outcome: "REVIEW_FLOW_FALLBACK", createdAt: { gte: since } } }),
     prisma.visit.count({ where: { companyId, createdAt: { gte: since } } }),
-    prisma.ratingEvent.count({ where: { companyId, createdAt: { gte: since } } }),
     countConversions(companyId, since),
   ]);
 
-  return buildReviewFunnel({ approaches, pageOpens, clicks, conversions });
+  return buildReviewFunnel({ approaches, pageOpens, conversions });
 }
 
 export interface PeriodComparatives {
@@ -183,7 +163,7 @@ const SPIKE_THRESHOLD_MULTIPLIER = 1.8;
  * inferidos: mudanças de atribuição de campanha (`AuditLog`), campanhas
  * agendadas iniciando/terminando (`Campaign.startsAt/endsAt`), e dois
  * eventos honestamente detectados a partir da própria série de toques —
- * um pico de aproximações e o dia de mais avaliações no período. Cada
+ * um pico de aproximações e o dia de mais conversões no período. Cada
  * entrada com um instante específico carrega `timeMachineAt`, para a UI
  * oferecer "Ver no Time Machine" (Fase 6) sem duplicar nenhuma lógica de
  * reconstrução — o Time Machine já sabe colorir o mapa a partir de um
@@ -197,7 +177,7 @@ async function computeExecutiveTimeline(companyId: string, days: number): Promis
   const since = subDays(startOfDay(new Date()), days - 1);
   const entries: ExecutiveTimelineEntry[] = [];
 
-  const [auditRows, campaigns, touchRows, reviewRows] = await Promise.all([
+  const [auditRows, campaigns, touchRows, conversionRows] = await Promise.all([
     prisma.auditLog.findMany({
       where: { companyId, createdAt: { gte: since }, action: { in: [...ASSIGNMENT_AUDIT_ACTIONS] } },
       select: { id: true, action: true, createdAt: true },
@@ -209,7 +189,7 @@ async function computeExecutiveTimeline(companyId: string, days: number): Promis
       select: { id: true, name: true, startsAt: true, endsAt: true },
     }),
     prisma.redirectLog.findMany({ where: { companyId, createdAt: { gte: since } }, select: { createdAt: true } }),
-    prisma.ratingEvent.findMany({ where: { companyId, createdAt: { gte: since } }, select: { createdAt: true } }),
+    findConvertedVisits(companyId, since),
   ]);
 
   for (const row of auditRows) {
@@ -259,20 +239,20 @@ async function computeExecutiveTimeline(companyId: string, days: number): Promis
     }
   }
 
-  const dailyReviews = new Map<string, number>();
-  for (const row of reviewRows) {
+  const dailyConversions = new Map<string, number>();
+  for (const row of conversionRows) {
     const key = row.createdAt.toISOString().slice(0, 10);
-    dailyReviews.set(key, (dailyReviews.get(key) ?? 0) + 1);
+    dailyConversions.set(key, (dailyConversions.get(key) ?? 0) + 1);
   }
-  if (dailyReviews.size > 0) {
-    const [recordDay, recordCount] = [...dailyReviews.entries()].sort((a, b) => b[1] - a[1])[0];
+  if (dailyConversions.size > 0) {
+    const [recordDay, recordCount] = [...dailyConversions.entries()].sort((a, b) => b[1] - a[1])[0];
     if (recordCount >= 3) {
       const recordDate = new Date(`${recordDay}T12:00:00`);
       entries.push({
-        id: `review-record:${recordDay}`,
-        kind: "REVIEW_RECORD",
-        title: "Recorde de avaliações no período",
-        description: `${recordCount} avaliações em um único dia.`,
+        id: `conversion-record:${recordDay}`,
+        kind: "CONVERSION_RECORD",
+        title: "Recorde de conversões no período",
+        description: `${recordCount} conversões em um único dia.`,
         at: recordDate.getTime(),
         timeMachineAt: recordDate.getTime(),
       });

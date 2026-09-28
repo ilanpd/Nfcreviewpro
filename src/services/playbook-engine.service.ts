@@ -2,6 +2,7 @@ import "server-only";
 import { prisma } from "@/lib/prisma";
 import { redis } from "@/lib/redis";
 import { publishEvent } from "@/lib/event-bus";
+import { countConvertedVisits, findConvertedVisits } from "@/lib/analytics/conversion";
 import { getLocalDateParts } from "@/domain/rules/timezone";
 import { computeConfidence } from "@/domain/playbooks/confidence-engine";
 import { estimateImpact } from "@/domain/playbooks/impact";
@@ -129,7 +130,7 @@ async function evaluateZoneTimePerformance(companyId: string, timezone: string, 
   const [zones, redirects, conversions] = await Promise.all([
     prisma.zone.findMany({ where: { companyId }, select: { id: true, name: true } }),
     prisma.redirectLog.findMany({ where: { companyId, createdAt: { gte: since } }, select: { createdAt: true, card: { select: { zoneId: true } } } }),
-    prisma.ratingEvent.findMany({ where: { companyId, redirectedGoogle: true, createdAt: { gte: since } }, select: { createdAt: true, cardId: true } }),
+    findConvertedVisits(companyId, since),
   ]);
   if (zones.length === 0) return null;
 
@@ -165,9 +166,9 @@ async function evaluateRatingDrop(companyId: string, playbook: PlaybookDefinitio
 
   const [recentTouches, recentConversions, baselineTouches, baselineConversions] = await Promise.all([
     prisma.redirectLog.count({ where: { companyId, createdAt: { gte: recentSince } } }),
-    prisma.ratingEvent.count({ where: { companyId, redirectedGoogle: true, createdAt: { gte: recentSince } } }),
+    countConvertedVisits(companyId, recentSince),
     prisma.redirectLog.count({ where: { companyId, createdAt: { gte: baselineSince, lt: recentSince } } }),
-    prisma.ratingEvent.count({ where: { companyId, redirectedGoogle: true, createdAt: { gte: baselineSince, lt: recentSince } } }),
+    countConvertedVisits(companyId, baselineSince, recentSince),
   ]);
 
   return triggers.evaluateRatingDrop(

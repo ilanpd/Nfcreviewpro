@@ -1,5 +1,6 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
+import { findConvertedVisits } from "@/lib/analytics/conversion";
 import type { HeatmapLayer, HeatmapRawCount } from "@/domain/heatmap/types";
 
 /**
@@ -23,25 +24,22 @@ export async function getApproaches(companyId: string, since: Date): Promise<Hea
 }
 
 export async function getConversions(companyId: string, since: Date): Promise<HeatmapRawCount[]> {
-  const rows = await prisma.ratingEvent.findMany({
-    where: { companyId, createdAt: { gte: since }, redirectedGoogle: true },
-    select: { cardId: true },
-  });
+  const rows = await findConvertedVisits(companyId, since);
   return countByCard(rows);
 }
 
 export async function getGoogleReviewsTouches(companyId: string, since: Date): Promise<HeatmapRawCount[]> {
-  const [campaignRedirects, legacyGoogle] = await Promise.all([
+  const [campaignRedirects, converted] = await Promise.all([
     prisma.redirectLog.findMany({
       where: { companyId, createdAt: { gte: since }, campaign: { type: "GOOGLE_REVIEWS" } },
       select: { cardId: true },
     }),
-    prisma.ratingEvent.findMany({
-      where: { companyId, createdAt: { gte: since }, redirectedGoogle: true },
-      select: { cardId: true },
-    }),
+    // Sem campanha do tipo GOOGLE_REVIEWS: o fluxo padrão (SYSTEM_DIRECT) já
+    // manda pro Google, e é aí que a maioria das conversões acontece — ver
+    // lib/analytics/conversion.ts.
+    findConvertedVisits(companyId, since),
   ]);
-  return countByCard([...campaignRedirects, ...legacyGoogle]);
+  return countByCard([...campaignRedirects, ...converted]);
 }
 
 export async function getInstagramTouches(companyId: string, since: Date): Promise<HeatmapRawCount[]> {

@@ -7,7 +7,7 @@ import { listStuckSupportRequests } from "@/services/support.service";
 import { getCardUrlGuard } from "@/lib/card-url";
 import type { InsightCardEntry } from "@nfc-os/ui";
 
-const NEGATIVE_REVIEW_WINDOW_DAYS = 7;
+const UNRESOLVED_FEEDBACK_WINDOW_DAYS = 7;
 const SUPPORT_REQUEST_STUCK_HOURS = 24;
 
 export interface AdminOverviewSnapshot {
@@ -31,18 +31,21 @@ export interface AdminOverviewSnapshot {
  */
 export async function getAdminOverviewSnapshot(): Promise<AdminOverviewSnapshot> {
   const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-  const sevenDaysAgo = new Date(Date.now() - NEGATIVE_REVIEW_WINDOW_DAYS * 24 * 60 * 60 * 1000);
+  const sevenDaysAgo = new Date(Date.now() - UNRESOLVED_FEEDBACK_WINDOW_DAYS * 24 * 60 * 60 * 1000);
 
   const supportStuckSince = new Date(Date.now() - SUPPORT_REQUEST_STUCK_HOURS * 60 * 60 * 1000);
 
-  const [allOrders, settings, activeCompanies, negativeReviewGroups, checkoutStarted, checkoutCompleted, stuckSupportRequests] =
+  const [allOrders, settings, activeCompanies, unresolvedFeedbackGroups, checkoutStarted, checkoutCompleted, stuckSupportRequests] =
     await Promise.all([
       prisma.storeOrder.findMany({ orderBy: { createdAt: "desc" }, take: 5000 }),
       getSiteSettings(),
       prisma.company.count({ where: { accountType: "CUSTOMER" } }),
-      prisma.ratingEvent.groupBy({
+      // Substitui, na auditoria de 28/09/2026, uma consulta a `RatingEvent`
+      // com 1-2 estrelas que zerava para sempre desde a ADR-080 — ver o
+      // comentário de `unresolvedFeedbackCompanies` em domain/admin/attention-radar.ts.
+      prisma.privateFeedback.groupBy({
         by: ["companyId"],
-        where: { stars: { lte: 2 }, createdAt: { gte: sevenDaysAgo } },
+        where: { resolved: false, createdAt: { gte: sevenDaysAgo } },
         _count: { _all: true },
         having: { companyId: { _count: { gte: 3 } } },
       }),
@@ -51,8 +54,8 @@ export async function getAdminOverviewSnapshot(): Promise<AdminOverviewSnapshot>
       listStuckSupportRequests(supportStuckSince),
     ]);
 
-  const negativeReviewCompanies = await Promise.all(
-    negativeReviewGroups.map(async (g) => {
+  const unresolvedFeedbackCompanies = await Promise.all(
+    unresolvedFeedbackGroups.map(async (g) => {
       const company = await prisma.company.findUnique({ where: { id: g.companyId }, select: { name: true } });
       return { companyId: g.companyId, companyName: company?.name ?? "Empresa removida", count: g._count._all };
     })
@@ -83,7 +86,7 @@ export async function getAdminOverviewSnapshot(): Promise<AdminOverviewSnapshot>
     stuckOrders,
     lowStock: { blankChipStock: stock, lowStockThreshold },
     disputedOrders: disputedOrders.map((o) => ({ id: o.id, customerName: o.customerName, disputeStatus: o.disputeStatus })),
-    negativeReviewCompanies,
+    unresolvedFeedbackCompanies,
     stuckSupportRequests: stuckSupportRequests.map((r) => ({
       id: r.id,
       companyId: r.companyId,
@@ -91,7 +94,7 @@ export async function getAdminOverviewSnapshot(): Promise<AdminOverviewSnapshot>
       subject: r.subject,
     })),
   }).map((insight) => {
-    if (insight.id.startsWith("reviews:")) return { ...insight, href: `/admin/empresas/${insight.id.split(":")[1]}` };
+    if (insight.id.startsWith("feedback:")) return { ...insight, href: `/admin/empresas/${insight.id.split(":")[1]}` };
     if (insight.id.startsWith("support:")) return { ...insight, href: `/admin/empresas/${insight.id.split(":")[1]}` };
     if (insight.id === "low-stock") return { ...insight, href: "/admin/conteudo" };    return { ...insight, href: "/admin/pedidos" };
   });

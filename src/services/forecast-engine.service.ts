@@ -2,6 +2,7 @@ import "server-only";
 import { subDays, startOfDay } from "date-fns";
 import { prisma } from "@/lib/prisma";
 import { analyticsCached } from "@/lib/analytics-cache";
+import { countConvertedVisitsTotal, findConvertedVisits } from "@/lib/analytics/conversion";
 import { projectLinearForecast } from "@/domain/analytics/forecast";
 import { percentDelta } from "@/domain/analytics/math";
 import { getRanking } from "@/services/ranking-engine.service";
@@ -11,17 +12,21 @@ import type { ForecastResult } from "@/domain/analytics/types";
  * Forecast Engine (Fase 7) — projeções lineares simples (ver
  * domain/analytics/forecast.ts para por que não é um modelo estatístico
  * sofisticado). Duas projeções, cada uma honesta sobre o que mede:
- *   - `getReviewGoalForecast`: quando uma meta de total de avaliações será
- *     alcançada, a partir do ritmo diário recente.
+ *   - `getReviewGoalForecast`: quando uma meta de total de conversões será
+ *     alcançada, a partir do ritmo diário recente (ver lib/analytics/conversion.ts
+ *     — chamava-se "avaliações" quando a única confirmação de conversão era o
+ *     redirecionamento a partir da tela de estrelas; renomeado na auditoria de
+ *     28/09/2026 junto com a correção do sinal, que estava obsoleto desde a
+ *     ADR-080 e zerava esta meta para sempre).
  *   - `getTopCampaignTrend`: crescimento de TOQUES (não conversões — ver a
  *     nota grande em domain/analytics/insights.ts) da campanha mais usada,
  *     esta semana vs. a anterior.
  */
 const RECENT_WINDOW_DAYS = 14;
 
-async function getDailyReviewCounts(companyId: string, days: number): Promise<number[]> {
+async function getDailyConversionCounts(companyId: string, days: number): Promise<number[]> {
   const since = subDays(startOfDay(new Date()), days - 1);
-  const rows = await prisma.ratingEvent.findMany({ where: { companyId, createdAt: { gte: since } }, select: { createdAt: true } });
+  const rows = await findConvertedVisits(companyId, since);
 
   const counts = new Map<string, number>();
   for (let i = 0; i < days; i++) counts.set(subDays(startOfDay(new Date()), days - 1 - i).toISOString().slice(0, 10), 0);
@@ -38,11 +43,11 @@ export async function getReviewGoalForecast(companyId: string, goal: number): Pr
 
 async function computeReviewGoalForecast(companyId: string, goal: number): Promise<ForecastResult> {
   const [currentValue, dailyCounts] = await Promise.all([
-    prisma.ratingEvent.count({ where: { companyId } }),
-    getDailyReviewCounts(companyId, RECENT_WINDOW_DAYS),
+    countConvertedVisitsTotal(companyId),
+    getDailyConversionCounts(companyId, RECENT_WINDOW_DAYS),
   ]);
 
-  return projectLinearForecast("avaliações", currentValue, goal, dailyCounts);
+  return projectLinearForecast("conversões", currentValue, goal, dailyCounts);
 }
 
 export interface CampaignTrendForecast {

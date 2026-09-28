@@ -19,14 +19,15 @@ import { percentDelta, safeDivide } from "./math";
  *
  * Um limite estrutural importante, descoberto ao desenhar este arquivo: uma
  * campanha (WhatsApp, Instagram, Google Reviews direto, etc.) redireciona o
- * cliente para fora do produto instantaneamente — ela nunca passa pelo
- * fluxo de estrelas (`RatingEvent`). Ou seja, **nenhuma campanha consegue,
- * honestamente, "gerar uma avaliação"** neste modelo de dados; só o fluxo
- * padrão (sem campanha ativa no momento do toque) gera avaliações. Por
- * isso o insight de campanha compara **toques** (o quanto cada campanha é
- * de fato usada), nunca avaliações — e zona/mesa/funcionário, que SÃO
- * atribuíveis a um `RatingEvent.cardId` real, continuam comparados por
- * conversão de verdade.
+ * cliente para fora do produto instantaneamente — ela nunca passa pela tela
+ * pública do cartão, então nunca gera o clique no botão principal que
+ * `lib/analytics/conversion.ts` conta como conversão. Ou seja, **nenhuma
+ * campanha consegue, honestamente, "converter" neste modelo de dados**; só o
+ * fluxo padrão (sem campanha ativa no momento do toque, ou o Retorno) passa
+ * pela tela e pode converter. Por isso o insight de campanha compara
+ * **toques** (o quanto cada campanha é de fato usada), nunca conversões — e
+ * zona/mesa/funcionário, que SÃO atribuíveis a um `Visit.cardId` real,
+ * continuam comparados por conversão de verdade.
  */
 const MIN_SAMPLE_SIZE = 5;
 /** Diferença mínima para uma comparação virar insight — variações pequenas
@@ -43,12 +44,12 @@ export interface ZoneComparisonInput {
 export interface CampaignPerformanceInput {
   id: string;
   label: string;
-  /** Toques (RedirectLog), não avaliações — uma campanha (WhatsApp,
+  /** Toques (RedirectLog), não conversões — uma campanha (WhatsApp,
    * Instagram, Google Reviews direto, etc.) redireciona o cliente para fora
-   * do produto instantaneamente, sem nunca passar pelo fluxo de estrelas.
-   * "Avaliação gerada por campanha" não é um dado que este produto consegue
-   * medir honestamente hoje — só quantas vezes cada campanha foi de fato
-   * servida. Ver a nota grande no topo deste arquivo e ADR-030. */
+   * do produto instantaneamente, sem nunca passar pela tela pública do
+   * cartão. "Conversão gerada por campanha" não é um dado que este produto
+   * consegue medir honestamente hoje — só quantas vezes cada campanha foi de
+   * fato servida. Ver a nota grande no topo deste arquivo e ADR-030. */
   touches: number;
 }
 

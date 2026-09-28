@@ -2,6 +2,7 @@ import "server-only";
 import { subDays, startOfDay } from "date-fns";
 import { prisma } from "@/lib/prisma";
 import { analyticsCached } from "@/lib/analytics-cache";
+import { findConvertedVisits } from "@/lib/analytics/conversion";
 import { getLocalDateParts } from "@/domain/rules/timezone";
 import { DESTINATION_META } from "@/domain/campaign/destination";
 import type { RankingEntry, RankingType } from "@/domain/analytics/types";
@@ -11,11 +12,11 @@ import type { RankingEntry, RankingType } from "@/domain/analytics/types";
  * horário/dia. Métrica de ordenação por tipo (ver a nota grande em
  * domain/analytics/insights.ts para o porquê):
  *   - CAMPANHA: toques (RedirectLog) — uma campanha nunca gera uma
- *     avaliação neste modelo de dados, só é servida com mais ou menos
- *     frequência.
+ *     conversão própria neste modelo de dados, só é servida com mais ou
+ *     menos frequência.
  *   - ZONA / MESA / FUNCIONÁRIO / HORÁRIO / DIA: conversões
- *     (`RatingEvent.redirectedGoogle = true`), a única atribuível
- *     diretamente a um `cardId` real.
+ *     (`lib/analytics/conversion.ts`), a única atribuível diretamente a um
+ *     `cardId` real.
  *
  * "Funcionário" não é uma entidade própria no schema (ver ADR-019) — é
  * qualquer `NFCCard` com a tag "equipe", a mesma convenção já usada pelo
@@ -25,10 +26,7 @@ const EMPLOYEE_TAG = "equipe";
 const DAY_LABELS = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
 
 async function getConversionCountsByCard(companyId: string, since: Date): Promise<Map<string, number>> {
-  const rows = await prisma.ratingEvent.findMany({
-    where: { companyId, redirectedGoogle: true, createdAt: { gte: since } },
-    select: { cardId: true },
-  });
+  const rows = await findConvertedVisits(companyId, since);
   const counts = new Map<string, number>();
   for (const row of rows) counts.set(row.cardId, (counts.get(row.cardId) ?? 0) + 1);
   return counts;
@@ -99,10 +97,7 @@ async function rankCards(companyId: string, since: Date, limit: number, requireT
 
 async function rankByLocalTime(companyId: string, since: Date, mode: "HOUR" | "DAY_OF_WEEK"): Promise<RankingEntry[]> {
   const company = await prisma.company.findUniqueOrThrow({ where: { id: companyId }, select: { timezone: true } });
-  const rows = await prisma.ratingEvent.findMany({
-    where: { companyId, redirectedGoogle: true, createdAt: { gte: since } },
-    select: { createdAt: true },
-  });
+  const rows = await findConvertedVisits(companyId, since);
 
   const counts = new Map<number, number>();
   for (const row of rows) {
