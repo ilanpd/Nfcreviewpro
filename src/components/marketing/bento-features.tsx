@@ -189,7 +189,13 @@ export function BentoFeatures({ qrSvg }: { qrSvg: string }) {
       href: "/ajuda",
       cta: "Ver como funciona",
       background: <RetornoBackground />,
-      className: "md:col-span-2 md:row-span-2",
+      // C15 — achado real de QA mobile: `row-span-2` só valia a partir de
+      // `md`; sem ele no mobile (grid de 1 coluna, mas `auto-rows-[24rem]`
+      // continua fixo), a tile só ganhava 1 linha de altura, e o mockup
+      // (ancorado no topo, `pt-16`) ficava sobreposto ao ícone/título
+      // (ancorado embaixo, `mt-auto`) — não tinha altura pra separar os
+      // dois. `row-span-2` sem prefixo corrige em toda largura.
+      className: "row-span-2 md:col-span-2 md:row-span-2",
     },
     {
       name: "Cartão NFC + QR Code",
@@ -198,7 +204,7 @@ export function BentoFeatures({ qrSvg }: { qrSvg: string }) {
       href: "/sign-up",
       cta: "Começar grátis",
       background: <CardTapBackground qrSvg={qrSvg} />,
-      className: "md:col-span-1 md:row-span-2",
+      className: "row-span-2 md:col-span-1 md:row-span-2",
     },
     {
       name: "Canal de feedback privado",

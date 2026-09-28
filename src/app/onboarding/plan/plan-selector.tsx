@@ -179,7 +179,7 @@ export function PlanSelector({ initialPlan, initialCardProductId, hasExistingCar
         >
           {plan.id === initialPlan || plan.highlighted ? (
             <>
-              <span className="mb-4 w-fit rounded-full bg-brand px-3 py-1 text-xs font-medium text-brand-foreground">
+              <span className="w-fit rounded-full bg-brand px-3 py-1 text-xs font-medium text-brand-foreground">
                 {plan.id === initialPlan ? "Recomendado para você" : "Mais popular"}
               </span>
             </>

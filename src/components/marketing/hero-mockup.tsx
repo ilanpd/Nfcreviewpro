@@ -222,8 +222,31 @@ function phaseContent(flowId: Flow, phase: Phase) {
  * por `setTimeout` encadeado (evita drift de `setInterval`); com
  * `prefers-reduced-motion`, trava no quadro mais informativo de cada fluxo.
  */
+/**
+ * Achado real de QA mobile (C15): o cartão físico usava um único conjunto de
+ * offsets em pixel pro "encosta"/"toque", pensado pro container largo
+ * (`sm:aspect-video`). No container quadrado do mobile (`aspect-square`,
+ * bem mais estreito), o MESMO deslocamento em pixels cobria boa parte da
+ * tela do celular durante o toque — sobreposição de verdade, não só um
+ * "encostar na borda". `matchMedia` (mesmo padrão de `usePrefersReducedMotion`)
+ * escolhe o conjunto certo; sem isso, teria que reescrever a coreografia
+ * toda em unidade relativa, bem mais arriscado a essa altura do ciclo.
+ */
+function useIsCompactViewport(): boolean {
+  const [compact, setCompact] = useState(false);
+  useEffect(() => {
+    const query = window.matchMedia("(max-width: 639px)");
+    setCompact(query.matches);
+    const handler = (e: MediaQueryListEvent) => setCompact(e.matches);
+    query.addEventListener("change", handler);
+    return () => query.removeEventListener("change", handler);
+  }, []);
+  return compact;
+}
+
 export function HeroMockup() {
   const reducedMotion = usePrefersReducedMotion();
+  const compact = useIsCompactViewport();
   const [flowId, setFlowId] = useState<Flow>("starter");
   const [step, setStep] = useState(reducedMotion ? FROZEN_STEP.starter : 0);
   const sequence = SEQUENCES[flowId];
@@ -275,20 +298,22 @@ export function HeroMockup() {
 
           {/* Cartão físico — só visível durante approach/tap; nas fases seguintes já "entrou" no celular. */}
           <motion.div
-            className="absolute flex h-20 w-32 items-center justify-center rounded-xl border border-white/10 bg-gradient-to-br from-[#1B1B1F] to-[#0A0A0C] shadow-elevated sm:h-24 sm:w-36"
+            className="absolute flex h-14 w-24 items-center justify-center rounded-xl border border-white/10 bg-gradient-to-br from-[#1B1B1F] to-[#0A0A0C] shadow-elevated sm:h-24 sm:w-36"
             animate={
               reducedMotion
                 ? { x: 0, y: 0, rotate: -6, opacity: 0 }
                 : phase === "approach"
-                  ? { x: 46, y: 34, rotate: -8, opacity: 1 }
-                  : { x: 4, y: 2, rotate: -2, opacity: phase === "tap" ? 1 : 0 }
+                  ? compact
+                    ? { x: 18, y: 26, rotate: -8, opacity: 1 }
+                    : { x: 46, y: 34, rotate: -8, opacity: 1 }
+                  : { x: compact ? 2 : 4, y: compact ? 1 : 2, rotate: -2, opacity: phase === "tap" ? 1 : 0 }
             }
             transition={
               phase === "approach"
                 ? { duration: SEQUENCES[flowId][0].duration / 1000, ease: motionTokens.easing.standard }
                 : { duration: motionTokens.duration.slow, ease: motionTokens.easing.spring }
             }
-            style={{ right: "18%" }}
+            style={{ right: compact ? "2%" : "18%" }}
           >
             <Nfc className="size-6 text-brand" strokeWidth={1.5} />
             {phase === "tap" ? (

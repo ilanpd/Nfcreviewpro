@@ -52,7 +52,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
         <SidebarInset className="overflow-hidden">
           <header className="glass sticky top-0 z-40 flex h-14 shrink-0 items-center gap-2 border-b px-4">
             <SidebarTrigger className="-ml-1" />
-            <Separator orientation="vertical" className="mr-2 h-4" />
+            {/* `data-vertical:self-stretch` do Separator (shadcn) vencia o `items-center` do header e colava o traço no topo — `self-center` alinha. */}
+            <Separator orientation="vertical" className="mr-2 h-4 data-vertical:self-center" />
             <SmartBadge label={`Plano ${company.plan}`} tone="neutral" />
             <div className="ml-auto flex items-center gap-3">
               <ThemeToggle />
