@@ -151,12 +151,30 @@ export async function POST(req: NextRequest) {
           select: {
             plan: true,
             name: true,
+            stripeSubscriptionId: true,
             stripeSubscriptionStatus: true,
             billingPastDueEmailSentAt: true,
             subscriptionCanceledEmailSentAt: true,
           },
         });
         if (!companyBeforeUpdate) break;
+
+        // Reativação (C15, Fluxo 6) cria uma assinatura NOVA pra mesma empresa.
+        // A ordem de entrega dos eventos do Stripe não é garantida e falhas são
+        // reenviadas por dias: um `deleted`/`unpaid` tardio da assinatura
+        // ANTIGA, chegando depois da reativação, derrubaria o plano (e o
+        // acesso) de quem já pagou de novo. Evento terminal de uma assinatura
+        // que não é a atual da empresa é só histórico — ignora.
+        const isTerminalStatus = subscription.status === "canceled" || subscription.status === "unpaid";
+        if (isTerminalStatus && companyBeforeUpdate.stripeSubscriptionId && companyBeforeUpdate.stripeSubscriptionId !== subscription.id) {
+          log.info("stripe-webhook", "Evento terminal de assinatura antiga ignorado (a empresa já tem outra)", {
+            companyId,
+            staleSubscriptionId: subscription.id,
+            currentSubscriptionId: companyBeforeUpdate.stripeSubscriptionId,
+            status: subscription.status,
+          });
+          break;
+        }
 
         const data: {
           stripeSubscriptionStatus: string;

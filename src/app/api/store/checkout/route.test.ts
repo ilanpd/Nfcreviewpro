@@ -16,6 +16,7 @@ const mocks = vi.hoisted(() => ({
   findCompany: vi.fn(),
   countCards: vi.fn(),
   createOrder: vi.fn(),
+  rateLimit: vi.fn(),
 }));
 
 vi.mock("@/lib/auth", () => ({ getAuthContext: mocks.getAuthContext }));
@@ -27,9 +28,15 @@ vi.mock("@/lib/prisma", () => ({
     storeOrder: { create: mocks.createOrder },
   },
 }));
+vi.mock("@/lib/rate-limit", () => ({ rateLimit: mocks.rateLimit }));
+vi.mock("@/lib/ip", () => ({ getRequestIp: vi.fn().mockResolvedValue("203.0.113.7") }));
 vi.mock("@/lib/site-settings", () => ({ getSiteSettings: vi.fn().mockResolvedValue(null) }));
 vi.mock("@/lib/api-error", () => ({
-  handleApiError: (error: unknown) => NextResponse.json({ error: String(error) }, { status: 500 }),
+  // Mesmo mapeamento do real (lib/api-error.ts) pro que estes testes observam.
+  handleApiError: (error: unknown) =>
+    error instanceof Error && error.message === "RATE_LIMITED"
+      ? NextResponse.json({ error: "Muitas requisições" }, { status: 429 })
+      : NextResponse.json({ error: String(error) }, { status: 500 }),
 }));
 
 import { POST } from "./route";
@@ -55,6 +62,7 @@ beforeEach(() => {
   mocks.sessionsCreate.mockResolvedValue({ id: "cs_store_1", url: "https://checkout.stripe.test/cs_store_1" });
   mocks.getAuthContext.mockResolvedValue(null);
   mocks.countCards.mockResolvedValue(0);
+  mocks.rateLimit.mockResolvedValue({ success: true, remaining: 9 });
 });
 
 afterEach(() => {
@@ -114,6 +122,15 @@ describe("POST /api/store/checkout — limite do plano só pra assinante logado"
   it("destino com esquema perigoso (javascript:) é recusado antes de qualquer sessão ou pedido", async () => {
     const res = await buy("single", "javascript:alert(1)");
     expect(res.status).toBeGreaterThanOrEqual(400);
+    expect(mocks.sessionsCreate).not.toHaveBeenCalled();
+    expect(mocks.createOrder).not.toHaveBeenCalled();
+  });
+
+  it("IP que estourou o limite recebe 429 antes de qualquer trabalho (sem sessão, sem pedido)", async () => {
+    mocks.rateLimit.mockResolvedValue({ success: false, remaining: 0 });
+    const res = await buy("single");
+    expect(res.status).toBe(429);
+    expect(mocks.rateLimit).toHaveBeenCalledWith("storeCheckout", "203.0.113.7");
     expect(mocks.sessionsCreate).not.toHaveBeenCalled();
     expect(mocks.createOrder).not.toHaveBeenCalled();
   });

@@ -29,7 +29,8 @@ type LimiterName =
   | "voucherLookup"
   | "voucherRedeem"
   | "personalLinkRecovery"
-  | "contact";
+  | "contact"
+  | "storeCheckout";
 
 const LIMITS: Record<LimiterName, { limit: number; windowSeconds: number }> = {
   publicCard: { limit: 60, windowSeconds: 60 },
@@ -76,6 +77,13 @@ const LIMITS: Record<LimiterName, { limit: number; windowSeconds: number }> = {
   // /contato (C9/F6) — por IP, mesma ordem de grandeza de `feedback`: uma
   // pessoa de verdade manda uma mensagem de cada vez, nunca em rajada.
   contact: { limit: 5, windowSeconds: 300 },
+  // Checkout público da Loja (C15) — por IP. Cada chamada grava um StoreOrder
+  // PENDING_PAYMENT e abre uma sessão no Stripe, sem exigir conta: o limite
+  // geral de `/api/*` (authMutation, 120/min) é folgado demais pra isso e um
+  // script encheria a fila de pedidos do admin. Um comprador real fecha 1
+  // pedido (2-3 se errar o CPF); uma rede com vários compradores atrás do mesmo
+  // IP ainda cabe folgada em 10 a cada 5 minutos.
+  storeCheckout: { limit: 10, windowSeconds: 300 },
 };
 
 const limiters = new Map<LimiterName, Ratelimit>();

@@ -10,6 +10,8 @@ import { getAuthContext } from "@/lib/auth";
 import { customerDocumentSchema, customerPhoneSchema } from "@/lib/validations/store-order";
 import { httpUrlSchema } from "@/lib/validations/http-url";
 import { cardLimitForPlan } from "@/lib/plans";
+import { rateLimit } from "@/lib/rate-limit";
+import { getRequestIp } from "@/lib/ip";
 
 const storeCheckoutSchema = z.object({
   productId: z.string(),
@@ -33,6 +35,9 @@ export async function POST(req: NextRequest) {
     if (!stripe) {
       return NextResponse.json({ error: "Loja indisponível (Stripe não configurado)" }, { status: 503 });
     }
+
+    const { success: withinLimit } = await rateLimit("storeCheckout", await getRequestIp());
+    if (!withinLimit) throw new Error("RATE_LIMITED");
 
     const input = storeCheckoutSchema.parse(await req.json());
     const baseProduct = getStoreProduct(input.productId);
