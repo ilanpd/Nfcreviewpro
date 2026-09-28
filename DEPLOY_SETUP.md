@@ -207,3 +207,22 @@ DIRECT_URL="<url direta de produção>" npx prisma migrate deploy
 No PowerShell: `$env:DIRECT_URL="<url>"; npx prisma migrate deploy; Remove-Item Env:DIRECT_URL`.
 
 Depois de qualquer migração, rodar `npx prisma migrate status` no mesmo banco e conferir que não há pendências.
+
+## Ordem de deploy: migração PRIMEIRO, código depois (C15, ADR-090)
+
+O código publicado assume o schema do commit. O Prisma gera `SELECT` com **toda** coluna do
+schema; uma coluna nova que o banco de Produção ainda não tem derruba qualquer query do model
+sem `select` estreito (no C15, `getCompanyById` — o painel inteiro). Por isso, sempre:
+
+1. Aplicar as migrações em Produção (`prisma migrate deploy`, ou o SQL manual — nesse caso
+   registrar também as linhas em `_prisma_migrations`, como no `PROXIMAS_TAREFAS.md`).
+2. `npm run predeploy` — só leitura; **falha** se ainda houver migração pendente em Produção.
+3. Só então `npx vercel --prod --yes`.
+
+Se um deploy sair antes da migração: `npx vercel rollback <url do deploy anterior> --yes`
+(instantâneo, foi assim que o C15 foi revertido).
+
+Migrações **aditivas** (coluna nova, tabela nova) são compatíveis para trás: o código antigo
+ignora o que não conhece — por isso a ordem é migração → código, nunca o contrário. Migração
+destrutiva (DROP de coluna que o código ainda lê) exige a ordem inversa e um deploy em duas
+etapas.

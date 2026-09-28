@@ -349,6 +349,8 @@ Encontradas durante os ciclos C0 e C1 e não corrigidas na hora (fora do escopo 
 - [ ] **Registrado, não implementado (C15, ADR-090): eliminar campos custom de nome/e-mail no checkout da Loja** — deixar o Stripe coletar nativamente é tecnicamente possível, mas é o item de maior risco de regressão do C15 inteiro (muda o momento em que `StoreOrder` recebe dados reais). Fica pra um ciclo isolado.
 - [ ] **⚠️ Ação sua, bloqueante: aplicar migrações + backfill em Produção antes do próximo deploy do C15/C14** — o código do C15 já foi publicado uma vez e teve que ser revertido (`vercel rollback`) porque a coluna `Company.activatedAt` ainda não existe em Produção — quebraria o painel inteiro (`getCompanyById` e outras queries sem `select` estreito). Produção está de volta ao C14 agora, estável. Rode isto no SQL Editor do Supabase (projeto de Produção), nesta ordem, antes de pedir o próximo deploy:
   ```sql
+  BEGIN;
+
   -- 1) Migração C14 (pendente desde aquele ciclo)
   ALTER TABLE "Company" ALTER COLUMN "returnPilotEnabled" SET DEFAULT true;
 
@@ -360,8 +362,18 @@ Encontradas durante os ciclos C0 e C1 e não corrigidas na hora (fora do escopo 
   -- 3) Backfill C15 — sem isso, todo cliente real já configurado veria o banner de ativação por engano
   UPDATE "Company" SET "activatedAt" = "createdAt"
   WHERE "activatedAt" IS NULL AND "whatsapp" IS NOT NULL AND "googleReviewUrl" IS NOT NULL;
+
+  -- 4) Registra as duas migrações no histórico do Prisma (mesmos checksums do Staging).
+  --    Sem isto, `prisma migrate status/deploy` continuaria achando que estão pendentes
+  --    (e um `migrate deploy` futuro tentaria reaplicar e falharia em "coluna já existe").
+  INSERT INTO "_prisma_migrations" (id, checksum, finished_at, migration_name, logs, started_at, applied_steps_count)
+  VALUES
+    (gen_random_uuid()::text, '5a0d6da2624d5f775a5173d008517b9c27920bb805904e72b502cbf2ba13d3cb', now(), '20260927201454_c14_return_pilot_default_true', NULL, now(), 1),
+    (gen_random_uuid()::text, 'c538800dd48cf01bb6dd29df420d55d6e38dc3290c69933f2a9de304793208db', now(), '20260928000618_c15_activation_flow', NULL, now(), 1);
+
+  COMMIT;
   ```
-  Depois de rodar, me avise pra eu confirmar e refazer o deploy do C15.
+  Depois de rodar, me avise. Eu confirmo com `npm run predeploy` (leitura só — deve responder "deploy liberado") e refaço o deploy do C15. **Regra nova (trava em código):** `npm run predeploy` (`scripts/predeploy-check.mjs`) falha se houver migração pendente em Produção — rodar antes de todo `vercel --prod`.
 
 ## Backlog (não iniciado)
 
