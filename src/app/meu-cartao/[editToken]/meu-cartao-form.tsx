@@ -5,10 +5,9 @@ import Link from "next/link";
 import { toast } from "sonner";
 import { MousePointerClick } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { PremiumCardShell } from "@nfc-os/ui";
 import { UpgradePitchCard } from "@/components/upgrade-pitch";
+import { DestinationPicker } from "@/components/destination-picker";
 
 export function MeuCartaoForm({
   editToken,
@@ -26,6 +25,13 @@ export function MeuCartaoForm({
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    // `DestinationPicker` não tem um `<input required>` nativo (mesmo padrão
+    // já usado no checkout, plan-selector.tsx/store-product-grid.tsx): a
+    // checagem é explícita aqui, não deixada pro navegador.
+    if (!destinationUrl) {
+      toast.error("Escolha ou preencha para onde o cartão deve redirecionar.");
+      return;
+    }
     setSaving(true);
     try {
       const res = await fetch(`/api/meu-cartao/${editToken}`, {
@@ -53,19 +59,15 @@ export function MeuCartaoForm({
       <PremiumCardShell className="shadow-premium">
         <form onSubmit={handleSubmit} className="space-y-4 p-6">
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <MousePointerClick className="size-4" />
+            <MousePointerClick className="size-4" aria-hidden="true" />
             {visitsThisMonth} toque(s) este mês
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="destination">Para onde este cartão redireciona</Label>
-            <Input
-              id="destination"
-              type="url"
-              value={destinationUrl}
-              onChange={(e) => setDestinationUrl(e.target.value)}
-              required
-            />
-          </div>
+          <DestinationPicker
+            value={destinationUrl}
+            onChange={setDestinationUrl}
+            label="Para onde este cartão redireciona"
+            helperText="Vale a partir do próximo toque — sem precisar reimprimir nem regravar o cartão."
+          />
           <Button type="submit" className="w-full" disabled={saving}>
             {saving ? "Salvando…" : "Salvar novo destino"}
           </Button>
