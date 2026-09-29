@@ -3,12 +3,20 @@
 import { useState } from "react";
 import { toast } from "sonner";
 import { Switch } from "@/components/ui/switch";
+import { ConfirmDialog } from "@/components/dashboard/confirm-dialog";
 
 /**
  * Controles do Retorno no Admin (ADR-079). Um só componente para os dois
  * interruptores, porque fazem a mesma coisa: ligar ou desligar e confirmar. O
  * do piloto liga o Retorno numa empresa; o geral desliga emissão e resgate para
  * todas, na hora, e por isso pede confirmação ao desligar.
+ *
+ * Achado de auditoria total (29/09/2026): a confirmação usava
+ * `window.confirm()` — sem estilo, sem chance de errar por clicar rápido
+ * demais num diálogo nativo, e é justamente a ação mais consequente do
+ * painel inteiro (o interruptor GERAL afeta toda empresa, na hora). Mesmo
+ * `ConfirmDialog` já usado no resto do painel (campanhas, cartões, equipe,
+ * mesas, brindes).
  */
 export function ReturnSwitch({
   endpoint,
@@ -26,9 +34,9 @@ export function ReturnSwitch({
 }) {
   const [enabled, setEnabled] = useState(initialEnabled);
   const [busy, setBusy] = useState(false);
+  const [confirmingOff, setConfirmingOff] = useState(false);
 
-  async function change(next: boolean) {
-    if (!next && confirmOff && !confirm(confirmOff)) return;
+  async function apply(next: boolean) {
     setBusy(true);
     const previous = enabled;
     setEnabled(next);
@@ -45,7 +53,16 @@ export function ReturnSwitch({
       toast.error("Não foi possível alterar. Tente de novo.");
     } finally {
       setBusy(false);
+      setConfirmingOff(false);
     }
+  }
+
+  function change(next: boolean) {
+    if (!next && confirmOff) {
+      setConfirmingOff(true);
+      return;
+    }
+    void apply(next);
   }
 
   return (
@@ -55,6 +72,18 @@ export function ReturnSwitch({
         <p className="text-xs text-muted-foreground">{description}</p>
       </div>
       <Switch checked={enabled} disabled={busy} onCheckedChange={change} aria-label={label} />
+
+      {confirmOff ? (
+        <ConfirmDialog
+          open={confirmingOff}
+          onOpenChange={setConfirmingOff}
+          title="Desligar?"
+          description={confirmOff}
+          confirmLabel="Desligar"
+          busy={busy}
+          onConfirm={() => apply(false)}
+        />
+      ) : null}
     </div>
   );
 }
