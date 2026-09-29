@@ -7,6 +7,19 @@ import { SkeletonGrid, SkeletonText } from "@nfc-os/ui";
  * até os dados chegarem — na rede móvel isso parece travamento. Este
  * fallback entra assim que a navegação começa e mantém o layout (sidebar e
  * header) no lugar; só a área de conteúdo vira esqueleto.
+ *
+ * Achado de auditoria (28/09/2026): isto só cobria a ENTRADA no segmento
+ * `/dashboard` em si — o Next.js só usa o `loading.tsx` de um segmento pai
+ * quando se navega PRA DENTRO dele; trocar de `/dashboard/campanhas` para
+ * `/dashboard/analytics` (irmãos, mesmo pai) não reaproveitava este arquivo,
+ * então cada subpágina continuava sem nenhum feedback visual — justamente o
+ * problema que este arquivo dizia ter resolvido. `dashboard/analytics/page.tsx`
+ * documenta até 22,8s de render numa empresa com bastante histórico: a mais
+ * grave das páginas sem esqueleto. Corrigido com um `loading.tsx` por
+ * subpágina, cada um só reexportando este componente (`export { default }
+ * from "../loading"`) — nenhuma duplicação de JSX, e o `role="status"`/
+ * `aria-live` abaixo também passa a ser anunciado a cada navegação interna,
+ * não só na primeira entrada no painel.
  */
 export default function DashboardLoading() {
   return (

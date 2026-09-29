@@ -36,9 +36,15 @@ export function ContactForm() {
   }
 
   if (sent) {
+    // `role="status"`: o formulário some e esta mensagem entra no lugar dele
+    // sem navegar de página — sem isto, quem usa leitor de tela não tinha
+    // nenhum aviso de que o envio deu certo (achado de auditoria, 28/09/2026).
     return (
-      <div className="flex flex-col items-center gap-3 rounded-xl border border-border/60 bg-muted/30 px-6 py-10 text-center">
-        <CheckCircle2 className="size-8 text-brand-ink" />
+      <div
+        role="status"
+        className="flex flex-col items-center gap-3 rounded-xl border border-border/60 bg-muted/30 px-6 py-10 text-center"
+      >
+        <CheckCircle2 className="size-8 text-brand-ink" aria-hidden="true" />
         <p className="font-medium">Mensagem enviada!</p>
         <p className="text-sm text-muted-foreground">Respondemos pelo e-mail que você deixou, o quanto antes.</p>
       </div>

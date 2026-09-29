@@ -6,6 +6,11 @@ import { SkeletonGrid, SkeletonText } from "@nfc-os/ui";
  * propósito: assim o esqueleto entra por baixo do layout com a sidebar e
  * nunca cobre `/admin/executivo` (o wallboard, que vive fora do grupo e
  * tem chrome próprio).
+ *
+ * Achado de auditoria (28/09/2026): mesma lacuna de `dashboard/loading.tsx`
+ * — só cobria a entrada no `(sidebar)` em si, não a troca entre
+ * empresas/pedidos/financeiro/conteúdo/contato (irmãos). Cada subpágina
+ * ganhou seu próprio `loading.tsx`, reexportando este componente.
  */
 export default function AdminLoading() {
   return (
