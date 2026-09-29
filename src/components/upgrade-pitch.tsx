@@ -18,13 +18,13 @@ export function UpgradePitchCard({ href, className }: { href: string; className?
       <ul className="mt-3 space-y-1.5">
         {features.map((feature) => (
           <li key={feature} className="flex items-start gap-2 text-sm text-muted-foreground">
-            <Check className="mt-0.5 size-3.5 shrink-0 text-brand-ink" />
+            <Check className="mt-0.5 size-3.5 shrink-0 text-brand-ink" aria-hidden="true" />
             {feature}
           </li>
         ))}
       </ul>
       <a href={href} className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-brand-ink hover:underline">
-        Assine o {BRAND.name} <ArrowRight className="size-3.5" />
+        Assine o {BRAND.name} <ArrowRight className="size-3.5" aria-hidden="true" />
       </a>
     </div>
   );
