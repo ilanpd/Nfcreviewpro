@@ -12,7 +12,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { CardFormDialog } from "@/components/dashboard/card-form-dialog";
+import { ConfirmDialog } from "@/components/dashboard/confirm-dialog";
 import { cardPublicUrl, cardQrPath } from "@/lib/card-url";
+import { copyText } from "@/hooks/use-copy";
 import type { BranchListItem, CardWithStats, ZoneListItem } from "@/types";
 import type { NFCCard } from "@/generated/prisma/client";
 import { PremiumCardShell, SmartBadge } from "@nfc-os/ui";
@@ -29,6 +31,7 @@ interface CardItemProps {
 export function CardItem({ card, branches, zones, onUpdated, onDeleted, canManage }: CardItemProps) {
   const [busy, setBusy] = useState(false);
   const [qrFailed, setQrFailed] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
   const publicUrl = cardPublicUrl(card.uniqueCode);
 
   async function toggleActive() {
@@ -51,7 +54,6 @@ export function CardItem({ card, branches, zones, onUpdated, onDeleted, canManag
   }
 
   async function handleDelete() {
-    if (!confirm(`Excluir o cartão "${card.name}"? Essa ação não pode ser desfeita.`)) return;
     setBusy(true);
     try {
       const res = await fetch(`/api/cards/${card.id}`, { method: "DELETE" });
@@ -62,12 +64,19 @@ export function CardItem({ card, branches, zones, onUpdated, onDeleted, canManag
       toast.error("Não foi possível excluir o cartão");
     } finally {
       setBusy(false);
+      setConfirmingDelete(false);
     }
   }
 
+  // Achado de auditoria (28/09/2026): usava `navigator.clipboard.writeText`
+  // direto — num clipboard bloqueado, a promise rejeitava sem tratamento e
+  // nem o toast de sucesso nem o de erro apareciam (falha muda, sem feedback
+  // nenhum). `copyText` (mesma função de hooks/use-copy.ts) tem uma segunda
+  // via e devolve se realmente funcionou.
   async function copyLink() {
-    await navigator.clipboard.writeText(publicUrl);
-    toast.success("Link copiado");
+    const ok = await copyText(publicUrl);
+    if (ok) toast.success("Link copiado");
+    else toast.error("Não foi possível copiar — toque e segure o link para copiar manualmente.");
   }
 
   return (
@@ -112,7 +121,7 @@ export function CardItem({ card, branches, zones, onUpdated, onDeleted, canManag
             {canManage ? (
               <>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem variant="destructive" onClick={handleDelete}>
+                <DropdownMenuItem variant="destructive" onClick={() => setConfirmingDelete(true)}>
                   <Trash2 className="size-4" /> Excluir
                 </DropdownMenuItem>
               </>
@@ -120,6 +129,15 @@ export function CardItem({ card, branches, zones, onUpdated, onDeleted, canManag
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
+
+      <ConfirmDialog
+        open={confirmingDelete}
+        onOpenChange={setConfirmingDelete}
+        title={`Excluir o cartão "${card.name}"?`}
+        description="Essa ação não pode ser desfeita."
+        busy={busy}
+        onConfirm={handleDelete}
+      />
       <div className="flex items-center justify-center p-5">
         {/* QR gerado sob demanda (ADR-076) — nada é guardado no banco. Se a rota
             recusar (endereço do cartão ainda provisório), mostra o aviso em vez de

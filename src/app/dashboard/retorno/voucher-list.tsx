@@ -4,6 +4,9 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Ban, Gift as GiftIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { AnalyticsCard, EmptyState, SmartBadge } from "@nfc-os/ui";
 import { formatVoucherCode } from "@/domain/return-offer/code";
@@ -22,6 +25,7 @@ export interface VoucherRow {
 
 const STATUS_TONE = { ISSUED: "neutral", REDEEMED: "success", EXPIRED: "neutral", VOIDED: "danger" } as const;
 const STATUS_LABEL: Record<VoucherRow["status"], string> = { ISSUED: "Emitido", REDEEMED: "Resgatado", EXPIRED: "Vencido", VOIDED: "Anulado" };
+const MIN_REASON_LENGTH = 3;
 
 function formatDateTime(iso: string): string {
   return new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short" }).format(new Date(iso));
@@ -31,11 +35,25 @@ function formatDateTime(iso: string): string {
 export function VoucherList({ initial, canManage }: { initial: VoucherRow[]; canManage: boolean }) {
   const [vouchers, setVouchers] = useState(initial);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [voidingVoucher, setVoidingVoucher] = useState<VoucherRow | null>(null);
+  const [reason, setReason] = useState("");
 
-  async function handleVoid(voucher: VoucherRow) {
-    const reason = window.prompt(`Anular o brinde ${formatVoucherCode(voucher.code)}? Descreva o motivo:`);
-    if (!reason || reason.trim().length < 3) {
-      if (reason !== null) toast.error("Explique o motivo em poucas palavras.");
+  function openVoidDialog(voucher: VoucherRow) {
+    setReason("");
+    setVoidingVoucher(voucher);
+  }
+
+  // Achado de auditoria (28/09/2026): usava `window.prompt()` — sem estilo,
+  // ausente/inconsistente em navegadores embutidos (Instagram/WhatsApp) e o
+  // único ponto do Retorno ainda fora do design system. `orders-board.tsx`
+  // já tinha resolvido o mesmo problema (marcar como enviado) com um Dialog
+  // de verdade — mesmo padrão aqui.
+  async function confirmVoid() {
+    const voucher = voidingVoucher;
+    if (!voucher) return;
+    const trimmed = reason.trim();
+    if (trimmed.length < MIN_REASON_LENGTH) {
+      toast.error("Explique o motivo em poucas palavras.");
       return;
     }
     setBusyId(voucher.id);
@@ -43,14 +61,15 @@ export function VoucherList({ initial, canManage }: { initial: VoucherRow[]; can
       const res = await fetch(`/api/return/vouchers/${voucher.id}/void`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ reason: reason.trim() }),
+        body: JSON.stringify({ reason: trimmed }),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         throw new Error(data.error ?? "Não foi possível anular");
       }
-      setVouchers((prev) => prev.map((v) => (v.id === voucher.id ? { ...v, status: "VOIDED", voidedReason: reason.trim() } : v)));
+      setVouchers((prev) => prev.map((v) => (v.id === voucher.id ? { ...v, status: "VOIDED", voidedReason: trimmed } : v)));
       toast.success("Brinde anulado");
+      setVoidingVoucher(null);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Erro inesperado");
     } finally {
@@ -100,8 +119,14 @@ export function VoucherList({ initial, canManage }: { initial: VoucherRow[]; can
                     {canManage ? (
                       <TableCell className="text-right">
                         {canVoid ? (
-                          <Button size="sm" variant="ghost" className="text-destructive" disabled={busyId === v.id} onClick={() => handleVoid(v)}>
-                            <Ban className="size-3.5" /> Anular
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="text-destructive"
+                            disabled={busyId === v.id}
+                            onClick={() => openVoidDialog(v)}
+                          >
+                            <Ban className="size-3.5" aria-hidden="true" /> Anular
                           </Button>
                         ) : null}
                       </TableCell>
@@ -113,6 +138,35 @@ export function VoucherList({ initial, canManage }: { initial: VoucherRow[]; can
           </Table>
         </div>
       )}
+
+      <Dialog open={!!voidingVoucher} onOpenChange={(open) => !open && setVoidingVoucher(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Anular o brinde {voidingVoucher ? formatVoucherCode(voidingVoucher.code) : ""}?</DialogTitle>
+            <DialogDescription>O cliente não vai mais conseguir resgatar. Descreva o motivo — fica registrado no histórico.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-1.5">
+            <Label htmlFor="void-reason">Motivo</Label>
+            <Textarea
+              id="void-reason"
+              rows={3}
+              minLength={MIN_REASON_LENGTH}
+              autoFocus
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              placeholder="Ex: emitido por engano, cliente pediu cancelamento…"
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setVoidingVoucher(null)}>
+              Cancelar
+            </Button>
+            <Button variant="destructive" disabled={busyId === voidingVoucher?.id} onClick={confirmVoid}>
+              Anular brinde
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AnalyticsCard>
   );
 }

@@ -14,7 +14,9 @@ import { useCallback, useState } from "react";
  */
 export type CopyState = "idle" | "copied" | "manual";
 
-async function copyText(text: string): Promise<boolean> {
+/** Exportado pra quem prefere um toast a um estado persistente na tela (ex.:
+ * um item de menu que fecha assim que é clicado — `card-item.tsx`). */
+export async function copyText(text: string): Promise<boolean> {
   try {
     if (navigator.clipboard?.writeText) {
       await navigator.clipboard.writeText(text);

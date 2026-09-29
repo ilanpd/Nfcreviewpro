@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { AccessScopeManager } from "./access-scope-manager";
+import { ConfirmDialog } from "@/components/dashboard/confirm-dialog";
 import { ASSIGNABLE_ROLES, ROLE_LABEL } from "@/domain/rbac/roles";
 import type { User, Role } from "@/generated/prisma/client";
 import type { BranchListItem, ZoneListItem } from "@/types";
@@ -30,6 +31,8 @@ export function TeamView({ initialMembers, canManage, currentUserId, branches, z
   const [members, setMembers] = useState(initialMembers);
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [removingId, setRemovingId] = useState<string | null>(null);
+  const [removing, setRemoving] = useState(false);
   const [form, setForm] = useState<{ email: string; name: string; role: AssignableRole }>({
     email: "",
     name: "",
@@ -76,7 +79,7 @@ export function TeamView({ initialMembers, canManage, currentUserId, branches, z
   }
 
   async function handleRemove(id: string) {
-    if (!confirm("Remover este membro da equipe?")) return;
+    setRemoving(true);
     try {
       const res = await fetch(`/api/team/${id}`, { method: "DELETE" });
       if (!res.ok) throw new Error();
@@ -84,8 +87,13 @@ export function TeamView({ initialMembers, canManage, currentUserId, branches, z
       toast.success("Membro removido");
     } catch {
       toast.error("Não foi possível remover o membro");
+    } finally {
+      setRemoving(false);
+      setRemovingId(null);
     }
   }
+
+  const removingMember = members.find((m) => m.id === removingId) ?? null;
 
   return (
     <div className="space-y-6">
@@ -243,7 +251,7 @@ export function TeamView({ initialMembers, canManage, currentUserId, branches, z
                         size="icon"
                         className="size-8"
                         aria-label={`Remover ${member.name || member.email} da equipe`}
-                        onClick={() => handleRemove(member.id)}
+                        onClick={() => setRemovingId(member.id)}
                       >
                         <Trash2 className="size-4" aria-hidden="true" />
                       </Button>
@@ -255,6 +263,16 @@ export function TeamView({ initialMembers, canManage, currentUserId, branches, z
           </TableBody>
         </Table>
       </div>
+
+      <ConfirmDialog
+        open={!!removingMember}
+        onOpenChange={(open) => !open && setRemovingId(null)}
+        title={`Remover ${removingMember?.name || removingMember?.email} da equipe?`}
+        description="A pessoa perde o acesso ao painel imediatamente. Você pode convidá-la de novo depois."
+        confirmLabel="Remover"
+        busy={removing}
+        onConfirm={() => removingId && handleRemove(removingId)}
+      />
     </div>
   );
 }

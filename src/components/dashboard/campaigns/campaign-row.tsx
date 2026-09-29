@@ -15,6 +15,7 @@ import {
 import { StatusBadge } from "./status-badge";
 import { DESTINATION_TYPE_ICON } from "./destination-type-icon";
 import { CampaignBuilderSheet } from "./campaign-builder-sheet";
+import { ConfirmDialog } from "@/components/dashboard/confirm-dialog";
 import { DESTINATION_META } from "@/domain/campaign/destination";
 import type { BranchListItem, CampaignListItem, CardWithStats, ZoneListItem } from "@/types";
 
@@ -48,6 +49,7 @@ export function CampaignRow({
   onBranchCreated,
 }: CampaignRowProps) {
   const [busy, setBusy] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
   const Icon = DESTINATION_TYPE_ICON[campaign.type];
 
   async function handleDuplicate() {
@@ -81,7 +83,6 @@ export function CampaignRow({
   }
 
   async function handleDelete() {
-    if (!confirm(`Excluir a campanha "${campaign.name}"? Essa ação não pode ser desfeita.`)) return;
     setBusy(true);
     try {
       const res = await fetch(`/api/campaigns/${campaign.id}`, { method: "DELETE" });
@@ -92,6 +93,7 @@ export function CampaignRow({
       toast.error("Não foi possível excluir");
     } finally {
       setBusy(false);
+      setConfirmingDelete(false);
     }
   }
 
@@ -147,13 +149,22 @@ export function CampaignRow({
                 </DropdownMenuItem>
               ) : null}
               <DropdownMenuSeparator />
-              <DropdownMenuItem variant="destructive" onClick={handleDelete}>
+              <DropdownMenuItem variant="destructive" onClick={() => setConfirmingDelete(true)}>
                 <Trash2 className="size-4" /> Excluir
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         ) : null}
       </TableCell>
+
+      <ConfirmDialog
+        open={confirmingDelete}
+        onOpenChange={setConfirmingDelete}
+        title={`Excluir a campanha "${campaign.name}"?`}
+        description="Essa ação não pode ser desfeita."
+        busy={busy}
+        onConfirm={handleDelete}
+      />
     </TableRow>
   );
 }

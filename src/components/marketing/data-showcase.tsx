@@ -13,14 +13,25 @@ import { usePrefersReducedMotion } from "@nfc-os/animations";
  * Command Center do produto (nunca uma cópia visual só pra Landing parecer
  * viva) — alimentado aqui com entradas ilustrativas cicladas em loop,
  * sempre rotuladas como exemplo (Zero Fake Demo).
+ *
+ * Achado de auditoria (28/09/2026): duas entradas usavam `kind:
+ * "ASSIGNMENT_CHANGED"` pra descrever "brinde emitido"/"brinde resgatado" —
+ * eventos que NUNCA aparecem no feed ao vivo de verdade (`listRecentEvents`
+ * só lê `RedirectLog`/`RatingEvent`/`PrivateFeedback`/`AuditLog`; Voucher não
+ * é uma fonte do Live Mode hoje). Rotulado "o mesmo feed do seu painel", mas
+ * mostrando um tipo de evento que o painel nunca mostra — o oposto de Zero
+ * Fake Demo. `RATING` também saiu: desde a ADR-080 a tela pública não pede
+ * mais nota, então esse evento é raríssimo (só links de antes da mudança).
+ * Trocado por variações de `REDIRECT`/`FEEDBACK`/`ASSIGNMENT_CHANGED` que
+ * genuinamente disparam hoje.
  */
 const SAMPLE_ENTRIES: Omit<LiveFeedEntry, "id">[] = [
-  { kind: "REDIRECT", message: "Mesa 4 — toque no cartão, avaliação no Google", timestamp: "agora" },
-  { kind: "ASSIGNMENT_CHANGED", message: "Brinde do Retorno emitido — código K7X-4QM", timestamp: "há 12s" },
-  { kind: "RATING", message: "Balcão — avaliação 5 estrelas registrada", timestamp: "há 38s" },
-  { kind: "FEEDBACK", message: "Cliente insatisfeito falou direto no WhatsApp", timestamp: "há 1min" },
-  { kind: "REDIRECT", message: "Mesa 9 — toque no cartão, avaliação no Google", timestamp: "há 2min" },
-  { kind: "ASSIGNMENT_CHANGED", message: "Brinde resgatado no balcão — PIN confirmado", timestamp: "há 3min" },
+  { kind: "REDIRECT", message: "Mesa 4 abriu Instagram", timestamp: "agora" },
+  { kind: "REDIRECT", message: "Mesa 9 abriu avaliação padrão", timestamp: "há 12s" },
+  { kind: "FEEDBACK", message: "Balcão deixou um feedback privado", timestamp: "há 38s" },
+  { kind: "REDIRECT", message: "Mesa 2 abriu WhatsApp", timestamp: "há 1min" },
+  { kind: "ASSIGNMENT_CHANGED", message: "Atribuiu a campanha", timestamp: "há 2min" },
+  { kind: "REDIRECT", message: "Mesa 15 abriu avaliação padrão", timestamp: "há 3min" },
 ];
 
 export function DataShowcase() {

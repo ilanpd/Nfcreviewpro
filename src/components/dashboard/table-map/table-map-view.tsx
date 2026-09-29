@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ConnectionIndicator } from "@nfc-os/ui";
 import { CardFormDialog } from "@/components/dashboard/card-form-dialog";
+import { ConfirmDialog } from "@/components/dashboard/confirm-dialog";
 import { Canvas } from "./canvas";
 import { CampaignTray } from "./campaign-tray";
 import { UnplacedTray } from "./unplaced-tray";
@@ -88,6 +89,8 @@ export function TableMapView({
   const [liveEnabled, setLiveEnabled] = useState(true);
   const [pendingAction, setPendingAction] = useState<PendingBulkAction | null>(null);
   const [confirming, setConfirming] = useState(false);
+  const [confirmingDeleteSelected, setConfirmingDeleteSelected] = useState(false);
+  const [deletingSelected, setDeletingSelected] = useState(false);
   const [timeMachineMinutesAgo, setTimeMachineMinutesAgo] = useState<number | null>(null);
 
   /** Briefly marks a set of tables as "just assigned" for TableNode's
@@ -302,8 +305,7 @@ export function TableMapView({
   async function handleDeleteSelected() {
     if (selectedIds.size === 0) return;
     const ids = [...selectedIds];
-    const label = ids.length === 1 ? "esta mesa" : `estas ${ids.length} mesas`;
-    if (!confirm(`Excluir ${label}? Essa ação não pode ser desfeita.`)) return;
+    setDeletingSelected(true);
     try {
       const results = await Promise.all(ids.map((id) => fetch(`/api/cards/${id}`, { method: "DELETE" })));
       const failed = results.filter((r) => !r.ok).length;
@@ -314,6 +316,9 @@ export function TableMapView({
       else toast.success(ids.length === 1 ? "Mesa excluída" : `${ids.length} mesas excluídas`);
     } catch {
       toast.error("Não foi possível excluir as mesas selecionadas");
+    } finally {
+      setDeletingSelected(false);
+      setConfirmingDeleteSelected(false);
     }
   }
 
@@ -531,8 +536,8 @@ export function TableMapView({
             </Button>
           ) : null}
           {selectedIds.size > 0 && canEditLayout ? (
-            <Button variant="outline" size="sm" onClick={handleDeleteSelected}>
-              <Trash2 className="size-3.5" /> Excluir ({selectedIds.size})
+            <Button variant="outline" size="sm" onClick={() => setConfirmingDeleteSelected(true)}>
+              <Trash2 className="size-3.5" aria-hidden="true" /> Excluir ({selectedIds.size})
             </Button>
           ) : null}
           <HeatmapLayerToggle value={heatmapLayer} onChange={setHeatmapLayer} />
@@ -648,6 +653,15 @@ export function TableMapView({
         onCancel={cancelPendingAction}
         confirming={confirming}
         apiBase={liveApiBase}
+      />
+
+      <ConfirmDialog
+        open={confirmingDeleteSelected}
+        onOpenChange={setConfirmingDeleteSelected}
+        title={`Excluir ${selectedIds.size === 1 ? "esta mesa" : `estas ${selectedIds.size} mesas`}?`}
+        description="Essa ação não pode ser desfeita."
+        busy={deletingSelected}
+        onConfirm={handleDeleteSelected}
       />
     </div>
   );
