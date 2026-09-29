@@ -27,6 +27,26 @@ const FAQS = [
     question: "Consigo trocar de plano depois?",
     answer: "Sim, você pode fazer upgrade ou downgrade a qualquer momento direto do painel, sem multa.",
   },
+  {
+    question: "Funciona em qualquer celular, inclusive iPhone?",
+    answer:
+      "Sim. NFC funciona nativamente em iPhone (a partir do iOS 11) e Android, direto pela câmera do próprio aparelho — sem instalar nenhum app. O QR Code no cartão é a alternativa para quem preferir escanear em vez de aproximar.",
+  },
+  {
+    question: "Se eu cancelar a assinatura, o cartão físico para de funcionar?",
+    answer:
+      "Não. O cartão continua levando o cliente para o destino que você configurou (Google, Instagram, WhatsApp...) mesmo sem assinatura ativa. O que fica indisponível é o acesso ao painel e a emissão de novos brindes do Retorno.",
+  },
+  {
+    question: "O cartão aguenta o uso diário num balcão ou numa mesa?",
+    answer:
+      "Sim, é feito pra isso — uso diário em mãos, balcão, mesa ou recepção. Se o seu chegar com algum defeito de fabricação, é só falar com a gente pelo Contato.",
+  },
+  {
+    question: "Preciso saber mexer em tecnologia pra configurar?",
+    answer:
+      "Não. O cartão já chega gravado e pronto — trocar pra onde ele leva leva menos de um minuto, direto do celular. Usar o painel do Starter é a mesma lógica de preencher um formulário.",
+  },
 ];
 
 export function Faq() {

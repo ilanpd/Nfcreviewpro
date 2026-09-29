@@ -73,3 +73,21 @@ describe("buildAttentionRadar — mensagens sem resposta (auditoria 28/09/2026)"
     expect(radar.map((r) => r.id)).toEqual(["feedback:co_1", "feedback:co_2"]);
   });
 });
+
+describe("buildAttentionRadar — provedor de e-mail (auditoria de potencial de venda, 29/09/2026)", () => {
+  it("campo ausente (undefined) nunca alerta — continua opcional pra quem ainda não o calcula", () => {
+    expect(buildAttentionRadar(EMPTY)).toEqual([]);
+  });
+
+  it("configurado (true) não alerta", () => {
+    expect(buildAttentionRadar({ ...EMPTY, emailProviderConfigured: true })).toEqual([]);
+  });
+
+  it("false explícito alerta — /contato promete envio que não acontece", () => {
+    const radar = buildAttentionRadar({ ...EMPTY, emailProviderConfigured: false });
+    expect(radar).toHaveLength(1);
+    expect(radar[0].id).toBe("email-provider");
+    expect(radar[0].severity).toBe("attention");
+    expect(radar[0].message).toContain("RESEND_API_KEY");
+  });
+});

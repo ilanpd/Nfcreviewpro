@@ -5,6 +5,7 @@ import { stageEnteredAt, daysSince } from "@/domain/store-order/board";
 import { buildAttentionRadar } from "@/domain/admin/attention-radar";
 import { listStuckSupportRequests } from "@/services/support.service";
 import { getCardUrlGuard } from "@/lib/card-url";
+import { resend } from "@/lib/email";
 import type { InsightCardEntry } from "@nfc-os/ui";
 
 const UNRESOLVED_FEEDBACK_WINDOW_DAYS = 7;
@@ -93,10 +94,17 @@ export async function getAdminOverviewSnapshot(): Promise<AdminOverviewSnapshot>
       companyName: r.company.name,
       subject: r.subject,
     })),
+    // Achado de auditoria de potencial de venda (29/09/2026) — ver o
+    // comentário completo em domain/admin/attention-radar.ts.
+    emailProviderConfigured: resend !== null,
   }).map((insight) => {
     if (insight.id.startsWith("feedback:")) return { ...insight, href: `/admin/empresas/${insight.id.split(":")[1]}` };
     if (insight.id.startsWith("support:")) return { ...insight, href: `/admin/empresas/${insight.id.split(":")[1]}` };
-    if (insight.id === "low-stock") return { ...insight, href: "/admin/conteudo" };    return { ...insight, href: "/admin/pedidos" };
+    if (insight.id === "low-stock") return { ...insight, href: "/admin/conteudo" };
+    // Sem tela no Admin que resolva isto (é uma env var na Vercel, não uma
+    // configuração do produto) — nenhum href é melhor que um errado.
+    if (insight.id === "email-provider") return insight;
+    return { ...insight, href: "/admin/pedidos" };
   });
 
   const conversionRate = checkoutStarted > 0 ? Math.round((checkoutCompleted / checkoutStarted) * 100) : null;

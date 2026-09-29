@@ -34,6 +34,17 @@ export interface AttentionRadarInput {
    * pagos que ainda vão virar chip; sem nenhum, um endereço provisório não
    * está prejudicando ninguém e o alerta não aparece. */
   cardUrl?: { kind: CardUrlKind; host: string; blocked: boolean; pendingOrders: number } | null;
+  /**
+   * Achado de auditoria de potencial de venda (29/09/2026): sem
+   * `RESEND_API_KEY`, `/contato` (o único canal de pré-venda por escrito)
+   * mostra "Mensagem enviada!" pro visitante, mas nada chega — a mensagem só
+   * é logada. Isso já era sabido como pendência técnica, mas nunca aparecia
+   * em lugar nenhum que o Admin olha; ficava fácil esquecer que está
+   * silenciosamente quebrado. `undefined` (não passado) nunca gera alerta —
+   * só `false` explícito, pra este campo continuar opcional em quem ainda
+   * não o calcula.
+   */
+  emailProviderConfigured?: boolean;
 }
 
 export function buildAttentionRadar(input: AttentionRadarInput): InsightCardEntry[] {
@@ -90,6 +101,15 @@ export function buildAttentionRadar(input: AttentionRadarInput): InsightCardEntr
       message: cardUrl.blocked
         ? `Endereço do cartão ainda não é o definitivo (${cardUrl.host || "inválido"}) — a gravação de chips está bloqueada e há ${orders}`
         : `Endereço do cartão ainda não é o definitivo (${cardUrl.host || "inválido"}) e há ${orders} — não grave chips antes de definir o domínio`,
+    });
+  }
+
+  if (input.emailProviderConfigured === false) {
+    insights.push({
+      id: "email-provider",
+      severity: "attention",
+      message:
+        "Nenhum provedor de e-mail configurado (RESEND_API_KEY ausente) — /contato mostra \"mensagem enviada\" pro visitante, mas nada é entregue de verdade",
     });
   }
 
