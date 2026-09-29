@@ -1,5 +1,3 @@
-"use client";
-
 import { ArrowRight, ShieldCheck, Truck, Zap } from "lucide-react";
 import { BRAND } from "@/lib/brand";
 import { BlurFade } from "@/components/ui/blur-fade";
@@ -17,6 +15,9 @@ const TRUST_ITEMS = [
  * pra responder as duas coisas na primeira dobra, e mencionar o Retorno como
  * upgrade disponível — nunca prometido pro avulso, honesto sobre o que só o
  * Starter entrega.
+ *
+ * Server Component (Auditoria de Performance, 28/09/2026) — só `BlurFade` é
+ * interativo, e já é "use client" por conta própria.
  */
 export function StoreHero() {
   return (
@@ -45,7 +46,7 @@ export function StoreHero() {
         <BlurFade delay={0.15}>
           <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
             <a href="#produtos" className="inline-flex items-center gap-2 rounded-lg bg-brand px-6 py-3 text-sm font-medium text-brand-foreground shadow-elevated transition-colors hover:bg-brand/90">
-              Ver planos e preços
+              Ver cartões e preços
               <ArrowRight className="size-4" />
             </a>
           </div>

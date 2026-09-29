@@ -3,7 +3,7 @@
 import { Check, Copy, Gift, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { screenCopy, shareMessage, type TouchScreen } from "@/domain/return-offer/public-screen";
-import { canNativeShare, nativeShare, useCopy } from "./use-copy";
+import { canNativeShare, nativeShare, useCopy } from "@/hooks/use-copy";
 
 /**
  * O brinde na tela do cliente (ADR-080): o texto do que ganhou, a validade e o

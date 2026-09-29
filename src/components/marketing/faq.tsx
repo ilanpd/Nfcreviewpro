@@ -1,7 +1,9 @@
-"use client";
-
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { BlurFade } from "@/components/ui/blur-fade";
+
+// Server Component — `Accordion`/`BlurFade` já são "use client" por conta
+// própria; nada aqui precisa de estado no servidor (Auditoria de
+// Performance, 28/09/2026).
 
 const FAQS = [
   {

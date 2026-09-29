@@ -102,10 +102,15 @@ export function PlanSelector({ initialPlan, initialCardProductId, hasExistingCar
                 : "Sua assinatura ativa o software; o cartão físico é o que o cliente toca na mesa. Adicione na mesma compra — uma cobrança só."}
             </p>
             {SINGLE_CARD_PRODUCT ? (
-              <div className="mt-4 flex flex-wrap gap-2">
+              // `role="group"` + `aria-pressed` (mesmo padrão do seletor de
+              // fluxo em hero-mockup.tsx): sem isso, um leitor de tela não
+              // tinha como saber qual das duas opções está selecionada — os
+              // dois eram `<button>` comuns com só a cor mudando.
+              <div className="mt-4 flex flex-wrap gap-2" role="group" aria-label="Quantidade de cartões físicos">
                 <button
                   type="button"
                   onClick={() => setCardProductId(null)}
+                  aria-pressed={cardProductId === null}
                   className={cn(
                     "rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
                     cardProductId === null ? "border-brand bg-brand text-brand-foreground" : "hover:bg-muted"
@@ -116,6 +121,7 @@ export function PlanSelector({ initialPlan, initialCardProductId, hasExistingCar
                 <button
                   type="button"
                   onClick={() => setCardProductId(SINGLE_CARD_PRODUCT.id)}
+                  aria-pressed={cardProductId === SINGLE_CARD_PRODUCT.id}
                   className={cn(
                     "rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
                     cardProductId === SINGLE_CARD_PRODUCT.id ? "border-brand bg-brand text-brand-foreground" : "hover:bg-muted"

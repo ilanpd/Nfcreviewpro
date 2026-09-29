@@ -1,12 +1,13 @@
-"use client";
-
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { BlurFade } from "@/components/ui/blur-fade";
 
 /** Fechamento da home: um bloco escuro chapado com um único botão âmbar.
- * Sem partículas, feixes nem varredura de cor no título (ADR-077). */
+ * Sem partículas, feixes nem varredura de cor no título (ADR-077).
+ * Server Component — o único hook daqui vem do `BlurFade` (já "use client"),
+ * então nenhum motivo pra esta seção inteira virar JS que hidrata no
+ * cliente (Auditoria de Performance, 28/09/2026). */
 export function Cta() {
   return (
     <section className="mx-auto max-w-6xl px-6 pb-20">

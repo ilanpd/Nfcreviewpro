@@ -1,5 +1,3 @@
-"use client";
-
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -25,6 +23,11 @@ function toEmbedUrl(url: string): string | null {
  * de verdade. `AuroraBackground`/`CursorGlow` (packages/ui, Fase 14,
  * nunca usados na Landing até aqui) entram pela primeira vez: o "vivo" que
  * a direção visual pede, sem nenhum componente novo pra manter.
+ *
+ * Server Component (Auditoria de Performance, 28/09/2026) — `toEmbedUrl` é
+ * uma função pura e todo elemento interativo (AuroraBackground, CursorGlow,
+ * MagneticButton, HeroMockup, BlurFade) já é "use client" por conta própria;
+ * nada aqui precisava hidratar no cliente.
  */
 export function Hero({ heroVideoUrl }: { heroVideoUrl?: string | null }) {
   const embedUrl = heroVideoUrl ? toEmbedUrl(heroVideoUrl) : null;

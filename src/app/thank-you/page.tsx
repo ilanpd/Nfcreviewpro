@@ -7,6 +7,11 @@ export default async function ThankYouPage({
 }) {
   const { type, wa } = await searchParams;
   const isFeedback = type === "feedback";
+  // Achado de auditoria (28/09/2026): quando a empresa ainda não configurou
+  // WhatsApp (ativação incompleta), `feedback-form.tsx` chega aqui sem `wa` —
+  // a mensagem antiga prometia "vamos abrir o WhatsApp" mesmo quando nada
+  // seria aberto (`ThankYouRedirect` só renderiza com `wa` presente).
+  const willRedirectToWhatsapp = isFeedback && !!wa;
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center gap-4 p-6 text-center">
@@ -15,11 +20,13 @@ export default async function ThankYouPage({
         {isFeedback ? "Mensagem enviada." : "Obrigado pela visita!"}
       </h1>
       <p className="max-w-xs text-sm text-muted-foreground">
-        {isFeedback
+        {willRedirectToWhatsapp
           ? "Vamos abrir o WhatsApp para você confirmar o envio ao responsável pelo atendimento."
-          : "Esperamos ver você de novo."}
+          : isFeedback
+            ? "Sua mensagem chegou até o responsável pelo atendimento."
+            : "Esperamos ver você de novo."}
       </p>
-      {isFeedback && wa ? <ThankYouRedirect whatsappUrl={wa} /> : null}
+      {willRedirectToWhatsapp ? <ThankYouRedirect whatsappUrl={wa!} /> : null}
     </main>
   );
 }

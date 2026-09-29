@@ -1,5 +1,3 @@
-"use client";
-
 import Link from "next/link";
 import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -13,6 +11,10 @@ import { STORE_PRODUCTS, formatCentsToBRL } from "@/lib/store-products";
 // Derivado de STORE_PRODUCTS, nunca hardcoded — nunca dessincroniza se o
 // preço do cartão mudar.
 const MIN_CARD_UNIT_PRICE_CENTS = Math.min(...STORE_PRODUCTS.map((p) => p.unitPriceCents));
+
+// Server Component (Auditoria de Performance, 28/09/2026) — só `BlurFade` e
+// `Button asChild`/`Link` são interativos, e já são "use client" por conta
+// própria.
 
 export function Pricing() {
   return (

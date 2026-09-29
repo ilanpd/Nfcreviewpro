@@ -50,29 +50,40 @@ export function DestinationPicker({ value, onChange }: { value: string; onChange
 
   return (
     <div className="space-y-2">
-      <Label>Para onde seus cartões devem redirecionar?</Label>
-      <div className="flex flex-wrap gap-1.5">
+      <Label htmlFor="destination-input">Para onde seus cartões devem redirecionar?</Label>
+      {/* `role="group"` + `aria-pressed`: mesmo achado de acessibilidade do
+          seletor de quantidade em onboarding/plan/plan-selector.tsx — sem
+          isso, um leitor de tela não sabia qual preset estava ativo. */}
+      <div className="flex flex-wrap gap-1.5" role="group" aria-label="Tipo de destino">
         {PRESETS.map((p) => (
           <button
             key={p.kind}
             type="button"
             onClick={() => selectPreset(p.kind)}
+            aria-pressed={preset === p.kind}
             className={cn(
               "flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
               preset === p.kind ? "border-brand bg-brand text-brand-foreground" : "hover:bg-muted"
             )}
           >
-            <p.icon className="size-3.5" /> {p.label}
+            <p.icon className="size-3.5" aria-hidden="true" /> {p.label}
           </button>
         ))}
       </div>
 
       {preset === "instagram" ? (
-        <Input placeholder="@seuinstagram" value={handle} onChange={(e) => updateHandle(e.target.value)} />
+        <Input id="destination-input" placeholder="@seuinstagram" value={handle} onChange={(e) => updateHandle(e.target.value)} />
       ) : preset === "whatsapp" ? (
-        <Input placeholder="DDD + número (só números)" inputMode="numeric" value={handle} onChange={(e) => updateHandle(e.target.value)} />
+        <Input
+          id="destination-input"
+          placeholder="DDD + número (só números)"
+          inputMode="numeric"
+          value={handle}
+          onChange={(e) => updateHandle(e.target.value)}
+        />
       ) : (
         <Input
+          id="destination-input"
           type="url"
           placeholder={preset === "google" ? "https://g.page/r/xxxxx/review" : "https://..."}
           value={value}

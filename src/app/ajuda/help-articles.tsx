@@ -1,7 +1,10 @@
-"use client";
-
 import Link from "next/link";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+
+// Server Component (Auditoria de Performance, 28/09/2026) — 10 artigos de
+// conteúdo real estavam indo pro bundle do cliente só porque `Accordion` (já
+// "use client" por conta própria) foi importado aqui; nada neste arquivo usa
+// estado ou efeito.
 
 interface Article {
   question: string;

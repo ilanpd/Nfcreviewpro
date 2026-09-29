@@ -3,10 +3,12 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PremiumCardShell } from "@nfc-os/ui";
+import { cn } from "@/lib/utils";
 
 const PRESET_COLORS = ["#0F172A", "#1D4ED8", "#059669", "#B91C1C", "#7C3AED", "#EA580C"];
 
@@ -89,21 +91,33 @@ export function ActivationForm({
           </div>
 
           <div className="space-y-2">
-            <Label>Cor principal da marca</Label>
-            <div className="flex flex-wrap gap-2">
-              {PRESET_COLORS.map((color) => (
-                <button
-                  key={color}
-                  type="button"
-                  aria-label={`Selecionar cor ${color}`}
-                  onClick={() => setForm({ ...form, primaryColor: color })}
-                  className="size-8 rounded-full ring-offset-2 transition-shadow"
-                  style={{
-                    backgroundColor: color,
-                    boxShadow: form.primaryColor === color ? `0 0 0 2px ${color}` : "none",
-                  }}
-                />
-              ))}
+            <Label id="primary-color-label">Cor principal da marca</Label>
+            {/* Achado de auditoria (28/09/2026): o anel de seleção usava a
+                MESMA cor do próprio botão — visualmente quase imperceptível
+                (a "seleção" só deixava o círculo 2px maior) — e não tinha
+                `aria-pressed`, então um leitor de tela não anunciava qual
+                cor estava escolhida. Agora o anel contrasta com o fundo e
+                a cor escolhida ganha um ✓ visível nos dois temas. */}
+            <div className="flex flex-wrap gap-2" role="group" aria-labelledby="primary-color-label">
+              {PRESET_COLORS.map((color) => {
+                const isSelected = form.primaryColor === color;
+                return (
+                  <button
+                    key={color}
+                    type="button"
+                    aria-label={`Cor ${color}`}
+                    aria-pressed={isSelected}
+                    onClick={() => setForm({ ...form, primaryColor: color })}
+                    className={cn(
+                      "flex size-8 items-center justify-center rounded-full ring-offset-2 ring-offset-background transition-shadow",
+                      isSelected && "ring-2 ring-foreground"
+                    )}
+                    style={{ backgroundColor: color }}
+                  >
+                    {isSelected ? <Check className="size-4 text-white drop-shadow-sm" aria-hidden="true" /> : null}
+                  </button>
+                );
+              })}
             </div>
           </div>
 

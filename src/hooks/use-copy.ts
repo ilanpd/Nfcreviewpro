@@ -3,10 +3,14 @@
 import { useCallback, useState } from "react";
 
 /**
- * Copiar o código (ADR-080). Em navegadores embutidos (Instagram, WhatsApp) a
- * área de transferência moderna pode não existir, então há uma segunda via e,
- * se nenhuma funcionar, o cliente é orientado a copiar à mão. Nunca engole a
- * falha em silêncio: o estado diz o que aconteceu.
+ * Copiar texto pra área de transferência (ADR-080, movido de `app/r/[code]`
+ * pra `hooks/` na auditoria de 28/09/2026 pra ser reaproveitado fora do
+ * cartão público — `loja/sucesso/edit-link-list.tsx` reimplementava a mesma
+ * ideia com `navigator.clipboard.writeText` cru, sem fallback e SEM checar
+ * se deu certo: um clipboard bloqueado (contexto inseguro, permissão negada,
+ * navegador embutido do Instagram/WhatsApp) mostrava "Link copiado" mesmo
+ * quando nada foi copiado). Aqui: uma segunda via (`execCommand`) e, se
+ * nenhuma funcionar, o estado diz a verdade em vez de fingir sucesso.
  */
 export type CopyState = "idle" | "copied" | "manual";
 

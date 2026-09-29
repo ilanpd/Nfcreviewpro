@@ -1,5 +1,3 @@
-"use client";
-
 import Link from "next/link";
 import { ArrowRight, CreditCard, Sparkles, Zap } from "lucide-react";
 import { PremiumCardShell } from "@nfc-os/ui";
@@ -30,6 +28,10 @@ interface Option {
  * confiança antes do Stripe") — calculado de `PLANS` + do preço do cartão
  * que a página recebe (mesma fonte da Loja), nunca um texto fixo que pode
  * divergir do que o checkout cobra.
+ *
+ * Server Component (Auditoria de Performance, 28/09/2026) — `PremiumCardShell`
+ * já é "use client" por conta própria; a página de descoberta é pura
+ * exibição + navegação (`Link`), sem nenhum estado no cliente.
  */
 export function DiscoveryOptions({ plan, cardPriceCents }: { plan: PlanType; cardPriceCents: number | null }) {
   const planDef = PLANS[plan];
