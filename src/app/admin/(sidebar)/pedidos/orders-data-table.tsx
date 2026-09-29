@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
+import { copyText } from "@/hooks/use-copy";
 import {
   columnVisibilityFeature,
   createColumnHelper,
@@ -404,15 +405,21 @@ export function OrdersDataTable({ initialOrders }: { initialOrders: StoreOrder[]
                   <TableCell onClick={(e) => e.stopPropagation()}>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="size-8">
-                          <MoreHorizontal className="size-4" />
+                        <Button variant="ghost" size="icon" className="size-8" aria-label={`Mais ações para o pedido de ${row.original.customerName}`}>
+                          <MoreHorizontal className="size-4" aria-hidden="true" />
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem onClick={() => setDetailOrderId(row.original.id)}>
                           <Eye className="size-3.5" /> Ver detalhes
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => navigator.clipboard.writeText(row.original.customerEmail)}>
+                        <DropdownMenuItem
+                          onClick={async () => {
+                            const ok = await copyText(row.original.customerEmail);
+                            if (ok) toast.success("E-mail copiado");
+                            else toast.error("Não foi possível copiar — selecione manualmente.");
+                          }}
+                        >
                           Copiar e-mail
                         </DropdownMenuItem>
                         {row.original.status !== "CANCELED" && row.original.status !== "REFUNDED" && row.original.status !== "DELIVERED" ? (

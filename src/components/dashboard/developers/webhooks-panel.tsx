@@ -11,6 +11,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { PUBLIC_WEBHOOK_EVENT_TYPES } from "@/domain/api-v1/webhook-events";
+import { copyText } from "@/hooks/use-copy";
 import type { WebhookDeliveryStatus } from "@/generated/prisma/client";
 
 export interface WebhookEndpointRow {
@@ -41,9 +42,11 @@ const STATUS_TONE: Record<WebhookDeliveryStatus, "success" | "warning" | "danger
   EXHAUSTED: "danger",
 };
 
-function copy(text: string) {
-  navigator.clipboard.writeText(text);
-  toast.success("Copiado");
+// Achado de auditoria (29/09/2026): usava `navigator.clipboard.writeText`
+// sem tratar falha — é o segredo do webhook, usado pra assinar entregas.
+async function copy(text: string) {
+  if (await copyText(text)) toast.success("Copiado");
+  else toast.error("Não foi possível copiar — selecione e copie manualmente.");
 }
 
 export function WebhooksPanel({ initialWebhooks }: { initialWebhooks: WebhookEndpointRow[] }) {

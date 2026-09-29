@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { API_SCOPES, API_SCOPE_LABELS, type ApiScope } from "@/domain/api-v1/scopes";
+import { copyText } from "@/hooks/use-copy";
 
 export interface ApiKeyRow {
   id: string;
@@ -80,9 +81,14 @@ export function ApiKeysPanel({ initialApiKeys }: { initialApiKeys: ApiKeyRow[] }
     }
   }
 
-  function copy(text: string) {
-    navigator.clipboard.writeText(text);
-    toast.success("Copiado");
+  // Achado de auditoria (29/09/2026): usava `navigator.clipboard.writeText`
+  // sem tratar falha — é a chave de API completa, mostrada só uma vez; um
+  // clipboard bloqueado silenciosamente "copiando" nada faria quem cria a
+  // chave fechar o diálogo achando que salvou, e perder o acesso pra sempre.
+  async function copy(text: string) {
+    const ok = await copyText(text);
+    if (ok) toast.success("Copiado");
+    else toast.error("Não foi possível copiar — selecione e copie manualmente antes de fechar.");
   }
 
   return (

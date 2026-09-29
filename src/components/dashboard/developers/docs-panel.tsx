@@ -7,6 +7,7 @@ import Link from "next/link";
 import { AnalyticsCard } from "@nfc-os/ui";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { copyText } from "@/hooks/use-copy";
 
 const SNIPPETS: Record<string, string> = {
   curl: `curl https://sua-empresa.nfcos.app/api/v1/cards \\
@@ -32,9 +33,9 @@ function CodeBlock({ code }: { code: string }) {
         size="sm"
         variant="ghost"
         className="absolute right-2 top-2 text-neutral-400 hover:text-neutral-100"
-        onClick={() => {
-          navigator.clipboard.writeText(code);
-          toast.success("Copiado");
+        onClick={async () => {
+          if (await copyText(code)) toast.success("Copiado");
+          else toast.error("Não foi possível copiar — selecione o código manualmente.");
         }}
       >
         <Copy className="size-3.5" />

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { copyText } from "@/hooks/use-copy";
 import {
   AlertTriangle,
   Check,
@@ -166,14 +167,15 @@ export function OrderDetailSheet({ orderId, onClose, onOrderChanged }: { orderId
     }
   }
 
-  function copyCards() {
+  async function copyCards() {
     if (!detail?.cards.length) return;
     if (detail.cardUrl.blocked) {
       toast.error(detail.cardUrl.message);
       return;
     }
-    navigator.clipboard.writeText(detail.cards.map((c) => `${c.name}\t${c.uniqueCode}\t${c.publicUrl}`).join("\n"));
-    toast.success("Lista copiada");
+    const ok = await copyText(detail.cards.map((c) => `${c.name}\t${c.uniqueCode}\t${c.publicUrl}`).join("\n"));
+    if (ok) toast.success("Lista copiada");
+    else toast.error("Não foi possível copiar — tente selecionar manualmente.");
   }
 
   const order = detail?.order;

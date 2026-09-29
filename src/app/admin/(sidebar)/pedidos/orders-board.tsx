@@ -2,6 +2,7 @@
 
 import { Fragment, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { copyText } from "@/hooks/use-copy";
 import { MoreHorizontal, Copy, CreditCard, XCircle, Truck, AlertTriangle, Search, ArrowRight, Eye, Gavel, MapPin, Clock } from "lucide-react";
 import { OrderDetailSheet } from "./order-detail-sheet";
 import { isDisputeActive } from "@/domain/store-order/checklist";
@@ -281,13 +282,14 @@ export function OrdersBoard({ initialOrders }: { initialOrders: StoreOrder[] }) 
     setExpandedId(orderId);
   }
 
-  function copyAll(cards: ProvisionedCard[]) {
+  async function copyAll(cards: ProvisionedCard[]) {
     if (cardUrl?.blocked) {
       toast.error(cardUrl.message);
       return;
     }
-    navigator.clipboard.writeText(cards.map((c) => `${c.name}\t${c.uniqueCode}\t${c.publicUrl}`).join("\n"));
-    toast.success("Lista copiada");
+    const ok = await copyText(cards.map((c) => `${c.name}\t${c.uniqueCode}\t${c.publicUrl}`).join("\n"));
+    if (ok) toast.success("Lista copiada");
+    else toast.error("Não foi possível copiar — tente selecionar manualmente.");
   }
 
   async function cancelOrder(orderId: string) {

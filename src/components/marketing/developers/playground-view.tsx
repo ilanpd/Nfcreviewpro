@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ApiExplorer } from "./api-explorer";
 import { PUBLIC_WEBHOOK_EVENT_TYPES } from "@/domain/api-v1/webhook-events";
+import { copyText } from "@/hooks/use-copy";
 
 const QUICKSTART: Record<string, string> = {
   curl: `curl https://sua-empresa.nfcos.app/api/v1/cards \\
@@ -51,9 +52,9 @@ const RESOURCES: { method: string; path: string; scope: string; description: str
   { method: "POST", path: "/webhooks/:id/deliveries/:id/replay", scope: "webhooks:manage", description: "Reenvia uma entrega." },
 ];
 
-function copy(text: string) {
-  navigator.clipboard.writeText(text);
-  toast.success("Copiado");
+async function copy(text: string) {
+  if (await copyText(text)) toast.success("Copiado");
+  else toast.error("Não foi possível copiar — selecione o texto manualmente.");
 }
 
 export function PlaygroundView({ demoApiKey }: { demoApiKey: string }) {
