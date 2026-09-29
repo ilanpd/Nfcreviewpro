@@ -227,8 +227,8 @@ export function TeamView({ initialMembers, canManage, currentUserId, branches, z
                         branches={branches}
                         zones={zones}
                         trigger={
-                          <Button variant="ghost" size="icon" className="size-8" title="Restringir acesso">
-                            <Shield className="size-4" />
+                          <Button variant="ghost" size="icon" className="size-8" title="Restringir acesso" aria-label="Restringir acesso">
+                            <Shield className="size-4" aria-hidden="true" />
                           </Button>
                         }
                       />
@@ -238,8 +238,14 @@ export function TeamView({ initialMembers, canManage, currentUserId, branches, z
                 {canManage ? (
                   <TableCell>
                     {member.role !== "OWNER" && member.id !== currentUserId ? (
-                      <Button variant="ghost" size="icon" className="size-8" onClick={() => handleRemove(member.id)}>
-                        <Trash2 className="size-4" />
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="size-8"
+                        aria-label={`Remover ${member.name || member.email} da equipe`}
+                        onClick={() => handleRemove(member.id)}
+                      >
+                        <Trash2 className="size-4" aria-hidden="true" />
                       </Button>
                     ) : null}
                   </TableCell>

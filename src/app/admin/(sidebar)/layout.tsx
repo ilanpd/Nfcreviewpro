@@ -38,8 +38,8 @@ export default async function AdminSidebarLayout({ children }: { children: React
           <AdminCommandPalette />
           <div className="ml-auto flex items-center gap-3">
             <Button asChild variant="ghost" size="icon" title="Modo Executivo (wallboard)">
-              <Link href="/admin/executivo">
-                <Monitor className="size-4" />
+              <Link href="/admin/executivo" aria-label="Modo Executivo (wallboard)">
+                <Monitor className="size-4" aria-hidden="true" />
               </Link>
             </Button>
             <ThemeToggle />

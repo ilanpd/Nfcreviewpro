@@ -147,8 +147,14 @@ export function RuleManager({ campaignId, initialRules, canManage, onRulesChange
                   </span>
                 </div>
                 {canManage ? (
-                  <Button variant="ghost" size="icon" className="size-7 shrink-0" onClick={() => handleRemove(rule.id)}>
-                    <Trash2 className="size-3.5" />
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="size-7 shrink-0"
+                    aria-label={`Remover regra: ${RULE_TYPE_LABEL[rule.type]}`}
+                    onClick={() => handleRemove(rule.id)}
+                  >
+                    <Trash2 className="size-3.5" aria-hidden="true" />
                   </Button>
                 ) : null}
               </li>

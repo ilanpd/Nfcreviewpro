@@ -133,8 +133,8 @@ export function CampaignRow({
         {canManage ? (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="size-8" disabled={busy}>
-                <MoreVertical className="size-4" />
+              <Button variant="ghost" size="icon" className="size-8" disabled={busy} aria-label={`Mais ações para ${campaign.name}`}>
+                <MoreVertical className="size-4" aria-hidden="true" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">

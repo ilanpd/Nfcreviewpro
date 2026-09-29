@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Copy, ShoppingBag } from "lucide-react";
+import { Check, Copy, ShoppingBag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,6 +19,7 @@ import {
 import { DestinationPicker } from "@/components/destination-picker";
 import { STORE_PRODUCTS, formatCentsToBRL } from "@/lib/store-products";
 import { cn } from "@/lib/utils";
+import { useCopy } from "@/hooks/use-copy";
 
 /**
  * Venda direta (C14, ADR-089) — o dono pediu explicitamente: ele vende
@@ -103,20 +104,7 @@ export function DirectSaleDialog() {
           <div className="space-y-3">
             <p className="text-sm text-muted-foreground">Link(s) de edição do cliente — compartilhe agora:</p>
             {editLinks.map((link) => (
-              <div key={link} className="flex items-center gap-2 rounded-lg border border-border/60 bg-muted/30 px-3 py-2">
-                <span className="min-w-0 flex-1 truncate text-sm">{link}</span>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => {
-                    navigator.clipboard.writeText(link);
-                    toast.success("Copiado");
-                  }}
-                >
-                  <Copy className="size-4" />
-                </Button>
-              </div>
+              <EditLinkCopyRow key={link} link={link} />
             ))}
             <Button className="w-full" onClick={() => setOpen(false)}>
               Concluir
@@ -173,5 +161,34 @@ export function DirectSaleDialog() {
         )}
       </DialogContent>
     </Dialog>
+  );
+}
+
+/**
+ * Achado de auditoria (28/09/2026): usava `navigator.clipboard.writeText`
+ * direto, sem tratar falha (e o botão de copiar não tinha `aria-label`) —
+ * num clipboard bloqueado, dizia "Copiado" mesmo sem copiar nada. Reaproveita
+ * `useCopy` (mesmo hook do cartão público em `/r/[code]` e de
+ * `loja/sucesso/edit-link-list.tsx`), com uma segunda via e um aviso sincero
+ * quando nenhuma funciona.
+ */
+function EditLinkCopyRow({ link }: { link: string }) {
+  const { state, copy } = useCopy(link);
+  return (
+    <div className="space-y-1">
+      <div className="flex items-center gap-2 rounded-lg border border-border/60 bg-muted/30 px-3 py-2">
+        <span className="min-w-0 flex-1 truncate text-sm" title={link}>
+          {link}
+        </span>
+        <Button type="button" variant="ghost" size="icon" aria-label="Copiar link" onClick={copy}>
+          {state === "copied" ? <Check className="size-4" aria-hidden="true" /> : <Copy className="size-4" aria-hidden="true" />}
+        </Button>
+      </div>
+      {state === "manual" ? (
+        <p role="status" className="text-xs text-muted-foreground">
+          Não deu para copiar sozinho. Toque e segure o link para copiar.
+        </p>
+      ) : null}
+    </div>
   );
 }

@@ -216,11 +216,11 @@ export function BranchZoneManager({ initialBranches, initialZones, canManage }: 
                   {editingBranchId === branch.id ? (
                     <>
                       <Input value={editValue} onChange={(e) => setEditValue(e.target.value)} className="h-7 flex-1" autoFocus />
-                      <Button size="icon" variant="ghost" className="size-6" onClick={() => renameBranch(branch.id)}>
-                        <Check className="size-3.5" />
+                      <Button size="icon" variant="ghost" className="size-6" aria-label="Salvar nome da unidade" onClick={() => renameBranch(branch.id)}>
+                        <Check className="size-3.5" aria-hidden="true" />
                       </Button>
-                      <Button size="icon" variant="ghost" className="size-6" onClick={() => setEditingBranchId(null)}>
-                        <X className="size-3.5" />
+                      <Button size="icon" variant="ghost" className="size-6" aria-label="Cancelar edição" onClick={() => setEditingBranchId(null)}>
+                        <X className="size-3.5" aria-hidden="true" />
                       </Button>
                     </>
                   ) : (
@@ -228,11 +228,23 @@ export function BranchZoneManager({ initialBranches, initialZones, canManage }: 
                       <span className="flex-1 truncate">{branch.name}</span>
                       {canManage ? (
                         <>
-                          <Button size="icon" variant="ghost" className="size-6" onClick={() => startEdit(branch.id, branch.name, "branch")}>
-                            <Pencil className="size-3.5" />
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="size-6"
+                            aria-label={`Renomear unidade ${branch.name}`}
+                            onClick={() => startEdit(branch.id, branch.name, "branch")}
+                          >
+                            <Pencil className="size-3.5" aria-hidden="true" />
                           </Button>
-                          <Button size="icon" variant="ghost" className="size-6" onClick={() => setConfirmDelete({ kind: "branch", id: branch.id, name: branch.name })}>
-                            <Trash2 className="size-3.5" />
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="size-6"
+                            aria-label={`Remover unidade ${branch.name}`}
+                            onClick={() => setConfirmDelete({ kind: "branch", id: branch.id, name: branch.name })}
+                          >
+                            <Trash2 className="size-3.5" aria-hidden="true" />
                           </Button>
                         </>
                       ) : null}
@@ -283,11 +295,11 @@ export function BranchZoneManager({ initialBranches, initialZones, canManage }: 
                   {editingZoneId === zone.id ? (
                     <>
                       <Input value={editValue} onChange={(e) => setEditValue(e.target.value)} className="h-7 flex-1" autoFocus />
-                      <Button size="icon" variant="ghost" className="size-6" onClick={() => renameZone(zone.id)}>
-                        <Check className="size-3.5" />
+                      <Button size="icon" variant="ghost" className="size-6" aria-label="Salvar nome da zona" onClick={() => renameZone(zone.id)}>
+                        <Check className="size-3.5" aria-hidden="true" />
                       </Button>
-                      <Button size="icon" variant="ghost" className="size-6" onClick={() => setEditingZoneId(null)}>
-                        <X className="size-3.5" />
+                      <Button size="icon" variant="ghost" className="size-6" aria-label="Cancelar edição" onClick={() => setEditingZoneId(null)}>
+                        <X className="size-3.5" aria-hidden="true" />
                       </Button>
                     </>
                   ) : (
@@ -310,11 +322,23 @@ export function BranchZoneManager({ initialBranches, initialZones, canManage }: 
                       ) : null}
                       {canManage ? (
                         <>
-                          <Button size="icon" variant="ghost" className="size-6" onClick={() => startEdit(zone.id, zone.name, "zone")}>
-                            <Pencil className="size-3.5" />
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="size-6"
+                            aria-label={`Renomear zona ${zone.name}`}
+                            onClick={() => startEdit(zone.id, zone.name, "zone")}
+                          >
+                            <Pencil className="size-3.5" aria-hidden="true" />
                           </Button>
-                          <Button size="icon" variant="ghost" className="size-6" onClick={() => setConfirmDelete({ kind: "zone", id: zone.id, name: zone.name })}>
-                            <Trash2 className="size-3.5" />
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="size-6"
+                            aria-label={`Remover zona ${zone.name}`}
+                            onClick={() => setConfirmDelete({ kind: "zone", id: zone.id, name: zone.name })}
+                          >
+                            <Trash2 className="size-3.5" aria-hidden="true" />
                           </Button>
                         </>
                       ) : null}

@@ -115,8 +115,14 @@ export function AccessScopeManager({ memberId, memberName, branches, zones, trig
                     )}
                     <span>{s.branch?.name ?? s.zone?.name}</span>
                   </div>
-                  <Button variant="ghost" size="icon" className="size-7" onClick={() => handleRemove(s.id)}>
-                    <Trash2 className="size-3.5" />
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="size-7"
+                    aria-label={`Remover restrição de ${s.branch?.name ?? s.zone?.name}`}
+                    onClick={() => handleRemove(s.id)}
+                  >
+                    <Trash2 className="size-3.5" aria-hidden="true" />
                   </Button>
                 </li>
               ))}

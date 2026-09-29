@@ -113,8 +113,14 @@ export function VariantManager({
                 </span>
               </div>
               {canManage ? (
-                <Button variant="ghost" size="icon" className="size-7 shrink-0" onClick={() => handleRemove(variant.id)}>
-                  <Trash2 className="size-3.5" />
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="size-7 shrink-0"
+                  aria-label={`Remover variante ${variant.name}`}
+                  onClick={() => handleRemove(variant.id)}
+                >
+                  <Trash2 className="size-3.5" aria-hidden="true" />
                 </Button>
               ) : null}
             </li>

@@ -177,8 +177,14 @@ export function AssignmentManager({
                   </span>
                 </div>
                 {canManage ? (
-                  <Button variant="ghost" size="icon" className="size-7 shrink-0" onClick={() => handleRemove(a.id)}>
-                    <Trash2 className="size-3.5" />
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="size-7 shrink-0"
+                    aria-label={`Remover atribuição: ${SCOPE_LABEL[a.scope]} ${targetLabel(a)}`}
+                    onClick={() => handleRemove(a.id)}
+                  >
+                    <Trash2 className="size-3.5" aria-hidden="true" />
                   </Button>
                 ) : null}
               </li>

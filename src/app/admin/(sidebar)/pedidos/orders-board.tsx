@@ -393,8 +393,8 @@ export function OrdersBoard({ initialOrders }: { initialOrders: StoreOrder[] }) 
                         </button>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button size="icon" variant="ghost" className="size-6 shrink-0">
-                              <MoreHorizontal className="size-3.5" />
+                            <Button size="icon" variant="ghost" className="size-6 shrink-0" aria-label={`Mais ações para o pedido de ${order.customerName}`}>
+                              <MoreHorizontal className="size-3.5" aria-hidden="true" />
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
