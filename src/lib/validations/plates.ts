@@ -75,9 +75,10 @@ export const plateAssignSchema = z.object({
   acceptCodeChange: z.boolean().optional(),
 });
 
-/** De onde sai a placa de uma venda: automático do estoque (FIFO) ou números informados. */
+/** De onde sai a placa de uma venda: automático do estoque por modelo (FIFO), de um LOTE escolhido (FIFO dentro dele) ou números informados. */
 export const platePickSchema = z.discriminatedUnion("mode", [
   z.object({ mode: z.literal("AUTO"), modelId: z.string().min(1) }),
+  z.object({ mode: z.literal("LOT"), batchId: z.string().min(1) }),
   z.object({ mode: z.literal("SERIALS"), serials: z.array(z.string().trim().min(3).max(20)).min(1).max(50) }),
 ]);
 

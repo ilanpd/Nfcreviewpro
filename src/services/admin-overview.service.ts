@@ -1,11 +1,11 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
 import { getSiteSettings } from "@/lib/site-settings";
-import { stageEnteredAt, daysSince } from "@/domain/store-order/board";
+import { BOARD_COLUMNS, deriveBoardColumn, stageEnteredAt, daysSince, type BoardColumn } from "@/domain/store-order/board";
 import { buildAttentionRadar } from "@/domain/admin/attention-radar";
 import { listStuckSupportRequests } from "@/services/support.service";
 import { getCardUrlGuard } from "@/lib/card-url";
-import { getRadarPlateInputs, type RadarPlateInputs } from "@/services/plates.service";
+import { getRadarPlateInputs, getStockSummary, type RadarPlateInputs } from "@/services/plates.service";
 import { resend } from "@/lib/email";
 import type { InsightCardEntry } from "@nfc-os/ui";
 
@@ -23,6 +23,14 @@ export interface AdminOverviewSnapshot {
   checkoutStarted: number;
   checkoutCompleted: number;
   radar: InsightCardEntry[];
+  /** Quantos pedidos há em cada etapa de produção e quantos estão parados (3+ dias). */
+  stages: { key: BoardColumn; label: string; count: number; stuck: number }[];
+  /** Pedidos pagos e não entregues com algum cartão ainda sem placa. */
+  ordersWithoutPlate: number;
+  /** Faltam chips para cobrir os pedidos (o contador ficou negativo). */
+  blankChipShortfall: number;
+  /** `null` quando o estoque de placas ainda não está disponível (tabelas não migradas). */
+  plates: Awaited<ReturnType<typeof getStockSummary>> | null;
 }
 
 /**
@@ -78,9 +86,25 @@ export async function getAdminOverviewSnapshot(): Promise<AdminOverviewSnapshot>
 
   const cardUrlGuard = getCardUrlGuard();
 
-  // Estoque de placas (ADR-092): um acréscimo ao radar. Qualquer falha (ex.:
-  // tabelas ainda não migradas) vira "sem alertas de placa" — o Centro de
-  // Operações nunca cai por causa de um módulo opcional.
+  // Produção por etapa: a mesma regra do quadro e da lista (deriveBoardColumn), nunca uma segunda.
+  const stages = BOARD_COLUMNS.map((column) => ({ key: column.key, label: column.label, count: 0, stuck: 0 }));
+  for (const order of allOrders) {
+    if (order.status !== "PAID" && order.status !== "SHIPPED" && order.status !== "DELIVERED") continue;
+    const entry = stages.find((s) => s.key === deriveBoardColumn(order));
+    if (!entry) continue;
+    entry.count++;
+    if (entry.key !== "ENTREGUE" && daysSince(stageEnteredAt(order)) >= 3) entry.stuck++;
+  }
+
+  // Estoque de placas (ADR-092): acréscimos. Qualquer falha (ex.: tabelas ainda
+  // não migradas) vira "sem placas" — o Centro de Operações nunca cai por causa
+  // de um módulo opcional.
+  const plates = await getStockSummary().catch((error) => {
+    console.error("[admin-overview] não foi possível ler o resumo de placas", error);
+    return null;
+  });
+  const ordersWithoutPlate = await countOrdersWithoutPlate(activeProduction);
+
   const plateRadar: RadarPlateInputs = await getRadarPlateInputs().catch((error) => {
     console.error("[admin-overview] não foi possível ler o estoque de placas", error);
     return { plateStock: [], plateBatches: [] };
@@ -112,6 +136,8 @@ export async function getAdminOverviewSnapshot(): Promise<AdminOverviewSnapshot>
     if (insight.id.startsWith("feedback:")) return { ...insight, href: `/admin/empresas/${insight.id.split(":")[1]}` };
     if (insight.id.startsWith("support:")) return { ...insight, href: `/admin/empresas/${insight.id.split(":")[1]}` };
     if (insight.id === "low-stock") return { ...insight, href: "/admin/conteudo" };
+    // O endereço do cartão é uma variável de ambiente na Vercel: nenhuma tela do painel o resolve.
+    if (insight.id === "card-url") return insight;
     if (insight.id.startsWith("plate-stock:")) return { ...insight, href: "/admin/estoque" };
     if (insight.id.startsWith("plate-batch:")) return { ...insight, href: `/admin/estoque/lotes/${insight.id.split(":")[1]}` };
     // Sem tela no Admin que resolva isto (é uma env var na Vercel, não uma
@@ -133,5 +159,24 @@ export async function getAdminOverviewSnapshot(): Promise<AdminOverviewSnapshot>
     checkoutStarted,
     checkoutCompleted,
     radar,
+    stages,
+    ordersWithoutPlate,
+    blankChipShortfall: Math.max(0, -stock),
+    plates,
   };
+}
+
+/** Pedidos em produção com ao menos um cartão sem placa. Falha → 0 (módulo opcional). */
+async function countOrdersWithoutPlate(orders: { provisionedCardIds: string[] }[]): Promise<number> {
+  try {
+    const withCards = orders.filter((o) => o.provisionedCardIds.length > 0);
+    const cardIds = withCards.flatMap((o) => o.provisionedCardIds);
+    if (cardIds.length === 0) return 0;
+    const plates = await prisma.plate.findMany({ where: { cardId: { in: cardIds } }, select: { cardId: true } });
+    const withPlate = new Set(plates.map((p) => p.cardId));
+    return withCards.filter((o) => o.provisionedCardIds.some((id) => !withPlate.has(id))).length;
+  } catch (error) {
+    console.error("[admin-overview] não foi possível contar pedidos sem placa", error);
+    return 0;
+  }
 }

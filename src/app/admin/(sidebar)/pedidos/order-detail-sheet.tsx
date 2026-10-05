@@ -1,62 +1,39 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { copyText } from "@/hooks/use-copy";
-import {
-  AlertTriangle,
-  Check,
-  Copy,
-  ExternalLink,
-  Mail,
-  MapPin,
-  Package,
-  RotateCcw,
-  User,
-} from "lucide-react";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetDescription,
-  SheetFooter,
-} from "@/components/ui/sheet";
+import { AlertTriangle, Check, Copy, ExternalLink, Mail, MapPin, Package, RotateCcw, User } from "lucide-react";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { SmartBadge } from "@nfc-os/ui";
-import { AssignPlatesDialog } from "./assign-plates-dialog";
 import { formatCentsToBRL } from "@/lib/store-products";
 import { buildOrderChecklist, isDisputeActive, STATUS_LABEL, STATUS_TONE } from "@/domain/store-order/checklist";
 import type { StoreOrder, StoreOrderNote } from "@/generated/prisma/client";
-
-interface ProvisionedCard {
-  id: string;
-  name: string;
-  uniqueCode: string;
-  /** `null` quando o endereço do cartão ainda não é o definitivo e o ambiente o exige (ADR-076). */
-  publicUrl: string | null;
-  /** Estoque de placas (ADR-092): a placa física ligada a este cartão, se houver. */
-  plate: { serial: string; status: string } | null;
-}
+import { OrderPlatesPanel } from "./order-plates-panel";
+import { OrderStageControl } from "./order-stage-control";
+import type { OrderCard } from "./assign-one-plate-dialog";
 
 interface OrderDetail {
   order: StoreOrder;
   productLabel: string;
   cardUrl: { kind: "final" | "provisional" | "local" | "invalid"; host: string; message: string; blocked: boolean };
-  cards: ProvisionedCard[];
+  cards: OrderCard[];
   notes: StoreOrderNote[];
   stripeDashboardUrl: string | null;
-};
+}
+
+function SectionTitle({ icon, children }: { icon?: React.ReactNode; children: React.ReactNode }) {
+  return (
+    <h3 className="flex items-center gap-1.5 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+      {icon}
+      {children}
+    </h3>
+  );
+}
 
 function EmailRow({ label, sentAt }: { label: string; sentAt: Date | string | null }) {
   return (
@@ -74,19 +51,36 @@ function EmailRow({ label, sentAt }: { label: string; sentAt: Date | string | nu
 }
 
 /**
- * Auditoria do Fluxo de Vendas (12/09/2026) — item 2 da lista priorizada da
- * Auditoria de Vendas: um único painel que junta tudo que hoje vive
- * espalhado (dados do cliente, endereço, pagamento no Stripe, checklist de
- * produção, notas internas, e-mails enviados) — o "centro de controle" por
- * pedido que faltava no Admin.
+ * Tudo sobre UM pedido, em ordem de uso: a ETAPA (e o botão que a avança), as
+ * PLACAS de cada cartão (atribuir ou trocar ali mesmo), o resumo do pedido, o
+ * cliente, a linha do tempo, os e-mails e as notas. Qualquer mudança aqui volta
+ * para a lista na hora, sem recarregar a página.
  */
-export function OrderDetailSheet({ orderId, onClose, onOrderChanged }: { orderId: string | null; onClose: () => void; onOrderChanged?: (order: StoreOrder) => void }) {
+export function OrderDetailSheet({
+  orderId,
+  onClose,
+  onOrderChanged,
+  onPlatesChanged,
+}: {
+  orderId: string | null;
+  onClose: () => void;
+  onOrderChanged?: (order: StoreOrder) => void;
+  /** Placa atribuída ou trocada: quem mostra a cobertura de placas (a lista) precisa recarregar. */
+  onPlatesChanged?: () => void;
+}) {
   const [detail, setDetail] = useState<OrderDetail | null>(null);
   const [loading, setLoading] = useState(false);
   const [noteBody, setNoteBody] = useState("");
   const [busy, setBusy] = useState(false);
   const [refundOpen, setRefundOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const load = useCallback(async (id: string) => {
+    const res = await fetch(`/api/admin/orders/${id}`);
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error ?? "Não foi possível carregar o pedido");
+    return data as OrderDetail;
+  }, []);
 
   useEffect(() => {
     if (!orderId) {
@@ -97,36 +91,42 @@ export function OrderDetailSheet({ orderId, onClose, onOrderChanged }: { orderId
     setLoading(true);
     setError(null);
     setDetail(null);
-    fetch(`/api/admin/orders/${orderId}`)
-      .then(async (res) => {
-        const data = await res.json().catch(() => ({}));
-        if (!res.ok) throw new Error(data.error ?? "Não foi possível carregar o pedido");
-        setDetail(data);
-      })
+    load(orderId)
+      .then(setDetail)
       .catch((err) => setError(err instanceof Error ? err.message : "Não foi possível carregar o pedido"))
       .finally(() => setLoading(false));
-  }, [orderId]);
+  }, [orderId, load]);
+
+  /** Recarrega o detalhe (depois de mudar etapa ou placa) e avisa a lista. */
+  async function refresh() {
+    if (!orderId) return;
+    try {
+      const fresh = await load(orderId);
+      setDetail(fresh);
+      onOrderChanged?.(fresh.order);
+    } catch {
+      // o detalhe antigo continua válido; a próxima abertura recarrega
+    }
+  }
 
   function updateLocalOrder(order: StoreOrder) {
-    setDetail((prev) => (prev ? { ...prev, order } : prev));
+    setDetail((prev) => (prev ? { ...prev, order: { ...prev.order, ...order } } : prev));
     onOrderChanged?.(order);
+    // o desfazer e a sincronização com as placas deixam uma nota: traz a lista de notas atualizada
+    void refresh();
   }
 
   async function addNote() {
     if (!orderId || !noteBody.trim()) return;
     setBusy(true);
     try {
-      const res = await fetch(`/api/admin/orders/${orderId}/notes`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ body: noteBody.trim() }),
-      });
+      const res = await fetch(`/api/admin/orders/${orderId}/notes`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ body: noteBody.trim() }) });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Não foi possível salvar a nota");
       setDetail((prev) => (prev ? { ...prev, notes: [data.note, ...prev.notes] } : prev));
       setNoteBody("");
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Erro inesperado");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erro inesperado");
     } finally {
       setBusy(false);
     }
@@ -140,10 +140,9 @@ export function OrderDetailSheet({ orderId, onClose, onOrderChanged }: { orderId
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Não foi possível reenviar");
       toast.success(data.sent ? "E-mail reenviado" : "Sem provedor de e-mail configurado — verifique RESEND_API_KEY");
-      const refreshed = await fetch(`/api/admin/orders/${orderId}`).then((r) => r.json());
-      setDetail(refreshed);
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Erro inesperado");
+      setDetail(await load(orderId));
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erro inesperado");
     } finally {
       setBusy(false);
     }
@@ -153,18 +152,14 @@ export function OrderDetailSheet({ orderId, onClose, onOrderChanged }: { orderId
     if (!orderId) return;
     setBusy(true);
     try {
-      const res = await fetch(`/api/admin/orders/${orderId}/refund`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({}),
-      });
+      const res = await fetch(`/api/admin/orders/${orderId}/refund`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({}) });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Não foi possível reembolsar");
       updateLocalOrder(data.order);
       toast.success("Pedido reembolsado no Stripe");
       setRefundOpen(false);
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Erro inesperado");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erro inesperado");
     } finally {
       setBusy(false);
     }
@@ -172,10 +167,7 @@ export function OrderDetailSheet({ orderId, onClose, onOrderChanged }: { orderId
 
   async function copyCards() {
     if (!detail?.cards.length) return;
-    if (detail.cardUrl.blocked) {
-      toast.error(detail.cardUrl.message);
-      return;
-    }
+    if (detail.cardUrl.blocked) return void toast.error(detail.cardUrl.message);
     const ok = await copyText(detail.cards.map((c) => `${c.name}\t${c.uniqueCode}\t${c.publicUrl}`).join("\n"));
     if (ok) toast.success("Lista copiada");
     else toast.error("Não foi possível copiar — tente selecionar manualmente.");
@@ -183,29 +175,33 @@ export function OrderDetailSheet({ orderId, onClose, onOrderChanged }: { orderId
 
   const order = detail?.order;
   const address = (order?.shippingAddress ?? null) as Record<string, string> | null;
+  const coverage = detail ? { total: detail.cards.length, withPlate: detail.cards.filter((c) => c.plate).length } : null;
+  const platesEditable = !!order && (order.status === "PAID" || order.status === "SHIPPED" || order.status === "DELIVERED");
 
   return (
     <>
       <Sheet open={!!orderId} onOpenChange={(open) => !open && onClose()}>
-        <SheetContent className="w-full gap-0 overflow-y-auto sm:max-w-lg">
+        <SheetContent className="w-full gap-0 overflow-y-auto data-[side=right]:sm:max-w-xl">
           {loading ? (
             <div className="flex flex-1 items-center justify-center p-6 text-sm text-muted-foreground">Carregando…</div>
-          ) : error || !order ? (
+          ) : error || !order || !detail ? (
             <div className="flex flex-1 flex-col items-center justify-center gap-3 p-6 text-center">
               <AlertTriangle className="size-8 text-destructive" />
               <p className="text-sm font-medium">{error ?? "Não foi possível carregar este pedido"}</p>
-              <Button variant="outline" size="sm" onClick={onClose}>Fechar</Button>
+              <Button variant="outline" size="sm" onClick={onClose}>
+                Fechar
+              </Button>
             </div>
           ) : (
             <>
               <SheetHeader className="border-b pr-12">
                 <div className="flex flex-wrap items-center gap-2">
-                  <SheetTitle>{order.customerName}</SheetTitle>
+                  <SheetTitle className="min-w-0 break-words">{order.customerName}</SheetTitle>
                   <SmartBadge label={STATUS_LABEL[order.status] ?? order.status} tone={STATUS_TONE[order.status] ?? "neutral"} />
                   <SmartBadge label={order.orderType === "CARD_PLUS_SAAS" ? "Cartão + SaaS" : "Só cartão"} tone="neutral" />
                 </div>
                 <SheetDescription>
-                  Pedido {order.id.slice(0, 10)}… · criado em {new Date(order.createdAt).toLocaleString("pt-BR")}
+                  Pedido {order.id.slice(-8).toUpperCase()} · criado em {new Date(order.createdAt).toLocaleString("pt-BR")}
                 </SheetDescription>
               </SheetHeader>
 
@@ -216,64 +212,60 @@ export function OrderDetailSheet({ orderId, onClose, onOrderChanged }: { orderId
                     <AlertTitle>Contestação de pagamento em aberto</AlertTitle>
                     <AlertDescription>
                       Status no Stripe: <span className="font-medium">{order.disputeStatus}</span>
-                      {order.disputedAt ? ` · aberta em ${new Date(order.disputedAt).toLocaleDateString("pt-BR")}` : ""}. Resolva direto no
-                      Stripe — dinheiro pode ser revertido automaticamente se você perder a disputa.
+                      {order.disputedAt ? ` · aberta em ${new Date(order.disputedAt).toLocaleDateString("pt-BR")}` : ""}. Resolva direto no Stripe — dinheiro pode ser revertido automaticamente se você perder a
+                      disputa.
                     </AlertDescription>
                   </Alert>
                 ) : null}
 
-                <section className="space-y-2">
-                  <h3 className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    <User className="size-3.5" /> Cliente
-                  </h3>
-                  <div className="space-y-1 rounded-lg border p-3 text-sm">
-                    <p>{order.customerEmail}</p>
-                    <p className="text-muted-foreground">{order.customerPhone || "Telefone não informado"}</p>
-                    <p className="text-muted-foreground">{order.customerDocument || "CPF/CNPJ não informado"}</p>
-                  </div>
+                <section aria-label="Etapa do pedido" className="rounded-xl border p-3.5">
+                  <OrderStageControl order={order} coverage={coverage} variant="full" onChanged={updateLocalOrder} />
                 </section>
 
-                {address ? (
-                  <section className="space-y-2">
-                    <h3 className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                      <MapPin className="size-3.5" /> Endereço de entrega
-                    </h3>
-                    <div className="space-y-0.5 rounded-lg border p-3 text-sm text-muted-foreground">
-                      {[address.line1, address.line2, `${address.city ?? ""} ${address.state ?? ""}`, address.postal_code, address.country]
-                        .filter(Boolean)
-                        .map((line, i) => (
-                          <p key={i}>{line}</p>
-                        ))}
-                    </div>
-                  </section>
-                ) : null}
+                {detail.cards.length > 0 ? (
+                  <OrderPlatesPanel
+                    orderId={order.id}
+                    cards={detail.cards}
+                    editable={platesEditable}
+                    onChanged={() => {
+                      void refresh();
+                      onPlatesChanged?.();
+                    }}
+                  />
+                ) : (
+                  <p className="rounded-xl border border-dashed p-3.5 text-sm text-muted-foreground">Os cartões deste pedido ainda não foram criados (o pedido precisa estar pago e provisionado).</p>
+                )}
 
                 <section className="space-y-2">
-                  <h3 className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    <Package className="size-3.5" /> Pedido
-                  </h3>
+                  <SectionTitle icon={<Package className="size-3.5" />}>Pedido</SectionTitle>
                   <div className="space-y-1.5 rounded-lg border p-3 text-sm">
-                    <div className="flex justify-between">
+                    <div className="flex justify-between gap-3">
                       <span className="text-muted-foreground">Produto</span>
-                      <span>{detail.productLabel} × {order.quantity}</span>
+                      <span className="text-right">
+                        {detail.productLabel} × {order.quantity}
+                      </span>
                     </div>
-                    <div className="flex justify-between">
+                    <div className="flex justify-between gap-3">
                       <span className="text-muted-foreground">Total pago</span>
                       <span className="font-medium tabular-nums">{formatCentsToBRL(order.amountTotalCents)}</span>
                     </div>
                     {order.refundAmountCents ? (
-                      <div className="flex justify-between text-red-600 dark:text-red-400">
+                      <div className="flex justify-between gap-3 text-red-600 dark:text-red-400">
                         <span>Reembolsado</span>
                         <span className="tabular-nums">{formatCentsToBRL(order.refundAmountCents)}</span>
                       </div>
                     ) : null}
+                    {order.trackingCode ? (
+                      <div className="flex justify-between gap-3">
+                        <span className="text-muted-foreground">Rastreio</span>
+                        <span className="text-right">
+                          {order.carrier ? `${order.carrier} · ` : ""}
+                          {order.trackingCode}
+                        </span>
+                      </div>
+                    ) : null}
                     {detail.stripeDashboardUrl ? (
-                      <a
-                        href={detail.stripeDashboardUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 text-brand-ink hover:underline"
-                      >
+                      <a href={detail.stripeDashboardUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-brand-ink hover:underline">
                         Ver pagamento no Stripe <ExternalLink className="size-3" />
                       </a>
                     ) : null}
@@ -281,17 +273,37 @@ export function OrderDetailSheet({ orderId, onClose, onOrderChanged }: { orderId
                 </section>
 
                 <section className="space-y-2">
-                  <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Linha do tempo</h3>
-                  <ol className="space-y-2 rounded-lg border p-3">
+                  <SectionTitle icon={<User className="size-3.5" />}>Cliente</SectionTitle>
+                  <div className="space-y-1 rounded-lg border p-3 text-sm">
+                    <p className="break-words">{order.customerEmail}</p>
+                    <p className="text-muted-foreground">{order.customerPhone || "Telefone não informado"}</p>
+                    <p className="text-muted-foreground">{order.customerDocument || "CPF/CNPJ não informado"}</p>
+                  </div>
+                </section>
+
+                {address ? (
+                  <section className="space-y-2">
+                    <SectionTitle icon={<MapPin className="size-3.5" />}>Endereço de entrega</SectionTitle>
+                    <div className="space-y-0.5 rounded-lg border p-3 text-sm text-muted-foreground">
+                      {[address.line1, address.line2, `${address.city ?? ""} ${address.state ?? ""}`, address.postal_code, address.country].filter(Boolean).map((line, i) => (
+                        <p key={i}>{line}</p>
+                      ))}
+                    </div>
+                  </section>
+                ) : null}
+
+                <section className="space-y-2">
+                  <SectionTitle>Linha do tempo</SectionTitle>
+                  <ol className="grid gap-x-4 gap-y-1.5 rounded-lg border p-3 sm:grid-cols-2">
                     {buildOrderChecklist(order).map((step) => (
-                      <li key={step.key} className="flex items-center justify-between text-sm">
+                      <li key={step.key} className="flex items-center justify-between gap-2 text-sm">
                         <span className={step.done ? "text-foreground" : "text-muted-foreground"}>{step.label}</span>
                         {step.done ? (
-                          <span className="inline-flex items-center gap-1 text-xs text-emerald-700 dark:text-emerald-400">
+                          <span className="inline-flex shrink-0 items-center gap-1 text-xs text-emerald-700 dark:text-emerald-400">
                             <Check className="size-3.5" /> {step.at ? new Date(step.at).toLocaleDateString("pt-BR") : "ok"}
                           </span>
                         ) : (
-                          <span className="text-xs text-muted-foreground">pendente</span>
+                          <span className="shrink-0 text-xs text-muted-foreground">pendente</span>
                         )}
                       </li>
                     ))}
@@ -299,54 +311,33 @@ export function OrderDetailSheet({ orderId, onClose, onOrderChanged }: { orderId
                 </section>
 
                 {detail.cards.length > 0 ? (
-                  <section className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                        Cartões ({detail.cards.length})
-                      </h3>
-                      <Button size="sm" variant="ghost" className="h-6 text-xs" onClick={copyCards}>
-                        <Copy className="size-3" /> Copiar tudo
+                  <details className="group rounded-lg border">
+                    <summary className="flex cursor-pointer list-none items-center justify-between gap-2 p-3 text-sm font-medium">
+                      Endereços dos cartões (para gravar o chip)
+                      <span className="text-xs font-normal text-muted-foreground group-open:hidden">mostrar</span>
+                    </summary>
+                    <div className="space-y-2 border-t p-3">
+                      {detail.cardUrl.kind !== "final" ? (
+                        <p role="alert" className={`rounded-lg border px-2.5 py-1.5 text-xs ${detail.cardUrl.blocked ? "border-destructive/40 text-destructive" : "border-amber-500/40 text-amber-700 dark:text-amber-400"}`}>
+                          {detail.cardUrl.message}
+                        </p>
+                      ) : null}
+                      <div className="max-h-32 space-y-1 overflow-y-auto rounded-lg border p-2 font-mono text-[11px] text-muted-foreground">
+                        {detail.cards.map((c) => (
+                          <div key={c.id} className="truncate">
+                            {c.publicUrl ?? `${c.uniqueCode} — endereço bloqueado`}
+                          </div>
+                        ))}
+                      </div>
+                      <Button size="sm" variant="outline" className="w-full text-xs" onClick={copyCards}>
+                        <Copy className="size-3" /> Copiar lista (nome, código e endereço)
                       </Button>
                     </div>
-                    {detail.cardUrl.kind !== "final" ? (
-                      <p
-                        role="alert"
-                        className={`rounded-lg border px-2.5 py-1.5 text-xs ${detail.cardUrl.blocked ? "border-destructive/40 text-destructive" : "border-amber-500/40 text-amber-700 dark:text-amber-400"}`}
-                      >
-                        {detail.cardUrl.message}
-                      </p>
-                    ) : null}
-                    <div className="max-h-32 space-y-1 overflow-y-auto rounded-lg border p-2 font-mono text-[11px] text-muted-foreground">
-                      {detail.cards.map((c) => (
-                        <div key={c.id} className="flex items-center gap-2">
-                          <span className="min-w-0 flex-1 truncate">{c.publicUrl ?? `${c.uniqueCode} — endereço bloqueado`}</span>
-                          {c.plate ? (
-                            <span className="shrink-0 rounded bg-emerald-500/10 px-1.5 py-0.5 text-emerald-700 dark:text-emerald-300" title={`Placa ${c.plate.serial}`}>
-                              {c.plate.serial}
-                            </span>
-                          ) : (
-                            <span className="shrink-0 rounded bg-muted px-1.5 py-0.5">sem placa</span>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                    {/* Estoque de placas (ADR-092): entrega as placas conferidas aos cartões que ainda não têm. */}
-                    {detail.cards.some((c) => !c.plate) && (order.status === "PAID" || order.status === "SHIPPED") ? (
-                      <AssignPlatesDialog
-                        orderId={order.id}
-                        missing={detail.cards.filter((c) => !c.plate).length}
-                        onDone={() => {
-                          fetch(`/api/admin/orders/${order.id}`).then((r) => r.json()).then(setDetail).catch(() => undefined);
-                        }}
-                      />
-                    ) : null}
-                  </section>
+                  </details>
                 ) : null}
 
                 <section className="space-y-2">
-                  <h3 className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    <Mail className="size-3.5" /> E-mails transacionais
-                  </h3>
+                  <SectionTitle icon={<Mail className="size-3.5" />}>E-mails transacionais</SectionTitle>
                   <div className="space-y-1.5 rounded-lg border p-3">
                     <EmailRow label="Confirmação" sentAt={order.confirmationEmailSentAt} />
                     <EmailRow label="Envio" sentAt={order.shippedEmailSentAt} />
@@ -358,16 +349,9 @@ export function OrderDetailSheet({ orderId, onClose, onOrderChanged }: { orderId
                 </section>
 
                 <section className="space-y-2">
-                  <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    Notas internas ({detail.notes.length})
-                  </h3>
+                  <SectionTitle>Notas internas ({detail.notes.length})</SectionTitle>
                   <div className="space-y-2">
-                    <Textarea
-                      placeholder="Ex: cliente ligou perguntando sobre o prazo…"
-                      value={noteBody}
-                      onChange={(e) => setNoteBody(e.target.value)}
-                      className="text-sm"
-                    />
+                    <Textarea placeholder="Ex: cliente ligou perguntando sobre o prazo…" value={noteBody} onChange={(e) => setNoteBody(e.target.value)} className="text-sm" />
                     <Button size="sm" disabled={busy || !noteBody.trim()} onClick={addNote}>
                       Adicionar nota
                     </Button>
@@ -376,7 +360,7 @@ export function OrderDetailSheet({ orderId, onClose, onOrderChanged }: { orderId
                     <ul className="space-y-2">
                       {detail.notes.map((note) => (
                         <li key={note.id} className="rounded-lg border bg-muted/30 p-2.5 text-sm">
-                          <p>{note.body}</p>
+                          <p className="break-words">{note.body}</p>
                           <p className="mt-1 text-[11px] text-muted-foreground">{new Date(note.createdAt).toLocaleString("pt-BR")}</p>
                         </li>
                       ))}
@@ -402,13 +386,16 @@ export function OrderDetailSheet({ orderId, onClose, onOrderChanged }: { orderId
           <DialogHeader>
             <DialogTitle>Reembolsar pedido?</DialogTitle>
             <DialogDescription>
-              Isso devolve {order ? formatCentsToBRL(order.amountTotalCents) : "o valor pago"} de verdade no Stripe e marca o pedido como
-              reembolsado. Não pode ser desfeito por aqui.
+              Isso devolve {order ? formatCentsToBRL(order.amountTotalCents) : "o valor pago"} de verdade no Stripe e marca o pedido como reembolsado. Não pode ser desfeito por aqui.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setRefundOpen(false)}>Cancelar</Button>
-            <Button variant="destructive" disabled={busy} onClick={confirmRefund}>Confirmar reembolso</Button>
+            <Button variant="outline" onClick={() => setRefundOpen(false)}>
+              Cancelar
+            </Button>
+            <Button variant="destructive" disabled={busy} onClick={confirmRefund}>
+              Confirmar reembolso
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

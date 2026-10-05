@@ -73,10 +73,12 @@ export function buildAttentionRadar(input: AttentionRadarInput): InsightCardEntr
   }
 
   if (input.lowStock && input.lowStock.blankChipStock < input.lowStock.lowStockThreshold) {
+    const stock = input.lowStock.blankChipStock;
     insights.push({
       id: "low-stock",
       severity: "attention",
-      message: `Estoque de chips NFC abaixo do mínimo — restam ${input.lowStock.blankChipStock} unidades`,
+      // Estoque negativo = pedidos pagos que ainda não têm chip: "restam -48" não diz nada a ninguém.
+      message: stock < 0 ? `Faltam ${-stock} chips NFC em branco para cobrir os pedidos já pagos` : `Estoque de chips NFC abaixo do mínimo — restam ${stock} unidades`,
     });
   }
 

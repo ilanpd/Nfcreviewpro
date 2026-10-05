@@ -14,7 +14,7 @@ import { PlatePicker, isPickReady, pickToPayload, type PickValue } from "@/compo
  */
 export function AssignPlatesDialog({ orderId, missing, onDone }: { orderId: string; missing: number; onDone: () => void }) {
   const [open, setOpen] = useState(false);
-  const [pick, setPick] = useState<PickValue>({ mode: "AUTO", modelId: "" });
+  const [pick, setPick] = useState<PickValue>({ mode: "LOT", batchId: "" });
   const [confirmMessage, setConfirmMessage] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -54,8 +54,8 @@ export function AssignPlatesDialog({ orderId, missing, onDone }: { orderId: stri
       }}
     >
       <DialogTrigger asChild>
-        <Button size="sm" variant="outline" className="h-6 text-xs">
-          <Boxes className="size-3" /> Atribuir placa{missing > 1 ? "s" : ""} do estoque
+        <Button size="sm" variant="outline" className="w-full">
+          <Boxes className="size-3.5" /> Atribuir as {missing} que faltam de um lote
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-lg">
@@ -63,7 +63,7 @@ export function AssignPlatesDialog({ orderId, missing, onDone }: { orderId: stri
           <DialogTitle>
             Atribuir {missing} placa{missing === 1 ? "" : "s"} a este pedido
           </DialogTitle>
-          <DialogDescription>Cada cartão do pedido que ainda não tem placa recebe uma, na ordem. Só placas já conferidas podem ser entregues.</DialogDescription>
+          <DialogDescription>Cada cartão do pedido que ainda não tem placa recebe uma, na ordem. Só placas já conferidas e sem dono podem ser entregues. Para escolher uma placa específica por cartão, use &ldquo;Atribuir&rdquo; na linha de cada um.</DialogDescription>
         </DialogHeader>
         <PlatePicker needed={missing} allowNone={false} value={pick} onChange={(v) => (setPick(v), setConfirmMessage(null))} idPrefix="assign" />
         {confirmMessage ? (

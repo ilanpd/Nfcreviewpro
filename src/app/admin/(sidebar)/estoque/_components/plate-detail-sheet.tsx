@@ -248,7 +248,7 @@ export function PlateDetailSheet({ plateId, onClose, onChanged }: { plateId: str
   return (
     <>
       <Sheet open={plateId !== null} onOpenChange={(open) => !open && onClose()}>
-        <SheetContent className="w-full overflow-y-auto sm:max-w-md">
+        <SheetContent className="w-full overflow-y-auto data-[side=right]:sm:max-w-md">
           <SheetHeader>
             <SheetTitle className="flex items-center gap-2">
               <span className="font-mono">{plate?.serial ?? "Placa"}</span>

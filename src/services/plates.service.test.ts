@@ -12,7 +12,8 @@ const mocks = vi.hoisted(() => {
     plateBatch: { findUnique: vi.fn(), findMany: vi.fn(), create: vi.fn(), update: vi.fn() },
     plateModel: { findUnique: vi.fn() },
     nFCCard: { findUnique: vi.fn(), findMany: vi.fn(), update: vi.fn() },
-    storeOrder: { findUnique: vi.fn(), findMany: vi.fn() },
+    storeOrder: { findUnique: vi.fn(), findMany: vi.fn(), update: vi.fn() },
+    storeOrderNote: { create: vi.fn() },
   };
   return { prisma, invalidateCard: vi.fn() };
 });
@@ -29,6 +30,7 @@ import {
   createStockBatch,
   resolvePlatePick,
   setPlateChecks,
+  syncOrderStagesFromPlates,
   unassignPlate,
 } from "./plates.service";
 
@@ -62,6 +64,7 @@ function card(overrides: Record<string, unknown> = {}) {
 beforeEach(() => {
   // reset (não só clear): um `mockRejectedValue` de um teste não pode vazar para o seguinte.
   vi.resetAllMocks();
+  prisma.storeOrder.findMany.mockResolvedValue([]); // padrão: o cartão não pertence a nenhum pedido
   prisma.$transaction.mockImplementation(async (arg: unknown) => (typeof arg === "function" ? (arg as (tx: unknown) => unknown)(prisma) : Promise.all(arg as unknown[])));
 });
 
@@ -369,5 +372,132 @@ describe("createStockBatch", () => {
     const batch = await createStockBatch({ modelId: "m1", quantity: 3 }, "a");
     expect(batch.id).toBe("b4");
     expect(prisma.plateBatch.create).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe("resolvePlatePick — de um lote escolhido", () => {
+  it("pega as placas conferidas e sem dono do LOTE, da mais baixa para a mais alta", async () => {
+    prisma.plateBatch.findUnique.mockResolvedValue({ code: "L002" });
+    prisma.plate.findMany.mockResolvedValue([
+      { id: "p1", serial: "L002-01" },
+      { id: "p2", serial: "L002-02" },
+    ]);
+    const picked = await resolvePlatePick({ mode: "LOT", batchId: "b2" }, 2);
+    expect(picked.map((p) => p.serial)).toEqual(["L002-01", "L002-02"]);
+    expect(prisma.plate.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { batchId: "b2", status: "VERIFIED", cardId: null }, orderBy: { index: "asc" }, take: 2 })
+    );
+  });
+
+  it("lote com menos placas do que o pedido precisa é recusado, e a mensagem cita o lote e as quantidades", async () => {
+    prisma.plateBatch.findUnique.mockResolvedValue({ code: "L001" });
+    prisma.plate.findMany.mockResolvedValue([{ id: "p1", serial: "L001-01" }]);
+    const error = await resolvePlatePick({ mode: "LOT", batchId: "b1" }, 20).catch((e) => e);
+    expect(error).toBeInstanceOf(PlateError);
+    expect(error.code).toBe("NOT_ENOUGH_STOCK");
+    expect(error.message).toBe("O lote L001 só tem 1 placa(s) conferida(s) e sem dono, e a venda precisa de 20.");
+  });
+
+  it("lote que não existe devolve 404", async () => {
+    prisma.plateBatch.findUnique.mockResolvedValue(null);
+    const error = await resolvePlatePick({ mode: "LOT", batchId: "nada" }, 1).catch((e) => e);
+    expect(error.status).toBe(404);
+  });
+});
+
+describe("syncOrderStagesFromPlates — a placa do estoque já cumpriu a produção", () => {
+  const order = (overrides: Record<string, unknown> = {}) => ({
+    id: "o1",
+    status: "PAID",
+    provisionedAt: new Date(),
+    stockConfirmedAt: null,
+    printedAt: null,
+    nfcWrittenAt: null,
+    qcPassedAt: null,
+    packagedAt: null,
+    shippedAt: null,
+    deliveredAt: null,
+    trackingCode: null,
+    carrier: null,
+    provisionedCardIds: ["c1", "c2"],
+    ...overrides,
+  });
+
+  it("com TODOS os cartões com placa conferida, marca Separação, Impressão, NFC e Qualidade — e deixa uma nota", async () => {
+    prisma.storeOrder.findMany.mockResolvedValue([order()]);
+    prisma.plate.findMany.mockResolvedValue([
+      { cardId: "c1", status: "VERIFIED", serial: "L001-02" },
+      { cardId: "c2", status: "VERIFIED", serial: "L001-01" },
+    ]);
+    await syncOrderStagesFromPlates(["c1"]);
+
+    const data = prisma.storeOrder.update.mock.calls[0][0].data;
+    expect(Object.keys(data).sort()).toEqual(["nfcWrittenAt", "printedAt", "qcPassedAt", "stockConfirmedAt"]);
+    expect(data).not.toHaveProperty("packagedAt");
+    expect(data.printedAt).toBeInstanceOf(Date);
+    const note = prisma.storeOrderNote.create.mock.calls[0][0].data;
+    expect(note.orderId).toBe("o1");
+    expect(note.body).toBe("Placas L001-01, L001-02 do estoque: já vieram impressas, gravadas e conferidas. Etapas marcadas automaticamente: Separação, Impressão, Programação NFC, Qualidade.");
+  });
+
+  it("procura só pedidos pagos ou enviados que tenham o cartão", async () => {
+    prisma.storeOrder.findMany.mockResolvedValue([]);
+    await syncOrderStagesFromPlates(["c9"]);
+    expect(prisma.storeOrder.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { provisionedCardIds: { hasSome: ["c9"] }, status: { in: ["PAID", "SHIPPED"] } } })
+    );
+  });
+
+  it("se falta placa em algum cartão, ou ela ainda não foi conferida, não marca nada", async () => {
+    prisma.storeOrder.findMany.mockResolvedValue([order()]);
+    prisma.plate.findMany.mockResolvedValueOnce([{ cardId: "c1", status: "VERIFIED", serial: "L001-01" }]);
+    await syncOrderStagesFromPlates(["c1"]);
+    prisma.plate.findMany.mockResolvedValueOnce([
+      { cardId: "c1", status: "VERIFIED", serial: "L001-01" },
+      { cardId: "c2", status: "IN_PRODUCTION", serial: "L001-02" },
+    ]);
+    await syncOrderStagesFromPlates(["c1"]);
+    expect(prisma.storeOrder.update).not.toHaveBeenCalled();
+    expect(prisma.storeOrderNote.create).not.toHaveBeenCalled();
+  });
+
+  it("só marca o que ainda não estava marcado e não regrava a data de um passo já feito", async () => {
+    const done = new Date("2026-10-01T10:00:00Z");
+    prisma.storeOrder.findMany.mockResolvedValue([order({ provisionedCardIds: ["c1"], stockConfirmedAt: done, printedAt: done })]);
+    prisma.plate.findMany.mockResolvedValue([{ cardId: "c1", status: "VERIFIED", serial: "L001-01" }]);
+    await syncOrderStagesFromPlates(["c1"]);
+    expect(Object.keys(prisma.storeOrder.update.mock.calls[0][0].data).sort()).toEqual(["nfcWrittenAt", "qcPassedAt"]);
+    expect(prisma.storeOrderNote.create.mock.calls[0][0].data.body).toContain("Programação NFC, Qualidade.");
+  });
+
+  it("pedido com tudo já marcado não gera nada (nem nota repetida)", async () => {
+    const done = new Date();
+    prisma.storeOrder.findMany.mockResolvedValue([order({ provisionedCardIds: ["c1"], stockConfirmedAt: done, printedAt: done, nfcWrittenAt: done, qcPassedAt: done })]);
+    prisma.plate.findMany.mockResolvedValue([{ cardId: "c1", status: "VERIFIED", serial: "L001-01" }]);
+    await syncOrderStagesFromPlates(["c1"]);
+    expect(prisma.storeOrder.update).not.toHaveBeenCalled();
+  });
+
+  it("nunca derruba quem chamou: erro no banco vira log, não exceção", async () => {
+    const spy = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    prisma.storeOrder.findMany.mockRejectedValue(new Error("banco fora do ar"));
+    await expect(syncOrderStagesFromPlates(["c1"])).resolves.toBeUndefined();
+    expect(spy).toHaveBeenCalled();
+    spy.mockRestore();
+  });
+
+  it("lista de cartões vazia não consulta o banco", async () => {
+    await syncOrderStagesFromPlates([]);
+    expect(prisma.storeOrder.findMany).not.toHaveBeenCalled();
+  });
+});
+
+describe("assignPlateToCard dispara a sincronização do pedido", () => {
+  it("depois de atribuir, procura o pedido do cartão para cumprir as etapas", async () => {
+    prisma.plate.findUnique.mockResolvedValue(plate());
+    prisma.nFCCard.findUnique.mockResolvedValue(card());
+    prisma.storeOrder.findMany.mockResolvedValue([]);
+    await assignPlateToCard({ plateId: "p1", cardId: "c1" }, "a");
+    expect(prisma.storeOrder.findMany).toHaveBeenCalledWith(expect.objectContaining({ where: expect.objectContaining({ provisionedCardIds: { hasSome: ["c1"] } }) }));
   });
 });

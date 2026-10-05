@@ -315,7 +315,7 @@ export function OrdersBoard({ initialOrders }: { initialOrders: StoreOrder[] }) 
           onChange={(e) => setSearch(e.target.value)}
         />
       </div>
-      <div className="grid grid-cols-2 gap-3 overflow-x-auto pb-2 sm:grid-cols-3 lg:grid-cols-6">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {BOARD_COLUMNS.map((column, index) => {
           const orderList = columns.get(column.key) ?? [];
           const selectedInColumn = orderList.filter((o) => selectedIds.has(o.id));
@@ -328,7 +328,7 @@ export function OrdersBoard({ initialOrders }: { initialOrders: StoreOrder[] }) 
               key={column.key}
               onDragOver={(e) => e.preventDefault()}
               onDrop={() => handleDrop(column.key)}
-              className="flex min-h-[200px] flex-col rounded-lg border bg-muted/20 p-2"
+              className="flex min-h-[200px] min-w-0 flex-col rounded-lg border bg-muted/20 p-2"
             >
               <div className="mb-2 flex items-center justify-between px-1">
                 <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{column.label}</h3>

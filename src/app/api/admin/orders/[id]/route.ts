@@ -34,11 +34,11 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
       // Estoque de placas (ADR-092): um acréscimo — qualquer falha vira "sem placa".
       order.provisionedCardIds.length > 0
         ? prisma.plate
-            .findMany({ where: { cardId: { in: order.provisionedCardIds } }, select: { cardId: true, serial: true, status: true } })
-            .catch(() => [] as { cardId: string | null; serial: string; status: string }[])
-        : Promise.resolve([] as { cardId: string | null; serial: string; status: string }[]),
+            .findMany({ where: { cardId: { in: order.provisionedCardIds } }, select: { cardId: true, serial: true, status: true, batch: { select: { code: true } } } })
+            .catch(() => [] as { cardId: string | null; serial: string; status: string; batch: { code: string } }[])
+        : Promise.resolve([] as { cardId: string | null; serial: string; status: string; batch: { code: string } }[]),
     ]);
-    const plateByCard = new Map(plates.map((p) => [p.cardId, { serial: p.serial, status: p.status }]));
+    const plateByCard = new Map(plates.map((p) => [p.cardId, { serial: p.serial, status: p.status, batchCode: p.batch.code }]));
 
     const stripeMode = process.env.STRIPE_SECRET_KEY?.startsWith("sk_live_") ? "" : "test/";
     const stripeDashboardUrl = order.stripePaymentIntentId

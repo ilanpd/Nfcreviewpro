@@ -19,6 +19,8 @@ import {
 import { defaultLayout, validateLayout, type LayoutCheck } from "@/domain/plates/layout";
 import { artProblem } from "@/domain/plates/limits";
 import { emptyCounts, findLowStock, type StageCounts } from "@/domain/plates/stock-summary";
+import { orderCoveredByPlates, pendingPlateSteps, STEP_FIELD } from "@/domain/store-order/stage";
+import { COLUMN_ENTRY_STEP, BOARD_COLUMNS } from "@/domain/store-order/board";
 import { buildQrMatrix, type QrErrorCorrection } from "@/lib/plates/qr-vector";
 import { MAX_BATCH_QUANTITY, type PlateLayoutInput, type PlatePick } from "@/lib/validations/plates";
 
@@ -787,6 +789,9 @@ export async function setPlateChecks(id: string, patch: Partial<PlateChecks>, ac
       await tx.plateEvent.create({ data: { plateId: id, type: "UNVERIFIED" satisfies PlateEventType, fromStatus: "VERIFIED", toStatus: next, actor } });
     }
   });
+
+  // Placa de lote sob demanda que acaba de ser conferida: as etapas do pedido dela podem estar cumpridas.
+  if (becameVerified && plate.cardId) await syncOrderStagesFromPlates([plate.cardId]);
 }
 
 export async function markPlateDefective(id: string, reason: string, actor: string) {
@@ -917,6 +922,7 @@ export async function assignPlateToCard(
   }
 
   if (result.codeChanged) await Promise.all([invalidateCard(result.previousCode), invalidateCard(result.uniqueCode)]);
+  await syncOrderStagesFromPlates([input.cardId]);
   return result;
 }
 
@@ -948,6 +954,20 @@ async function pickStockPlates(modelId: string, count: number) {
 
 /** Resolve a escolha (automática ou por número) em placas reais, sem gravar nada. */
 export async function resolvePlatePick(pick: PlatePick, needed: number): Promise<{ id: string; serial: string }[]> {
+  if (pick.mode === "LOT") {
+    const batch = await prisma.plateBatch.findUnique({ where: { id: pick.batchId }, select: { code: true } });
+    if (!batch) throw new PlateError("Lote não encontrado.", 404);
+    const plates = await prisma.plate.findMany({
+      where: { batchId: pick.batchId, status: "VERIFIED", cardId: null },
+      orderBy: { index: "asc" },
+      take: needed,
+      select: { id: true, serial: true },
+    });
+    if (plates.length < needed) {
+      throw new PlateError(`O lote ${batch.code} só tem ${plates.length} placa(s) conferida(s) e sem dono, e a venda precisa de ${needed}.`, 409, "NOT_ENOUGH_STOCK");
+    }
+    return plates;
+  }
   if (pick.mode === "AUTO") {
     const plates = await pickStockPlates(pick.modelId, needed);
     if (plates.length < needed) {
@@ -1007,6 +1027,92 @@ export async function assignPlatesToOrder(
     results.push(await assignPlateToCard({ plateId: plates[i].id, cardId: cards[i].id, acceptCodeChange: input.acceptCodeChange }, actor));
   }
   return results;
+}
+
+// ---------------------------------------------------------------------------
+// Pedido ↔ placa: a placa do estoque já cumpriu etapas de produção
+// ---------------------------------------------------------------------------
+
+/** Rótulo de cada passo de produção, tirado das mesmas colunas do quadro (uma fonte só). */
+const STEP_LABEL: Record<string, string> = Object.fromEntries(
+  BOARD_COLUMNS.flatMap((column) => {
+    const step = COLUMN_ENTRY_STEP[column.key];
+    return step ? [[step, column.label]] : [];
+  })
+);
+
+/**
+ * Uma placa do estoque já foi impressa (no lote), teve o chip gravado (pelo
+ * fornecedor) e foi testada (na conferência). Quando TODOS os cartões de um
+ * pedido têm uma placa conferida, as etapas Separação, Impressão, Programação
+ * NFC e Qualidade do pedido já aconteceram de verdade — marcá-las à mão seria
+ * trabalho repetido e um jeito de o quadro mentir. O pedido segue na
+ * Embalagem. Deixa uma nota explicando o que foi marcado e por quê.
+ *
+ * Nunca derruba quem chamou: é um efeito colateral útil, não o objetivo.
+ */
+export async function syncOrderStagesFromPlates(cardIds: string[]): Promise<void> {
+  try {
+    if (cardIds.length === 0) return;
+    const orders = await prisma.storeOrder.findMany({
+      where: { provisionedCardIds: { hasSome: cardIds }, status: { in: ["PAID", "SHIPPED"] } },
+      select: {
+        id: true,
+        status: true,
+        provisionedAt: true,
+        stockConfirmedAt: true,
+        printedAt: true,
+        nfcWrittenAt: true,
+        qcPassedAt: true,
+        packagedAt: true,
+        shippedAt: true,
+        deliveredAt: true,
+        trackingCode: true,
+        carrier: true,
+        provisionedCardIds: true,
+      },
+    });
+    for (const order of orders) {
+      const plates = await prisma.plate.findMany({ where: { cardId: { in: order.provisionedCardIds } }, select: { cardId: true, status: true, serial: true } });
+      if (!orderCoveredByPlates(order.provisionedCardIds, plates)) continue;
+      const pending = pendingPlateSteps(order);
+      if (pending.length === 0) continue;
+      const now = new Date();
+      await prisma.storeOrder.update({ where: { id: order.id }, data: Object.fromEntries(pending.map((step) => [STEP_FIELD[step], now])) });
+      const serials = plates.map((p) => p.serial).sort().join(", ");
+      await prisma.storeOrderNote.create({
+        data: {
+          orderId: order.id,
+          body: `Placa${plates.length === 1 ? "" : "s"} ${serials} do estoque: já vieram impressas, gravadas e conferidas. Etapas marcadas automaticamente: ${pending.map((step) => STEP_LABEL[step] ?? step).join(", ")}.`,
+        },
+      });
+    }
+  } catch (error) {
+    console.error("[plates] não foi possível sincronizar as etapas do pedido com as placas", error);
+  }
+}
+
+/** Lotes que ainda têm placa conferida e sem dono, do mais antigo para o mais novo (a ordem em que devem sair). */
+export async function listStockLots() {
+  const groups = await prisma.plate.groupBy({ by: ["batchId"], where: { status: "VERIFIED", cardId: null }, _count: { _all: true } });
+  if (groups.length === 0) return [];
+  const batches = await prisma.plateBatch.findMany({
+    where: { id: { in: groups.map((g) => g.batchId) } },
+    orderBy: { createdAt: "asc" },
+    select: { id: true, code: true, model: { select: { id: true, name: true } } },
+  });
+  const counts = Object.fromEntries(groups.map((g) => [g.batchId, g._count._all]));
+  return batches.map((b) => ({ id: b.id, code: b.code, modelId: b.model.id, modelName: b.model.name, inStock: counts[b.id] ?? 0 }));
+}
+
+/** As placas de um lote que podem ser vendidas agora (conferidas e sem dono), em ordem de série. */
+export async function listAvailablePlates(batchId: string, take = 200) {
+  return prisma.plate.findMany({
+    where: { batchId, status: "VERIFIED", cardId: null },
+    orderBy: { index: "asc" },
+    take: Math.min(take, 500),
+    select: { id: true, serial: true },
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -1091,6 +1197,24 @@ export async function getStockOverview() {
       createdAt: e.createdAt.toISOString(),
       plate: e.plate,
     })),
+  };
+}
+
+/** Números do estoque de placas para o Centro de Operações (leve: nada de eventos nem lotes). */
+export async function getStockSummary() {
+  const [models, byModel] = await Promise.all([
+    prisma.plateModel.findMany({ select: { id: true, name: true, minStock: true, active: true } }),
+    loadModelCounts(),
+  ]);
+  const totals = emptyCounts();
+  for (const counts of Object.values(byModel)) for (const key of Object.keys(counts) as PlateStage[]) totals[key] += counts[key];
+  return {
+    inStock: totals.IN_STOCK,
+    assigned: totals.ASSIGNED,
+    inProduction: totals.GENERATED + totals.IN_PRODUCTION,
+    defective: totals.DEFECTIVE,
+    lowModels: findLowStock(models, byModel),
+    modelCount: models.length,
   };
 }
 

@@ -54,8 +54,18 @@ Registre a venda direta com **Sem placa do estoque**. O cartão nasce com um có
 
 Pagamento → o sistema cria o pedido e o cartão sozinho. Depois:
 
-- **Tem placa em estoque:** no detalhe do pedido (`Pedidos`), clique em **Atribuir placa do estoque**, automático ou por número. Siga o quadro (separação, embalagem, expedição, entregue).
+- **Tem placa em estoque:** em `Pedidos`, clique no pedido. O quadro **Placas do pedido** lista cada cartão. Em **Atribuir**, escolha o **lote** e depois a **placa** (a mais antiga vem marcada como "próxima", mas você pode pegar qualquer uma). Para um pedido grande, use **Atribuir as N que faltam de um lote**.
 - **Não tem:** junte os pedidos pagos num **lote para pedidos pagos** e siga o fluxo do lote.
+
+### Mudar a etapa do pedido
+
+Na lista de `Pedidos`, cada linha tem um botão **Avançar** (leva ao próximo passo) e o menu **Mais opções** (saltos e **Desfazer**). O mesmo controle aparece no topo do detalhe do pedido.
+
+- **Placa conferida já vale como produção feita.** Quando **todos** os cartões do pedido têm placa conferida, o sistema marca sozinho Separação, Impressão, Programação NFC e Qualidade e deixa uma nota no pedido dizendo quais placas e quais etapas. Embalagem continua sendo sua: é o passo físico.
+- **Saltar etapas** só vale dentro da produção (até Embalagem) e pede confirmação, porque marca como feito tudo o que ficou no meio.
+- **Expedição e Entrega são sempre um gesto próprio**, pois cada uma manda um e-mail ao cliente. Na expedição você pode informar transportadora e código de rastreio (opcionais).
+- **Desfazer** volta a última etapa de produção e deixa uma nota. Depois de enviado, não desfaz: o cliente já recebeu o e-mail; registre uma nota.
+- **Aviso de placa faltando:** embalar ou enviar com cartão sem placa pede confirmação. A coluna **Placas** da lista mostra `2/3` e o painel do Centro de Operações conta quantos pedidos estão assim.
 
 Se o cliente já tem painel (`CUSTOMER`) e o código do cartão vai mudar, o sistema pede confirmação: ele pode ter baixado o QR antigo. Por isso, para clientes com plano, prefira o **lote para pedidos pagos**, que não troca código.
 

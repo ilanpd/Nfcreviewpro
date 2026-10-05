@@ -16,6 +16,8 @@ import { stripe } from "@/lib/stripe";
 import type { Prisma } from "@/generated/prisma/client";
 import { assignPlatesToOrder, resolvePlatePick, type AssignResult } from "@/services/plates.service";
 import type { PlatePick } from "@/lib/validations/plates";
+import { deriveBoardColumn, type BoardColumn } from "@/domain/store-order/board";
+import { columnLabel, planUndo, stepsToReach } from "@/domain/store-order/stage";
 
 export class StoreOrderProvisionError extends Error {
   constructor(
@@ -306,6 +308,78 @@ export async function markDelivered(orderId: string) {
   });
   await sendOrderEmail(orderId, "delivered").catch(() => {});
   return order;
+}
+
+/**
+ * Etapa do pedido num só gesto: leva o pedido de onde ele está até `target`,
+ * marcando cada passo no caminho, na ordem. É o que está por trás do botão
+ * "Avançar" e do "Ir direto para…" do painel.
+ *
+ * Várias etapas de uma vez só valem DENTRO da produção (pago até embalagem):
+ * enviar e entregar mandam e-mail ao cliente, então cada um é um gesto próprio
+ * (e o envio pede transportadora/rastreio). Pular direto de "Pago" para
+ * "Entregue" mandaria os dois e-mails de uma vez e esconderia produção que nunca
+ * aconteceu — por isso é recusado.
+ */
+export async function advanceOrderToStage(orderId: string, target: BoardColumn, shipping: { trackingCode?: string; carrier?: string } = {}) {
+  const order = await prisma.storeOrder.findUnique({ where: { id: orderId } });
+  if (!order) throw new StoreOrderProvisionError("Pedido não encontrado", 404);
+  if (order.status !== "PAID" && order.status !== "SHIPPED" && order.status !== "DELIVERED") {
+    throw new StoreOrderProvisionError("Só pedidos pagos andam na produção. Este está " + order.status.toLowerCase().replace("_", " ") + ".", 409);
+  }
+
+  const steps = stepsToReach(deriveBoardColumn(order), target);
+  if (steps.length === 0) {
+    throw new StoreOrderProvisionError("O pedido já está nesta etapa (ou além dela). Para voltar uma etapa de produção, use Desfazer.", 409);
+  }
+  if (steps.length > 1 && (steps.includes("SHIPPED") || steps.includes("DELIVERED"))) {
+    throw new StoreOrderProvisionError("Enviar e entregar são gestos separados (o cliente recebe um e-mail em cada um). Avance até a embalagem, depois envie, depois entregue.", 409);
+  }
+
+  for (const step of steps) {
+    switch (step) {
+      case "STOCK_CONFIRMED":
+        await markStockConfirmed(orderId);
+        break;
+      case "PRINTED":
+        await markPrinted(orderId);
+        break;
+      case "NFC_WRITTEN":
+        await markNfcWritten(orderId);
+        break;
+      case "QC_PASSED":
+        await markQcPassed(orderId);
+        break;
+      case "PACKAGED":
+        await markPackaged(orderId);
+        break;
+      case "SHIPPED":
+        await markShipped(orderId, shipping);
+        break;
+      case "DELIVERED":
+        await markDelivered(orderId);
+        break;
+    }
+  }
+  return prisma.storeOrder.findUniqueOrThrow({ where: { id: orderId } });
+}
+
+/**
+ * Desfaz o último passo de PRODUÇÃO (ver `planUndo`): limpa a data da etapa
+ * atual e deixa uma nota no pedido, para o histórico mostrar que houve um
+ * engano e quando. Nunca desfaz envio nem entrega.
+ */
+export async function undoOrderStage(orderId: string) {
+  const order = await prisma.storeOrder.findUnique({ where: { id: orderId } });
+  if (!order) throw new StoreOrderProvisionError("Pedido não encontrado", 404);
+  const plan = planUndo({ ...order, currentColumn: deriveBoardColumn(order) });
+  if (!plan.ok) throw new StoreOrderProvisionError(plan.reason, 409);
+
+  const updated = await prisma.storeOrder.update({ where: { id: orderId }, data: { [plan.field]: null } });
+  await prisma.storeOrderNote.create({
+    data: { orderId, body: `Etapa "${columnLabel(plan.from)}" desfeita: o pedido voltou para "${columnLabel(plan.to)}".` },
+  });
+  return updated;
 }
 
 /**

@@ -9,6 +9,25 @@ const EMPTY: AttentionRadarInput = {
   stuckSupportRequests: [],
 };
 
+describe("buildAttentionRadar — chips NFC em branco", () => {
+  it("estoque baixo, mas positivo, diz quantos restam", () => {
+    const radar = buildAttentionRadar({ ...EMPTY, lowStock: { blankChipStock: 8, lowStockThreshold: 20 } });
+    expect(radar).toHaveLength(1);
+    expect(radar[0].message).toBe("Estoque de chips NFC abaixo do mínimo — restam 8 unidades");
+  });
+
+  it("estoque negativo (pedidos pagos sem chip) diz quantos faltam, nunca um número negativo", () => {
+    const radar = buildAttentionRadar({ ...EMPTY, lowStock: { blankChipStock: -48, lowStockThreshold: 20 } });
+    expect(radar).toHaveLength(1);
+    expect(radar[0].message).toBe("Faltam 48 chips NFC em branco para cobrir os pedidos já pagos");
+    expect(radar[0].message).not.toContain("-");
+  });
+
+  it("estoque no mínimo ou acima não alerta", () => {
+    expect(buildAttentionRadar({ ...EMPTY, lowStock: { blankChipStock: 20, lowStockThreshold: 20 } })).toEqual([]);
+  });
+});
+
 describe("buildAttentionRadar — endereço do cartão (ADR-076)", () => {
   it("sem nada de errado, o radar vem vazio (nunca um insight de exemplo)", () => {
     expect(buildAttentionRadar(EMPTY)).toEqual([]);

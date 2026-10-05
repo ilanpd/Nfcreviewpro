@@ -33,7 +33,10 @@ export default async function AdminSidebarLayout({ children }: { children: React
   return (
     <SidebarProvider>
       <AdminSidebar pendingOrders={pendingOrders} pendingContactMessages={pendingContactMessages} plateAttention={plateAttention} adminEmail={adminEmail} />
-      <SidebarInset>
+      {/* min-w-0: sem isto, o conteúdo mais largo da página (ex.: uma tabela) estica o
+          <main> além do espaço que sobra ao lado da barra lateral e a PÁGINA INTEIRA
+          passa a rolar para o lado. Com ele, o conteúdo tem de caber ou rolar por dentro. */}
+      <SidebarInset className="min-w-0">
         <header className="glass sticky top-0 z-40 flex h-14 shrink-0 items-center gap-2 border-b px-4">
           <SidebarTrigger className="-ml-1" />
           <Separator orientation="vertical" className="mr-2 h-4 data-vertical:self-center" />
@@ -60,7 +63,8 @@ export default async function AdminSidebarLayout({ children }: { children: React
             )}
           </div>
         </header>
-        <main className="flex flex-1 flex-col gap-6 p-4 sm:p-6">{children}</main>
+        {/* O SidebarInset já é o <main> da página: este é só o miolo (um segundo <main> duplicaria o marco de navegação). */}
+        <div className="flex min-w-0 flex-1 flex-col gap-6 p-4 sm:p-6">{children}</div>
       </SidebarInset>
     </SidebarProvider>
   );
