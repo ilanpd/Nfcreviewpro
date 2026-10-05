@@ -12,5 +12,8 @@
       "path": "/api/return/reengagement",
       "schedule": "0 8 * * *"
     }
+  ],
+  "regions": [
+    "gru1"
   ]
 }
