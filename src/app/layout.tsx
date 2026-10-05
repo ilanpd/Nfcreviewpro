@@ -75,8 +75,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   // visual (preto profundo/grafite/violeta) foi desenhada escura-primeiro —
   // luz continua uma opção completa e testada, nunca de segunda classe, só
   // deixa de ser a primeira impressão de quem nunca escolheu nada ainda.
+  // `storageKey` próprio (05/10/2026): a chave padrão do next-themes é `theme`, e
+  // quem alternou para o claro em testes antigos continuava vendo o claro como
+  // "primeira impressão" no próprio navegador. Uma chave nova descarta essas
+  // preferências antigas uma única vez; daí em diante a escolha de cada pessoa
+  // (claro ou escuro) é lembrada normalmente.
   const body = (
-    <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
+    <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false} storageKey="pulse-theme">
       <TooltipProvider delayDuration={200}>
         {children}
         <Toaster position="top-center" richColors />
