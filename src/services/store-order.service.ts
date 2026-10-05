@@ -14,6 +14,8 @@ import { confirmationEmailHtml, shippedEmailHtml, deliveredEmailHtml } from "@/l
 import { getStoreProduct } from "@/lib/store-products";
 import { stripe } from "@/lib/stripe";
 import type { Prisma } from "@/generated/prisma/client";
+import { assignPlatesToOrder, resolvePlatePick, type AssignResult } from "@/services/plates.service";
+import type { PlatePick } from "@/lib/validations/plates";
 
 export class StoreOrderProvisionError extends Error {
   constructor(
@@ -368,6 +370,8 @@ export interface DirectSaleInput {
   customerEmail: string;
   customerDocument: string;
   customerPhone: string;
+  /** Estoque de placas (ADR-092): de onde sai a placa física; ausente = sob demanda. */
+  plates?: PlatePick;
 }
 
 /**
@@ -383,9 +387,13 @@ export interface DirectSaleInput {
  * lógica de provisionamento/checklist/e-mail já existente — nunca um
  * segundo caminho para "cartão existe" fora do que a loja online já faz.
  */
-export async function createDirectSaleOrder(input: DirectSaleInput) {
+export async function createDirectSaleOrder(input: DirectSaleInput, actor = "venda direta") {
   const product = getStoreProduct(input.productId);
   if (!product) throw new StoreOrderProvisionError("Produto não encontrado", 404);
+
+  // Estoque de placas (ADR-092): confere ANTES de criar o pedido que as placas
+  // existem e estão conferidas — uma venda não nasce para falhar na entrega.
+  if (input.plates) await resolvePlatePick(input.plates, product.quantity);
 
   const order = await prisma.storeOrder.create({
     data: {
@@ -420,5 +428,19 @@ export async function createDirectSaleOrder(input: DirectSaleInput) {
     .filter((t): t is string => !!t)
     .map((token) => `${appBaseUrl()}/meu-cartao/${token}`);
 
-  return { order: provisioned, editLinks };
+  // Entrega as placas do estoque aos cartões recém-criados. O cartão acabou de
+  // nascer (ninguém viu o código dele), então trocar o código por o da placa é
+  // seguro mesmo que o comprador já tenha painel. Se algo der errado aqui, a
+  // venda JÁ existe: devolve o motivo para o admin atribuir pelo pedido.
+  let plates: AssignResult[] = [];
+  let plateError: string | null = null;
+  if (input.plates) {
+    try {
+      plates = await assignPlatesToOrder({ orderId: order.id, pick: input.plates, acceptCodeChange: true }, actor);
+    } catch (error) {
+      plateError = error instanceof Error ? error.message : "Não foi possível atribuir as placas.";
+    }
+  }
+
+  return { order: provisioned, editLinks, plates, plateError };
 }

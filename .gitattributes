@@ -1,0 +1,5 @@
+# Migrações do Prisma: o checksum registrado no banco é do arquivo byte a byte.
+# Com `core.autocrlf=true` (padrão no Windows), uma troca silenciosa de LF para
+# CRLF mudaria o checksum e o `npm run predeploy` passaria a reclamar. LF sempre,
+# em qualquer máquina.
+prisma/migrations/**/*.sql text eol=lf

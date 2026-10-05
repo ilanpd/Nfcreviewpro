@@ -10,7 +10,9 @@ import { getInactiveCardContact } from "@/services/card.service";
 import { loadReturnContext } from "@/services/return-offer.service";
 import { decideCardExperience, pickPrimaryUrl } from "@/domain/return-offer/experience";
 import { buildCampaignWhatsAppUrl, normalizePhone } from "@/lib/whatsapp";
+import { getPublicPlate, recordUnassignedPlateScan } from "@/services/plates.service";
 import { CardScreen } from "./card-screen";
+import { UnassignedPlateScreen } from "./unassigned-plate-screen";
 import type { ResolutionDecision } from "@/lib/resolution-engine/types";
 
 export const dynamic = "force-dynamic";
@@ -77,6 +79,15 @@ export default async function CardPage({ params }: { params: Promise<{ code: str
   const decision = await resolveDestination(code, await getDeviceType());
 
   if (decision.outcome === "NOT_FOUND") {
+    // Estoque de placas (ADR-092): um código que não é de nenhum cartão pode ser
+    // de uma placa ainda sem dono. Só roda aqui, no ramo de erro — o caminho
+    // normal do toque não paga nada a mais — e qualquer falha (ex.: tabela
+    // ainda não migrada) cai na tela de sempre.
+    const plate = await getPublicPlate(code).catch(() => null);
+    if (plate && !plate.assigned) {
+      await recordUnassignedPlateScan(code);
+      return <UnassignedPlateScreen serial={plate.serial} retired={plate.status === "DEFECTIVE" || plate.status === "VOIDED"} />;
+    }
     return <UnavailableScreen code={code} />;
   }
 

@@ -378,49 +378,49 @@ model Organization {
 }
 
 model Company {
-  id                          String        @id @default(cuid())
-  organizationId              String?
-  organization                Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
-  name                        String
-  slug                        String        @unique
-  logoUrl                     String?
+  id                              String        @id @default(cuid())
+  organizationId                  String?
+  organization                    Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  name                            String
+  slug                            String        @unique
+  logoUrl                         String?
   // Preparação para White Label (Fase 10, ainda não implementada) — mesmo
   // padrão de `logoUrl`: nulo até a fase construir a UI de upload e o
   // `<link rel="icon">` dinâmico que a lê. Ver ADR-039.
-  faviconUrl                  String?
+  faviconUrl                      String?
   // C15 — passaram de obrigatórios pra opcionais: o onboarding deixou de
   // pedir isso ANTES do pagamento (o pedido original é só o nome da
   // empresa). Ficam preenchidos só depois, na tela de ativação pós-compra
   // (`/onboarding/ativar`) — nulos entre a criação da empresa e esse passo,
   // nunca uma string vazia fingindo ser um valor real.
-  whatsapp                    String?
-  googleReviewUrl             String?
-  primaryColor                String        @default("#0F172A")
+  whatsapp                        String?
+  googleReviewUrl                 String?
+  primaryColor                    String        @default("#0F172A")
   // White Label (Fase 10) — cor secundária opcional; sem ela, a UI de marca
   // deriva um tom neutro de `primaryColor` (ver domain/white-label/color.ts),
   // nunca inventa uma cor sem relação com a marca escolhida.
-  secondaryColor              String?
+  secondaryColor                  String?
   // `domain` já existia desde uma fase anterior (ver ADR-039) — sem uso até
   // agora. Nesta fase ganha um leitor de verdade: `domainVerifiedAt` é nulo
   // até uma checagem real de DNS (TXT) confirmar posse do domínio; o
   // DomainResolver nunca resolve branding por um domínio não verificado
   // (ver ADR-042).
-  domain                      String?       @unique
-  domainVerifiedAt            DateTime?
+  domain                          String?       @unique
+  domainVerifiedAt                DateTime?
   // Token aleatório por tentativa de verificação — o empresário publica
   // `_nfcos-challenge.<domínio> TXT "<domainVerificationToken>"` no DNS;
   // `verifyDomainOwnership` confirma via uma consulta DNS-over-HTTPS real
   // antes de `domainVerifiedAt` ser preenchido. Nunca reaproveita um
   // segredo de outra finalidade (ex.: IP_HASH_SALT) — token de posse de
   // domínio é uma preocupação própria. Ver ADR-042.
-  domainVerificationToken     String?
+  domainVerificationToken         String?
   // Tela de login com marca própria (Fase 10) — ambos opcionais, nulos até
   // configurados; sem eles a tela de login mostra o padrão do produto.
-  loginHeadline               String?
-  loginBackgroundUrl          String?
-  plan                        PlanType      @default(STARTER)
+  loginHeadline                   String?
+  loginBackgroundUrl              String?
+  plan                            PlanType      @default(STARTER)
   // Motor de Ativação (Fase 18) — ver comentário do enum AccountType.
-  accountType                 AccountType   @default(CUSTOMER)
+  accountType                     AccountType   @default(CUSTOMER)
   // Billing (Stripe) — nulos até o primeiro checkout. `stripeCustomerId` é
   // criado uma vez e reaproveitado em toda assinatura futura da empresa;
   // `stripeSubscriptionStatus` espelha literalmente o `status` do Subscription
@@ -429,14 +429,14 @@ model Company {
   // Stripe. `plan` acima continua sendo a fonte da verdade para limites/
   // features do produto; o webhook do Stripe é o único escritor de `plan`
   // depois do checkout inicial. Ver ADR-062.
-  stripeCustomerId            String?       @unique
-  stripeSubscriptionId        String?       @unique
-  stripeSubscriptionStatus    String?
+  stripeCustomerId                String?       @unique
+  stripeSubscriptionId            String?       @unique
+  stripeSubscriptionStatus        String?
   // Quando `stripeSubscriptionStatus` mudou pela última vez (escrito só pelo
   // webhook do Stripe). Sem isto não dá para contar a tolerância de 7 dias de
   // uma cobrança atrasada nem os 90 dias de leitura depois de cancelar. Ver
   // domain/billing (tier efetivo) e ADR-078.
-  subscriptionStatusChangedAt DateTime?
+  subscriptionStatusChangedAt     DateTime?
   // Piloto do Retorno (ADR-078, default revisado no C14/ADR-089) — nasceu
   // "falso, só o Admin liga" enquanto o Retorno ainda era validado. Desde o
   // C8 o marketing promete "Faça cada cliente voltar" pra todo Starter; uma
@@ -448,7 +448,7 @@ model Company {
   // interruptor de exceção (desligar uma empresa específica), não mais
   // como porta de entrada obrigatória. Empresas já existentes não mudam —
   // é só o valor pra CRIAÇÃO nova.
-  returnPilotEnabled          Boolean       @default(true)
+  returnPilotEnabled              Boolean       @default(true)
   // E-mails transacionais/reengajamento (C9/F6, ADR-084) — mesmo padrão
   // idempotente de `StoreOrder.confirmationEmailSentAt`: cada campo só é
   // preenchido depois de um envio confirmado (`sent: true`), nunca antes, e
@@ -456,41 +456,41 @@ model Company {
   // tentativa/retry do webhook ou do cron. `billingPastDueEmailSentAt` é
   // zerado de volta a nulo quando a assinatura volta a "active"/"trialing" —
   // um novo atraso futuro precisa poder avisar de novo.
-  returnActivatedEmailSentAt     DateTime?
-  subscriptionWelcomeEmailSentAt DateTime?
-  billingPastDueEmailSentAt      DateTime?
+  returnActivatedEmailSentAt      DateTime?
+  subscriptionWelcomeEmailSentAt  DateTime?
+  billingPastDueEmailSentAt       DateTime?
   subscriptionCanceledEmailSentAt DateTime?
   // Reengajamento D+7/D+30 (J7 do plano): só dispara para quem ainda não
   // ativou o Retorno. `reengagementD30EmailSentAt` preenchido travas os dois
   // lembretes para sempre (ver domain/return-offer/reengagement.ts) — nunca
   // manda o lembrete de 7 dias depois do de 30.
-  reengagementD7EmailSentAt  DateTime?
-  reengagementD30EmailSentAt DateTime?
+  reengagementD7EmailSentAt       DateTime?
+  reengagementD30EmailSentAt      DateTime?
   // IANA identifier. Used by the Rule Engine to evaluate DAY_OF_WEEK/
   // TIME_WINDOW/DATE_RANGE rules in the business's local time, not the
   // server's — a "Friday 18:00" Happy Hour rule must mean 6pm in the
   // restaurant, not 6pm UTC. Defaults to Brazil since every string in this
   // product is already pt-BR; a real timezone picker is a Settings UI
   // nicety, not a Phase 3 blocker.
-  timezone                    String        @default("America/Sao_Paulo")
+  timezone                        String        @default("America/Sao_Paulo")
   // ROI Mode (Fase 7) — configuração opcional, definida uma vez pelo
   // empresário em Configurações, que transforma toques/conversões em
   // dinheiro estimado. Os três campos só existem juntos (nulos até o
   // empresário configurar pela primeira vez); o Analytics Engine só calcula
   // receita influenciada quando os três estão preenchidos — nunca estima
   // com valores parciais ou inventados. Ver ADR-029.
-  roiAvgTicket                Float?
-  roiReturnRate               Float?
-  roiNewCustomerValue         Float?
+  roiAvgTicket                    Float?
+  roiReturnRate                   Float?
+  roiNewCustomerValue             Float?
   // C15 — "primeiro comprei, agora vamos ativar seu negócio": preenchido só
   // quando o dono completa `/onboarding/ativar` (WhatsApp, Google, cor) DEPOIS
   // do pagamento confirmado. Nulo = empresa criada mas ainda não ativada;
   // `ActivationBanner` no dashboard lê isto pra nunca deixar uma empresa
   // "pela metade" invisível ao dono. Nunca reescrito numa edição comum de
   // Configurações depois (rota própria, `POST /api/company/activate`).
-  activatedAt                 DateTime?
-  createdAt                   DateTime      @default(now())
-  updatedAt                   DateTime      @updatedAt
+  activatedAt                     DateTime?
+  createdAt                       DateTime      @default(now())
+  updatedAt                       DateTime      @updatedAt
 
   users                   User[]
   cards                   NFCCard[]
@@ -654,6 +654,10 @@ model NFCCard {
   redirectLogs        RedirectLog[]
   ruleExecutionLogs   RuleExecutionLog[]
   vouchers            Voucher[]
+  // Estoque de placas (ADR-092): a placa física que carrega o código deste
+  // cartão. A chave estrangeira vive em `Plate`, então este back-relation não
+  // cria coluna nenhuma em NFCCard — nenhuma query existente muda.
+  plate               Plate?
 
   @@index([companyId])
   @@index([branchId])
@@ -1394,4 +1398,164 @@ model SiteSettings {
   returnOfferEnabled    Boolean  @default(true)
   updatedAt             DateTime @updatedAt
   updatedByEmail        String?
+}
+
+// ---------------------------------------------------------------------------
+// Estoque de placas (ADR-092)
+// ---------------------------------------------------------------------------
+// Uma placa física (acrílico + chip NFC + QR) é um registro próprio, separado
+// do `NFCCard`: ela existe ANTES de ter dono (estoque), e só vira um cartão de
+// uma empresa quando é atribuída (o `NFCCard` passa a usar o MESMO código da
+// placa — nunca o contrário). Assim o QR impresso e o chip gravado já valem
+// desde a fábrica, e a venda (online ou direta) só liga placa a cliente.
+
+// Ciclo FÍSICO da placa. "Em estoque" e "reservada" não são status: derivam de
+// `VERIFIED` + `cardId` nulo/preenchido (uma fonte de verdade só — ver
+// domain/plates/status.ts).
+enum PlateStatus {
+  GENERATED
+  IN_PRODUCTION
+  VERIFIED
+  DEFECTIVE
+  VOIDED
+}
+
+enum PlateBatchOrigin {
+  STOCK
+  ORDERS
+}
+
+// O "molde" da placa. Só carrega identidade e política (estoque mínimo); a arte
+// e o layout vivem em `PlateModelVersion`, imutáveis, para que um lote já
+// impresso sempre possa ser regerado exatamente como saiu.
+model PlateModel {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  minStock    Int      @default(5)
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  versions PlateModelVersion[]
+  batches  PlateBatch[]
+  plates   Plate[]
+}
+
+// Medidas em milímetros, a partir do canto superior esquerdo da ÁREA FINAL
+// (já cortada, sem a sangria). `background` é a arte sem o QR; nulo gera um
+// fundo branco liso (modelo de teste). Atenção: o Prisma seleciona todas as
+// colunas — listagens SEMPRE usam `select` sem `background`.
+model PlateModelVersion {
+  id                 String     @id @default(cuid())
+  modelId            String
+  model              PlateModel @relation(fields: [modelId], references: [id], onDelete: Cascade)
+  version            Int
+  note               String?
+  widthMm            Float
+  heightMm           Float
+  bleedMm            Float
+  background         Bytes?
+  backgroundMime     String?
+  backgroundName     String?
+  backgroundWidthPx  Int?
+  backgroundHeightPx Int?
+  qrXMm              Float
+  qrYMm              Float
+  qrSizeMm           Float
+  qrErrorCorrection  String     @default("M")
+  qrDarkColor        String     @default("#000000")
+  qrLightColor       String     @default("#FFFFFF")
+  serialEnabled      Boolean    @default(true)
+  serialXMm          Float      @default(0)
+  serialYMm          Float      @default(0)
+  serialFontPt       Float      @default(6)
+  serialColor        String     @default("#FFFFFF")
+  createdBy          String?
+  createdAt          DateTime   @default(now())
+
+  batches PlateBatch[]
+
+  @@unique([modelId, version])
+}
+
+model PlateBatch {
+  id             String            @id @default(cuid())
+  // "L001", "L002"… — o prefixo de toda série do lote.
+  code           String            @unique
+  modelId        String
+  model          PlateModel        @relation(fields: [modelId], references: [id], onDelete: Restrict)
+  modelVersionId String
+  modelVersion   PlateModelVersion @relation(fields: [modelVersionId], references: [id], onDelete: Restrict)
+  origin         PlateBatchOrigin  @default(STOCK)
+  // Só para origin ORDERS: os pedidos pagos que motivaram o lote.
+  orderIds       String[]          @default([])
+  quantity       Int
+  supplier       String?
+  notes          String?
+  createdBy      String?
+  createdAt      DateTime          @default(now())
+  sentAt         DateTime?
+  receivedAt     DateTime?
+
+  plates Plate[]
+
+  @@index([modelId])
+  @@index([createdAt])
+}
+
+model Plate {
+  id            String      @id @default(cuid())
+  batchId       String
+  batch         PlateBatch  @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  // Denormalizado de batch.modelId (mesmo padrão de companyId no resto do
+  // schema): contagem de estoque por modelo e filtros viram um `where` direto,
+  // sem join. Nunca muda depois da criação — o lote não troca de modelo.
+  modelId       String
+  model         PlateModel  @relation(fields: [modelId], references: [id], onDelete: Restrict)
+  // Posição dentro do lote (1..quantity); a série "L001-07" deriva dela.
+  index         Int
+  serial        String      @unique
+  // O código que vai na URL do chip e do QR (`/r/<código>`) — gerado aqui e
+  // herdado pelo NFCCard na atribuição. Único também contra NFCCard.uniqueCode
+  // (garantido na geração, ver services/plates.service.ts).
+  uniqueCode    String      @unique
+  status        PlateStatus @default(GENERATED)
+  // Conferência na chegada: os três itens precisam estar marcados para a
+  // placa virar VERIFIED.
+  nfcChecked    Boolean     @default(false)
+  qrChecked     Boolean     @default(false)
+  serialChecked Boolean     @default(false)
+  verifiedAt    DateTime?
+  defectReason  String?
+  cardId        String?     @unique
+  card          NFCCard?    @relation(fields: [cardId], references: [id], onDelete: SetNull)
+  assignedAt    DateTime?
+  // Toques na tela "placa ainda não ativada" — prova que o NFC/QR leem.
+  scanCount     Int         @default(0)
+  lastScannedAt DateTime?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  events PlateEvent[]
+
+  @@index([batchId, status])
+  @@index([modelId, status])
+  @@index([status])
+}
+
+// Trilha de auditoria: toda mudança de estado ou de dono de uma placa.
+model PlateEvent {
+  id         String       @id @default(cuid())
+  plateId    String
+  plate      Plate        @relation(fields: [plateId], references: [id], onDelete: Cascade)
+  type       String
+  fromStatus PlateStatus?
+  toStatus   PlateStatus?
+  note       String?
+  actor      String?
+  createdAt  DateTime     @default(now())
+
+  @@index([plateId, createdAt])
+  @@index([createdAt])
 }

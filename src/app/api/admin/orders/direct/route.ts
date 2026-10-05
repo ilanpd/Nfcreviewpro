@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { isSuperAdmin } from "@/lib/super-admin";
+import { getSuperAdminEmail, isSuperAdmin } from "@/lib/super-admin";
 import { directSaleSchema } from "@/lib/validations/store-order";
 import { createDirectSaleOrder } from "@/services/store-order.service";
 import { handleApiError } from "@/lib/api-error";
@@ -15,8 +15,8 @@ export async function POST(req: NextRequest) {
   try {
     if (!(await isSuperAdmin())) return NextResponse.json({ error: "Não autorizado" }, { status: 403 });
     const input = directSaleSchema.parse(await req.json());
-    const { order, editLinks } = await createDirectSaleOrder(input);
-    return NextResponse.json({ order, editLinks }, { status: 201 });
+    const { order, editLinks, plates, plateError } = await createDirectSaleOrder(input, await getSuperAdminEmail());
+    return NextResponse.json({ order, editLinks, plates, plateError }, { status: 201 });
   } catch (error) {
     return handleApiError(error);
   }

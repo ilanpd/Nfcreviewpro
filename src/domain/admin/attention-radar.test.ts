@@ -74,6 +74,39 @@ describe("buildAttentionRadar — mensagens sem resposta (auditoria 28/09/2026)"
   });
 });
 
+describe("buildAttentionRadar — estoque de placas (ADR-092)", () => {
+  it("campos ausentes nunca alertam", () => {
+    expect(buildAttentionRadar({ ...EMPTY, plateStock: [], plateBatches: [] })).toEqual([]);
+    expect(buildAttentionRadar(EMPTY)).toEqual([]);
+  });
+
+  it("estoque abaixo do mínimo alerta com o modelo, o que há e o que está a caminho", () => {
+    const radar = buildAttentionRadar({ ...EMPTY, plateStock: [{ modelId: "m1", modelName: "Avaliação", inStock: 2, minStock: 5, incoming: 0 }] });
+    expect(radar).toHaveLength(1);
+    expect(radar[0].id).toBe("plate-stock:m1");
+    expect(radar[0].severity).toBe("attention");
+    expect(radar[0].message).toBe('Estoque de placas "Avaliação" abaixo do mínimo — 2 conferidas (mínimo 5)');
+
+    const withIncoming = buildAttentionRadar({ ...EMPTY, plateStock: [{ modelId: "m1", modelName: "Avaliação", inStock: 1, minStock: 5, incoming: 3 }] });
+    expect(withIncoming[0].message).toBe('Estoque de placas "Avaliação" abaixo do mínimo — 1 conferida (mínimo 5), 3 a caminho');
+  });
+
+  it("lote na gráfica só alerta a partir de 10 dias", () => {
+    expect(buildAttentionRadar({ ...EMPTY, plateBatches: [{ id: "b1", code: "L001", kind: "AT_SUPPLIER", days: 9 }] })).toEqual([]);
+    const radar = buildAttentionRadar({ ...EMPTY, plateBatches: [{ id: "b1", code: "L001", kind: "AT_SUPPLIER", days: 10 }] });
+    expect(radar[0].id).toBe("plate-batch:b1");
+    expect(radar[0].message).toBe("Lote L001 está na gráfica há 10 dias sem ser marcado como recebido");
+  });
+
+  it("lote recebido só alerta depois de 2 dias e se ainda há placa sem conferir", () => {
+    expect(buildAttentionRadar({ ...EMPTY, plateBatches: [{ id: "b1", code: "L001", kind: "AWAITING_CHECK", days: 1, pending: 5 }] })).toEqual([]);
+    expect(buildAttentionRadar({ ...EMPTY, plateBatches: [{ id: "b1", code: "L001", kind: "AWAITING_CHECK", days: 5, pending: 0 }] })).toEqual([]);
+    const radar = buildAttentionRadar({ ...EMPTY, plateBatches: [{ id: "b1", code: "L001", kind: "AWAITING_CHECK", days: 3, pending: 1 }] });
+    expect(radar[0].message).toBe("Lote L001 foi recebido há 3 dias e ainda tem 1 placa sem conferir");
+    expect(radar[0].severity).toBe("neutral");
+  });
+});
+
 describe("buildAttentionRadar — provedor de e-mail (auditoria de potencial de venda, 29/09/2026)", () => {
   it("campo ausente (undefined) nunca alerta — continua opcional pra quem ainda não o calcula", () => {
     expect(buildAttentionRadar(EMPTY)).toEqual([]);

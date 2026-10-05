@@ -34,6 +34,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { SmartBadge } from "@nfc-os/ui";
+import { AssignPlatesDialog } from "./assign-plates-dialog";
 import { formatCentsToBRL } from "@/lib/store-products";
 import { buildOrderChecklist, isDisputeActive, STATUS_LABEL, STATUS_TONE } from "@/domain/store-order/checklist";
 import type { StoreOrder, StoreOrderNote } from "@/generated/prisma/client";
@@ -44,6 +45,8 @@ interface ProvisionedCard {
   uniqueCode: string;
   /** `null` quando o endereço do cartão ainda não é o definitivo e o ambiente o exige (ADR-076). */
   publicUrl: string | null;
+  /** Estoque de placas (ADR-092): a placa física ligada a este cartão, se houver. */
+  plate: { serial: string; status: string } | null;
 }
 
 interface OrderDetail {
@@ -315,9 +318,28 @@ export function OrderDetailSheet({ orderId, onClose, onOrderChanged }: { orderId
                     ) : null}
                     <div className="max-h-32 space-y-1 overflow-y-auto rounded-lg border p-2 font-mono text-[11px] text-muted-foreground">
                       {detail.cards.map((c) => (
-                        <div key={c.id} className="truncate">{c.publicUrl ?? `${c.uniqueCode} — endereço bloqueado`}</div>
+                        <div key={c.id} className="flex items-center gap-2">
+                          <span className="min-w-0 flex-1 truncate">{c.publicUrl ?? `${c.uniqueCode} — endereço bloqueado`}</span>
+                          {c.plate ? (
+                            <span className="shrink-0 rounded bg-emerald-500/10 px-1.5 py-0.5 text-emerald-700 dark:text-emerald-300" title={`Placa ${c.plate.serial}`}>
+                              {c.plate.serial}
+                            </span>
+                          ) : (
+                            <span className="shrink-0 rounded bg-muted px-1.5 py-0.5">sem placa</span>
+                          )}
+                        </div>
                       ))}
                     </div>
+                    {/* Estoque de placas (ADR-092): entrega as placas conferidas aos cartões que ainda não têm. */}
+                    {detail.cards.some((c) => !c.plate) && (order.status === "PAID" || order.status === "SHIPPED") ? (
+                      <AssignPlatesDialog
+                        orderId={order.id}
+                        missing={detail.cards.filter((c) => !c.plate).length}
+                        onDone={() => {
+                          fetch(`/api/admin/orders/${order.id}`).then((r) => r.json()).then(setDetail).catch(() => undefined);
+                        }}
+                      />
+                    ) : null}
                   </section>
                 ) : null}
 

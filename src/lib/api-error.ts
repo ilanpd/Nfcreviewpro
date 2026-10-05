@@ -5,6 +5,8 @@ import { CampaignConflictError } from "@/services/campaign.service";
 import { StoreOrderProvisionError } from "@/services/store-order.service";
 import { ReturnOfferError } from "@/services/return-offer.service";
 import { FeedbackError } from "@/services/feedback.service";
+import { PlateError } from "@/services/plates.service";
+import { CardUrlNotReadyError } from "@/lib/card-url";
 
 /** Central place to turn a thrown error into a consistent JSON response for API routes. */
 export function handleApiError(error: unknown): NextResponse {
@@ -28,6 +30,12 @@ export function handleApiError(error: unknown): NextResponse {
   }
   if (error instanceof ReturnOfferError) {
     return NextResponse.json({ error: error.message }, { status: error.status });
+  }
+  if (error instanceof PlateError) {
+    return NextResponse.json({ error: error.message, code: error.code }, { status: error.status });
+  }
+  if (error instanceof CardUrlNotReadyError) {
+    return NextResponse.json({ error: error.message, code: "CARD_URL_NOT_READY" }, { status: 503 });
   }
   if (error instanceof Error && error.message === "RATE_LIMITED") {
     return NextResponse.json({ error: "Muitas requisições, tente novamente em instantes." }, { status: 429 });

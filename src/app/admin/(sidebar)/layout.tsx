@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { isDevRuntimeEnabled, devRuntimeUserEmail } from "@/lib/dev-runtime/config";
 import { prisma } from "@/lib/prisma";
+import { getStockAttentionCount } from "@/services/plates.service";
 
 /**
  * Fase 19.8 — o chrome de sidebar/header do Painel Admin, extraído de
@@ -21,16 +22,17 @@ import { prisma } from "@/lib/prisma";
  * segurança em dois layouts.
  */
 export default async function AdminSidebarLayout({ children }: { children: React.ReactNode }) {
-  const [pendingOrders, pendingContactMessages, user] = await Promise.all([
+  const [pendingOrders, pendingContactMessages, plateAttention, user] = await Promise.all([
     prisma.storeOrder.count({ where: { status: { in: ["PAID", "SHIPPED"] } } }),
     prisma.contactMessage.count({ where: { respondedAt: null } }),
+    getStockAttentionCount(),
     currentUser().catch(() => null),
   ]);
   const adminEmail = isDevRuntimeEnabled() ? devRuntimeUserEmail() : user?.primaryEmailAddress?.emailAddress;
 
   return (
     <SidebarProvider>
-      <AdminSidebar pendingOrders={pendingOrders} pendingContactMessages={pendingContactMessages} adminEmail={adminEmail} />
+      <AdminSidebar pendingOrders={pendingOrders} pendingContactMessages={pendingContactMessages} plateAttention={plateAttention} adminEmail={adminEmail} />
       <SidebarInset>
         <header className="glass sticky top-0 z-40 flex h-14 shrink-0 items-center gap-2 border-b px-4">
           <SidebarTrigger className="-ml-1" />

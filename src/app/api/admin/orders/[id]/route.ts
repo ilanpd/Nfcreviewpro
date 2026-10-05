@@ -26,12 +26,19 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
     const order = await prisma.storeOrder.findUnique({ where: { id } });
     if (!order) throw new StoreOrderProvisionError("Pedido não encontrado", 404);
 
-    const [cards, notes] = await Promise.all([
+    const [cards, notes, plates] = await Promise.all([
       order.provisionedCardIds.length > 0
         ? prisma.nFCCard.findMany({ where: { id: { in: order.provisionedCardIds } }, select: { id: true, name: true, uniqueCode: true } })
         : Promise.resolve([]),
       listStoreOrderNotes(id),
+      // Estoque de placas (ADR-092): um acréscimo — qualquer falha vira "sem placa".
+      order.provisionedCardIds.length > 0
+        ? prisma.plate
+            .findMany({ where: { cardId: { in: order.provisionedCardIds } }, select: { cardId: true, serial: true, status: true } })
+            .catch(() => [] as { cardId: string | null; serial: string; status: string }[])
+        : Promise.resolve([] as { cardId: string | null; serial: string; status: string }[]),
     ]);
+    const plateByCard = new Map(plates.map((p) => [p.cardId, { serial: p.serial, status: p.status }]));
 
     const stripeMode = process.env.STRIPE_SECRET_KEY?.startsWith("sk_live_") ? "" : "test/";
     const stripeDashboardUrl = order.stripePaymentIntentId
@@ -46,7 +53,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
       order,
       productLabel: getStoreProduct(order.productId)?.name ?? order.productId,
       cardUrl: { kind: guard.status.kind, host: guard.status.host, message: guard.status.message, blocked: guard.blocked },
-      cards: cards.map((c) => ({ ...c, publicUrl: guard.blocked ? null : cardPublicUrl(c.uniqueCode) })),
+      cards: cards.map((c) => ({ ...c, publicUrl: guard.blocked ? null : cardPublicUrl(c.uniqueCode), plate: plateByCard.get(c.id) ?? null })),
       notes,
       stripeDashboardUrl,
     });

@@ -11,6 +11,10 @@ import type { CardUrlKind } from "@/domain/card-url/classify";
 
 const STUCK_PRODUCTION_DAYS = 3;
 const UNRESOLVED_FEEDBACK_THRESHOLD = 3;
+// Limiares operacionais do estoque de placas (ADR-092) — só decidem quando o
+// radar avisa o dono, nunca algo que o cliente veja. Ajustáveis num lugar só.
+const PLATE_BATCH_AT_SUPPLIER_DAYS = 10;
+const PLATE_BATCH_AWAITING_CHECK_DAYS = 2;
 
 export interface AttentionRadarInput {
   stuckOrders: { id: string; customerName: string; daysStuck: number }[];
@@ -45,6 +49,15 @@ export interface AttentionRadarInput {
    * não o calcula.
    */
   emailProviderConfigured?: boolean;
+  /**
+   * Estoque de placas (ADR-092). `plateStock` já vem filtrado de quem o
+   * chamador considera sem cobertura (nem o que está a caminho completa o
+   * mínimo). `plateBatches` são lotes parados: na gráfica sem recebimento, ou
+   * recebidos com placas ainda por conferir. Opcionais — `undefined` nunca gera
+   * alerta.
+   */
+  plateStock?: { modelId: string; modelName: string; inStock: number; minStock: number; incoming: number }[];
+  plateBatches?: { id: string; code: string; kind: "AT_SUPPLIER" | "AWAITING_CHECK"; days: number; pending?: number }[];
 }
 
 export function buildAttentionRadar(input: AttentionRadarInput): InsightCardEntry[] {
@@ -102,6 +115,33 @@ export function buildAttentionRadar(input: AttentionRadarInput): InsightCardEntr
         ? `Endereço do cartão ainda não é o definitivo (${cardUrl.host || "inválido"}) — a gravação de chips está bloqueada e há ${orders}`
         : `Endereço do cartão ainda não é o definitivo (${cardUrl.host || "inválido"}) e há ${orders} — não grave chips antes de definir o domínio`,
     });
+  }
+
+  for (const model of input.plateStock ?? []) {
+    const incoming = model.incoming > 0 ? `, ${model.incoming} a caminho` : "";
+    insights.push({
+      id: `plate-stock:${model.modelId}`,
+      severity: "attention",
+      message: `Estoque de placas "${model.modelName}" abaixo do mínimo — ${model.inStock} conferida${model.inStock === 1 ? "" : "s"} (mínimo ${model.minStock})${incoming}`,
+    });
+  }
+
+  for (const batch of input.plateBatches ?? []) {
+    if (batch.kind === "AT_SUPPLIER" && batch.days >= PLATE_BATCH_AT_SUPPLIER_DAYS) {
+      insights.push({
+        id: `plate-batch:${batch.id}`,
+        severity: "attention",
+        message: `Lote ${batch.code} está na gráfica há ${batch.days} dias sem ser marcado como recebido`,
+      });
+    }
+    if (batch.kind === "AWAITING_CHECK" && batch.days >= PLATE_BATCH_AWAITING_CHECK_DAYS && (batch.pending ?? 0) > 0) {
+      const pending = batch.pending ?? 0;
+      insights.push({
+        id: `plate-batch:${batch.id}`,
+        severity: "neutral",
+        message: `Lote ${batch.code} foi recebido há ${batch.days} dias e ainda tem ${pending} placa${pending === 1 ? "" : "s"} sem conferir`,
+      });
+    }
   }
 
   if (input.emailProviderConfigured === false) {

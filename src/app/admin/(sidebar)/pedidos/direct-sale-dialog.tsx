@@ -17,6 +17,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { DestinationPicker } from "@/components/destination-picker";
+import { PlatePicker, isPickReady, pickToPayload, type PickValue } from "@/components/admin/plate-picker";
 import { STORE_PRODUCTS, formatCentsToBRL } from "@/lib/store-products";
 import { cn } from "@/lib/utils";
 import { useCopy } from "@/hooks/use-copy";
@@ -40,6 +41,11 @@ export function DirectSaleDialog() {
   const [phone, setPhone] = useState("");
   const [loading, setLoading] = useState(false);
   const [editLinks, setEditLinks] = useState<string[] | null>(null);
+  // Estoque de placas (ADR-092): sem escolha, nada muda — a venda segue sob demanda como sempre.
+  const [platePick, setPlatePick] = useState<PickValue>({ mode: "NONE" });
+  const [deliveredPlates, setDeliveredPlates] = useState<string[]>([]);
+  const [plateError, setPlateError] = useState<string | null>(null);
+  const needed = STORE_PRODUCTS.find((p) => p.id === productId)?.quantity ?? 1;
 
   function reset() {
     setProductId(STORE_PRODUCTS[0]?.id ?? "");
@@ -49,6 +55,9 @@ export function DirectSaleDialog() {
     setDocument("");
     setPhone("");
     setEditLinks(null);
+    setPlatePick({ mode: "NONE" });
+    setDeliveredPlates([]);
+    setPlateError(null);
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -62,14 +71,17 @@ export function DirectSaleDialog() {
       const res = await fetch("/api/admin/orders/direct", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ productId, destinationUrl, customerName: name, customerEmail: email, customerDocument: document, customerPhone: phone }),
+        body: JSON.stringify({ productId, destinationUrl, customerName: name, customerEmail: email, customerDocument: document, customerPhone: phone, plates: pickToPayload(platePick) }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Não foi possível registrar a venda");
 
+      setDeliveredPlates(((data.plates ?? []) as { serial: string }[]).map((p) => p.serial));
+      setPlateError(data.plateError ?? null);
       const links: string[] = data.editLinks ?? [];
       setEditLinks(links.length > 0 ? links : ["Cartão(ões) criado(s) — veja em Empresas → cartões."]);
-      toast.success("Venda registrada — cartão(ões) já provisionado(s).");
+      if (data.plateError) toast.warning("Venda registrada, mas a placa não foi atribuída. Veja o aviso.");
+      else toast.success("Venda registrada — cartão(ões) já provisionado(s).");
       router.refresh();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Erro inesperado");
@@ -102,6 +114,16 @@ export function DirectSaleDialog() {
 
         {editLinks ? (
           <div className="space-y-3">
+            {deliveredPlates.length > 0 ? (
+              <p className="rounded-lg border border-emerald-500/40 bg-emerald-500/5 p-3 text-sm">
+                Entregue a placa <strong className="font-mono">{deliveredPlates.join(", ")}</strong>. Encoste o celular nela para testar antes de deixar com o cliente.
+              </p>
+            ) : null}
+            {plateError ? (
+              <p role="alert" className="rounded-lg border border-amber-500/40 bg-amber-500/5 p-3 text-sm text-amber-800 dark:text-amber-200">
+                A venda foi registrada, mas a placa não foi atribuída: {plateError} Atribua pelo detalhe do pedido.
+              </p>
+            ) : null}
             <p className="text-sm text-muted-foreground">Link(s) de edição do cliente — compartilhe agora:</p>
             {editLinks.map((link) => (
               <EditLinkCopyRow key={link} link={link} />
@@ -133,6 +155,8 @@ export function DirectSaleDialog() {
 
             <DestinationPicker value={destinationUrl} onChange={setDestinationUrl} />
 
+            <PlatePicker needed={needed} allowNone value={platePick} onChange={setPlatePick} idPrefix="direct" />
+
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-1.5">
                 <Label htmlFor="direct-name">Nome do cliente</Label>
@@ -153,7 +177,7 @@ export function DirectSaleDialog() {
             </div>
 
             <DialogFooter>
-              <Button type="submit" className="w-full" disabled={loading}>
+              <Button type="submit" className="w-full" disabled={loading || !isPickReady(platePick, needed)}>
                 {loading ? "Registrando…" : "Registrar venda e liberar cartão"}
               </Button>
             </DialogFooter>

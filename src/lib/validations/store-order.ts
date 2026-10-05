@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { isValidCpfOrCnpj, isValidBrazilianPhone } from "@/domain/validation/br-documents";
 import { httpUrlSchema } from "@/lib/validations/http-url";
+import { platePickSchema } from "@/lib/validations/plates";
 
 /**
  * Motor de Ativação (Fase 18) — CPF (11 dígitos) ou CNPJ (14 dígitos).
@@ -42,4 +43,6 @@ export const directSaleSchema = z.object({
   customerEmail: z.string().trim().email("E-mail inválido"),
   customerDocument: customerDocumentSchema,
   customerPhone: customerPhoneSchema,
+  /** Estoque de placas (ADR-092): de onde sai a placa física. Ausente = produzir sob demanda, como sempre foi. */
+  plates: platePickSchema.optional(),
 });

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Image as ImageIcon, Package, Building2, ShieldCheck, Wallet, Monitor, Mail } from "lucide-react";
+import { LayoutDashboard, Image as ImageIcon, Package, Boxes, Building2, ShieldCheck, Wallet, Monitor, Mail } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -39,13 +39,16 @@ interface NavGroup {
  * sai deste layout com sidebar para o wallboard full-bleed
  * (`admin/executivo`, fora do route group `(sidebar)`).
  */
-function buildNavGroups(pendingOrders: number, pendingContactMessages: number): NavGroup[] {
+function buildNavGroups(pendingOrders: number, pendingContactMessages: number, plateAttention: number): NavGroup[] {
   return [
     {
       label: "Operação",
       items: [
         { href: "/admin", label: "Centro de Operações", icon: LayoutDashboard },
         { href: "/admin/pedidos", label: "Pedidos da loja", icon: Package, badge: pendingOrders },
+        // Estoque de placas (ADR-092): o selo só conta o que pede ação (estoque
+        // abaixo do mínimo, lote parado) — não o total de placas.
+        { href: "/admin/estoque", label: "Estoque de placas", icon: Boxes, badge: plateAttention },
         { href: "/admin/executivo", label: "Modo Executivo", icon: Monitor },
       ],
     },
@@ -73,14 +76,16 @@ function buildNavGroups(pendingOrders: number, pendingContactMessages: number): 
 export function AdminSidebar({
   pendingOrders = 0,
   pendingContactMessages = 0,
+  plateAttention = 0,
   adminEmail,
 }: {
   pendingOrders?: number;
   pendingContactMessages?: number;
+  plateAttention?: number;
   adminEmail?: string;
 }) {
   const pathname = usePathname();
-  const groups = buildNavGroups(pendingOrders, pendingContactMessages);
+  const groups = buildNavGroups(pendingOrders, pendingContactMessages, plateAttention);
 
   return (
     <Sidebar collapsible="icon">

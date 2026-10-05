@@ -5,6 +5,7 @@ import { stageEnteredAt, daysSince } from "@/domain/store-order/board";
 import { buildAttentionRadar } from "@/domain/admin/attention-radar";
 import { listStuckSupportRequests } from "@/services/support.service";
 import { getCardUrlGuard } from "@/lib/card-url";
+import { getRadarPlateInputs, type RadarPlateInputs } from "@/services/plates.service";
 import { resend } from "@/lib/email";
 import type { InsightCardEntry } from "@nfc-os/ui";
 
@@ -77,6 +78,14 @@ export async function getAdminOverviewSnapshot(): Promise<AdminOverviewSnapshot>
 
   const cardUrlGuard = getCardUrlGuard();
 
+  // Estoque de placas (ADR-092): um acréscimo ao radar. Qualquer falha (ex.:
+  // tabelas ainda não migradas) vira "sem alertas de placa" — o Centro de
+  // Operações nunca cai por causa de um módulo opcional.
+  const plateRadar: RadarPlateInputs = await getRadarPlateInputs().catch((error) => {
+    console.error("[admin-overview] não foi possível ler o estoque de placas", error);
+    return { plateStock: [], plateBatches: [] };
+  });
+
   const radar = buildAttentionRadar({
     cardUrl: {
       kind: cardUrlGuard.status.kind,
@@ -97,10 +106,14 @@ export async function getAdminOverviewSnapshot(): Promise<AdminOverviewSnapshot>
     // Achado de auditoria de potencial de venda (29/09/2026) — ver o
     // comentário completo em domain/admin/attention-radar.ts.
     emailProviderConfigured: resend !== null,
+    plateStock: plateRadar.plateStock,
+    plateBatches: plateRadar.plateBatches,
   }).map((insight) => {
     if (insight.id.startsWith("feedback:")) return { ...insight, href: `/admin/empresas/${insight.id.split(":")[1]}` };
     if (insight.id.startsWith("support:")) return { ...insight, href: `/admin/empresas/${insight.id.split(":")[1]}` };
     if (insight.id === "low-stock") return { ...insight, href: "/admin/conteudo" };
+    if (insight.id.startsWith("plate-stock:")) return { ...insight, href: "/admin/estoque" };
+    if (insight.id.startsWith("plate-batch:")) return { ...insight, href: `/admin/estoque/lotes/${insight.id.split(":")[1]}` };
     // Sem tela no Admin que resolva isto (é uma env var na Vercel, não uma
     // configuração do produto) — nenhum href é melhor que um errado.
     if (insight.id === "email-provider") return insight;
