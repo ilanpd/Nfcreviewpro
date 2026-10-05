@@ -81,7 +81,9 @@ function rasterize(content: string, widthPt: number, heightPt: number, scale: nu
   return { data, width, height };
 }
 
-describe("renderPlatePdf", () => {
+// Prazo de 30 s: rasterizar páginas inteiras e decodificar o QR é conta pesada (~1,5 s
+// sozinho), e na suíte inteira, com a máquina carregada, passa dos 5 s padrão.
+describe("renderPlatePdf", { timeout: 30_000 }, () => {
   const items = [
     { serial: "L001-01", url: "https://pulsesmartlink.com.br/r/abcd2345" },
     { serial: "L001-02", url: "https://pulsesmartlink.com.br/r/efgh6789" },

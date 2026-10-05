@@ -19,7 +19,7 @@ Cada placa tem **série** (`L001-07`, impressa nela) e **código** (as letras da
 ## Primeiro lote, passo a passo
 
 1. **Modelo** (`Estoque → Modelos → Novo modelo`). Defina o nome e o estoque mínimo.
-2. **Arte.** No editor do modelo, envie a arte de fundo (PNG ou JPG, **sem o QR**, até 3,5 MB; prefira JPG). Para 10×10 cm com 3 mm de sangria, a página é 106×106 mm e, em 300 dpi, 1252×1252 px. Deixe um painel **branco chapado** onde o QR vai entrar. Arraste o QR e a série para o lugar certo (ou use as setas do teclado).
+2. **Arte.** No editor do modelo, envie a arte de fundo (PNG ou JPG, **sem o QR**, até 3,5 MB; prefira JPG). Para 10×10 cm com 3 mm de sangria, a página é 106×106 mm e, em 300 dpi, 1252×1252 px. Deixe um painel **branco chapado** onde o QR vai entrar. Clique em **Encaixar no painel branco da arte**: o sistema acha o painel e enquadra o QR dentro dele. Para ajustar à mão, arraste o QR e a série (ou use as setas do teclado); para mudar o **tamanho** do QR, arraste a **alça azul** do canto dele, use os botões **−** e **+**, ou as teclas **+** e **−** com o QR selecionado.
 3. **Prova.** Clique em "Prova em PDF" e confira como a gráfica vai receber. Os avisos do editor (QR pequeno, poucos dpi, arte esticada) aparecem antes de você salvar.
 4. **Lote** (`Estoque → Lotes → Novo lote`). Escolha o modelo e a quantidade (ex.: 20).
 5. **Arquivos.** Na página do lote, baixe os três e mande **juntos** para a gráfica:

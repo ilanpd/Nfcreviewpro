@@ -3,11 +3,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { AlertTriangle, FileText, ImageOff, Save, Upload } from "lucide-react";
+import { AlertTriangle, FileText, Frame, ImageOff, Minus, Plus, Save, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { effectiveDpi, pageSizeMm, PT_PER_MM, qrModuleSizeMm, validateLayout, type PlateLayout } from "@/domain/plates/layout";
+import { detectWhitePanel, fitQrIntoPanel } from "@/domain/plates/panel-detect";
 import { selectClass } from "../../_components/field-styles";
 
 export interface EditorVersion {
@@ -168,6 +169,15 @@ export function ModelEditor({
   }, [page.width]);
 
   const drag = useRef<{ target: "qr" | "serial"; startX: number; startY: number; origX: number; origY: number } | null>(null);
+  const resize = useRef<{ startX: number; startY: number; origSize: number } | null>(null);
+
+  /** Maior lado que o QR pode ter sem sair da área de corte, a partir de onde ele está. */
+  const maxQrSize = (f: Form) => Math.max(10, Math.min(finite(f.widthMm) - finite(f.qrXMm), finite(f.heightMm) - finite(f.qrYMm)));
+
+  /** Muda o tamanho a partir do estado MAIS RECENTE; o canto superior esquerdo do QR fica parado. */
+  function resizeQr(deltaMm: number) {
+    setForm((f) => ({ ...f, qrSizeMm: clamp(round(finite(f.qrSizeMm) + deltaMm), 10, maxQrSize(f)) }));
+  }
 
   function moveTo(target: "qr" | "serial", x: number, y: number) {
     if (target === "qr") {
@@ -177,9 +187,17 @@ export function ModelEditor({
     }
   }
 
+  function capture(e: React.PointerEvent<HTMLDivElement>) {
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch {
+      // sem captura o arraste continua funcionando enquanto o ponteiro estiver sobre o elemento
+    }
+  }
+
   function onPointerDown(e: React.PointerEvent<HTMLDivElement>, target: "qr" | "serial") {
     e.preventDefault();
-    e.currentTarget.setPointerCapture(e.pointerId);
+    capture(e);
     drag.current = { target, startX: e.clientX, startY: e.clientY, origX: target === "qr" ? layout.qrXMm : layout.serialXMm, origY: target === "qr" ? layout.qrYMm : layout.serialYMm };
   }
   function onPointerMove(e: React.PointerEvent<HTMLDivElement>) {
@@ -202,11 +220,66 @@ export function ModelEditor({
   }
   function onKeyDown(e: React.KeyboardEvent<HTMLDivElement>, target: "qr" | "serial") {
     const step = e.shiftKey ? 5 : 0.5;
+    if (target === "qr" && (e.key === "+" || e.key === "=" || e.key === "-" || e.key === "_")) {
+      e.preventDefault();
+      resizeQr(e.key === "+" || e.key === "=" ? step : -step);
+      return;
+    }
     const delta: Record<string, [number, number]> = { ArrowLeft: [-step, 0], ArrowRight: [step, 0], ArrowUp: [0, -step], ArrowDown: [0, step] };
     const move = delta[e.key];
     if (!move) return;
     e.preventDefault();
     nudge(target, move[0], move[1]);
+  }
+
+  /** Alça do canto do QR: arrastar para baixo/direita aumenta, para cima/esquerda diminui. */
+  function onResizeDown(e: React.PointerEvent<HTMLDivElement>) {
+    e.preventDefault();
+    e.stopPropagation(); // não começa o arraste de posição do QR
+    capture(e);
+    resize.current = { startX: e.clientX, startY: e.clientY, origSize: layout.qrSizeMm };
+  }
+  function onResizeMove(e: React.PointerEvent<HTMLDivElement>) {
+    const r = resize.current;
+    if (!r) return;
+    const deltaMm = (e.clientX - r.startX + (e.clientY - r.startY)) / 2 / pxPerMm;
+    setForm((f) => ({ ...f, qrSizeMm: clamp(round(r.origSize + deltaMm), 10, maxQrSize(f)) }));
+  }
+
+  /**
+   * Acha o painel branco na arte (a que está na tela, salva ou ainda não) e
+   * enquadra o QR dentro dele. A arte é redesenhada pequena num canvas só para
+   * ler os pixels; nada sai do navegador.
+   */
+  async function fitQrToWhitePanel() {
+    if (!bgSrc) return void toast.error("Envie a arte de fundo primeiro.");
+    try {
+      const img = new Image();
+      await new Promise<void>((resolve, reject) => {
+        img.onload = () => resolve();
+        img.onerror = () => reject(new Error("imagem"));
+        img.src = bgSrc;
+      });
+      const scale = Math.min(1, 480 / Math.max(img.naturalWidth, img.naturalHeight));
+      const width = Math.max(8, Math.round(img.naturalWidth * scale));
+      const height = Math.max(8, Math.round(img.naturalHeight * scale));
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext("2d", { willReadFrequently: true });
+      if (!ctx) throw new Error("canvas");
+      ctx.drawImage(img, 0, 0, width, height);
+      const panel = detectWhitePanel({ data: ctx.getImageData(0, 0, width, height).data, width, height });
+      if (!panel) {
+        return void toast.error("Não achei um painel branco chapado na arte. Arraste o QR e use a alça azul do canto (ou os botões − e +) para ajustar na mão.");
+      }
+      const fit = fitQrIntoPanel(panel, { width, height }, layout);
+      if (!fit) return void toast.error("O painel branco é pequeno demais para um QR legível (menos de 10 mm).");
+      setForm((f) => ({ ...f, ...fit }));
+      toast.success(`QR encaixado no painel branco da arte (${fit.qrSizeMm} mm). Confira na prévia.`);
+    } catch {
+      toast.error("Não consegui ler a arte para encontrar o painel. Ajuste o QR na mão.");
+    }
   }
 
   function pickFile(e: React.ChangeEvent<HTMLInputElement>) {
@@ -260,8 +333,8 @@ export function ModelEditor({
           <div
             role="slider"
             tabIndex={0}
-            aria-label="Posição do QR. Arraste ou use as setas do teclado"
-            aria-valuetext={`${layout.qrXMm} mm da esquerda, ${layout.qrYMm} mm do topo`}
+            aria-label="Posição e tamanho do QR. Arraste para mover; as setas movem e as teclas + e − mudam o tamanho"
+            aria-valuetext={`${layout.qrXMm} mm da esquerda, ${layout.qrYMm} mm do topo, ${layout.qrSizeMm} mm de lado`}
             aria-valuenow={layout.qrXMm}
             onPointerDown={(e) => onPointerDown(e, "qr")}
             onPointerMove={onPointerMove}
@@ -272,6 +345,16 @@ export function ModelEditor({
           >
             {/* eslint-disable-next-line @next/next/no-img-element -- QR de exemplo, SVG gerado pela própria API */}
             <img src="/api/qr/exemplo0?format=svg&size=256" alt="" draggable={false} className="pointer-events-none h-full w-full select-none" style={{ mixBlendMode: "multiply" }} />
+            {/* Alça de tamanho: o canto inferior direito do QR. Arrastar muda o lado; o canto superior esquerdo fica parado. */}
+            <div
+              data-qr-resize-handle
+              aria-hidden="true"
+              title="Arraste para mudar o tamanho do QR"
+              onPointerDown={onResizeDown}
+              onPointerMove={onResizeMove}
+              onPointerUp={() => (resize.current = null)}
+              className="absolute -right-2 -bottom-2 size-4 cursor-nwse-resize rounded-sm border-2 border-white bg-sky-500 shadow"
+            />
           </div>
           {form.serialEnabled ? (
             <div
@@ -292,8 +375,8 @@ export function ModelEditor({
           ) : null}
         </div>
         <p className="text-xs text-muted-foreground">
-          Arraste o QR e a série (ou use as setas, com Shift para andar mais rápido). A linha tracejada rosa é o corte; a parte escurecida é a sangria.
-          Página do PDF: {page.width} × {page.height} mm.
+          Arraste o QR e a série (ou use as setas, com Shift para andar mais rápido). Para mudar o tamanho do QR, arraste a alça azul do canto dele
+          ou use as teclas + e −. A linha tracejada rosa é o corte; a parte escurecida é a sangria. Página do PDF: {page.width} × {page.height} mm.
         </p>
       </div>
 
@@ -313,6 +396,20 @@ export function ModelEditor({
             <NumberField id="qx" label="Da esquerda" value={form.qrXMm} onChange={(v) => set("qrXMm", v)} />
             <NumberField id="qy" label="Do topo" value={form.qrYMm} onChange={(v) => set("qrYMm", v)} />
             <NumberField id="qs" label="Lado" value={form.qrSizeMm} onChange={(v) => set("qrSizeMm", v)} />
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button type="button" variant="outline" size="sm" onClick={fitQrToWhitePanel} disabled={!bgSrc} title={bgSrc ? undefined : "Envie a arte de fundo primeiro"}>
+              <Frame className="size-3.5" /> Encaixar no painel branco da arte
+            </Button>
+            <div role="group" aria-label="Tamanho do QR" className="flex items-center gap-1">
+              <Button type="button" variant="outline" size="icon-sm" aria-label="Diminuir o QR em 1 mm" onClick={() => resizeQr(-1)}>
+                <Minus className="size-3.5" aria-hidden="true" />
+              </Button>
+              <Button type="button" variant="outline" size="icon-sm" aria-label="Aumentar o QR em 1 mm" onClick={() => resizeQr(1)}>
+                <Plus className="size-3.5" aria-hidden="true" />
+              </Button>
+            </div>
+            <span className="text-xs text-muted-foreground">ou arraste a alça azul do canto do QR na prévia</span>
           </div>
           <div className="grid grid-cols-3 gap-3">
             <div className="space-y-1">

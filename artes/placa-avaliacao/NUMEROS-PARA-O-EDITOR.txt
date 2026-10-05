@@ -1,0 +1,21 @@
+ARTE DA PLACA DE AVALIACAO — numeros para o editor do modelo (Estoque -> Modelos)
+
+Arquivo a enviar:  arte-placa-avaliacao-106x106mm-300dpi.jpg
+  1252 x 1252 px, 300 dpi = 106 x 106 mm (100 x 100 mm de corte + 3 mm de sangria em cada lado)
+  Sem QR: o painel branco da direita e onde o sistema coloca o QR de cada placa.
+  (A versao "...-fiel-a-foto.jpg" mantem o reflexo de vidro do render; use so se preferir.)
+
+Tamanho
+  Largura  100 mm      Altura  100 mm      Sangria  3 mm
+
+QR (medidas a partir do canto superior esquerdo do CORTE)
+  Da esquerda  65 mm   Do topo  54 mm      Lado  25 mm
+  Correcao de erros  M      Modulos  #000000 (preto)      Fundo do QR  #FFFFFF (branco)
+  Com o endereco de hoje o quadradinho do QR sai com 0,61 mm (minimo recomendado: 0,50 mm).
+
+Serie impressa
+  Da esquerda  7 mm    Do topo  92 mm      Corpo  6 pt      Cor  #FFFFFF (branca)
+
+Para a grafica / fornecedor
+  Centro do icone NFC (onde o chip deve ficar, atras do "N)))"):
+    22,7 mm da esquerda e 67,7 mm do topo, medidos a partir do canto superior esquerdo do corte.
