@@ -2,6 +2,8 @@
 
 Mapa completo do que falta, do que tem erro e do que pode melhorar, para você poder tocar o trabalho em partes enquanto junta o dinheiro da hospedagem, do domínio e do lote. Cada item diz **o que é**, **a evidência**, **quanto custa** (em dinheiro e em trabalho) e **quem faz**.
 
+> **Atualização — pacote 1 (segurança) feito:** P1-4 (SSRF), P1-5 (página de sucesso) e P1-8 (dependências) estão no ar. **P1-1 (RLS) continua com você:** o SQL está pronto em `SQL_PRODUCAO_RLS.sql`. O plano da CSP está no ADR-094.
+
 **Escala de prioridade**
 - **P0** — impede a primeira venda real. Quase tudo aqui depende de dinheiro, de conta ou de decisão sua.
 - **P1** — segurança e confiabilidade. Custa R$ 0 e deve vir antes de ter cliente de verdade.
@@ -14,7 +16,7 @@ Mapa completo do que falta, do que tem erro e do que pode melhorar, para você p
 
 ## 1. Resumo em um minuto
 
-- **A base está sólida:** 725 testes passando, `tsc` e build limpos, nenhuma das 52 páginas estáticas dá erro 500, o isolamento entre empresas está correto nos pontos que conferi, e o toque na placa já está rápido (0,34 s).
+- **A base está sólida:** 828 testes passando, `tsc` e build limpos, nenhuma das 52 páginas estáticas dá erro 500, o isolamento entre empresas está correto nos pontos que conferi, e o toque na placa já está rápido (0,34 s).
 - **O que impede vender hoje (P0):** 10 itens, e quase todos são seus: hospedagem que permita uso comercial, domínio, Clerk e Stripe em produção, e-mail de verdade, textos legais com CNPJ, definição de nota fiscal, ligar as travas de lançamento, limpar os dados de teste e fechar a arte do lote.
 - **O que posso fazer sem gastar nada agora (P1 e P2):** 8 itens de segurança e confiabilidade e 18 de qualidade (seção 5 e 6). O mais importante é **ligar o RLS do Supabase** (SQL pronto), **ter alertas de erro (Sentry)** e **escrever os testes do caminho do dinheiro**.
 - **Quatro achados que eu não esperava:**
@@ -45,12 +47,12 @@ Mapa completo do que falta, do que tem erro e do que pode melhorar, para você p
 |---|---|
 | `tsc` | limpo |
 | `eslint` | 0 erros, 2 avisos (no componente sem uso `dia-text-reveal`) |
-| Testes | **725 passando** em 56 arquivos |
+| Testes | **828 passando** em 59 arquivos (725 antes do pacote 1) |
 | Build de produção | limpo; 242 rotas medidas |
 | Páginas estáticas (52) | **0 erros 500** |
 | Layout em celular | 1 página com defeito (`/developers`); tabelas do painel rolam por dentro do cartão |
 | Contraste (WCAG AA) | 2 defeitos pequenos (ver P2-4); resto passou nos dois temas |
-| `npm audit` (produção) | 11 avisos: **0 críticos**, 7 altos, 4 moderados; quase tudo em ferramentas de build (ver P1-8) |
+| `npm audit` (produção) | **8 avisos, 0 críticos** (eram 11; ver P1-8): tudo em ferramentas de build ou sem uso real, só com conserto por salto de versão |
 | Cobertura de testes | domínio bem coberto; **serviços 2 de 43, rotas de API 4 de 178** |
 | Velocidade do toque | **~0,34 s** (média de 8 medições, após fixar São Paulo) |
 | JavaScript da página inicial | 397 kB (média do site: 212 kB; análises 500 kB) |
@@ -83,11 +85,11 @@ Mapa completo do que falta, do que tem erro e do que pode melhorar, para você p
 | **P1-1** | **Ligar RLS nas tabelas antigas.** Sem RLS, quem tiver a chave pública do projeto Supabase pode ler e escrever essas tabelas pela API de dados, sem passar pelo app. | **Produção: 33/39 tabelas sem RLS; `anon` e `authenticated` com permissão em 39.** Staging: 38/39 sem RLS. As 5 tabelas do estoque já têm RLS e o app funciona com elas. | **P.** SQL pronto: `SQL_PRODUCAO_RLS.sql`. **Você roda**, primeiro no Staging, confere o app, depois em Produção. (Tentei validar no Staging, mas a plataforma bloqueou a alteração, e respeitei.) |
 | **P1-2** | **Alertas de erro.** Hoje nada avisa quando algo quebra. | `NEXT_PUBLIC_SENTRY_DSN` ausente (o código já tem Sentry pronto, desligado); logs de execução do Hobby: 1 hora. | **P** + conta grátis no Sentry (você cria, eu ligo). |
 | **P1-3** | **Testes do caminho do dinheiro e do estoque.** | `store-order.service`, o webhook do Stripe e `card.service` sem teste; 4 de 178 rotas com teste. Eu mesmo mexi hoje em `store-order.service` e só validei ao vivo. | **M–G.** Webhook Stripe (assinatura, repetição), provisionamento, avanço de etapa, atribuição de placa, e um conjunto de testes de **acesso entre empresas**. |
-| **P1-4** | **SSRF no envio de webhooks do cliente.** O dono (ou uma chave de API) escolhe a URL que o servidor chama; não há bloqueio de endereços internos. | `lib/webhooks/delivery.ts`: nenhuma guarda de IP privado, de `https` ou de redirecionamento. | **P.** |
-| **P1-5** | **`/loja/sucesso` confirma pedido que não existe.** | A página mostra "Pedido confirmado!" com o ícone de sucesso mesmo com `session_id` vazio, pedido cancelado ou pagamento pendente. | **P.** Título conforme o estado real do pedido. |
+| **P1-4** | **SSRF no envio de webhooks do cliente.** O dono (ou uma chave de API) escolhe a URL que o servidor chama; não há bloqueio de endereços internos. | `lib/webhooks/delivery.ts`: nenhuma guarda de IP privado, de `https` ou de redirecionamento. | ✅ **Feito (pacote 1, ADR-094):** bloqueio no cadastro e na conexão, testado ao vivo com um domínio público que aponta para `127.0.0.1`. |
+| **P1-5** | **`/loja/sucesso` confirma pedido que não existe.** | A página mostra "Pedido confirmado!" com o ícone de sucesso mesmo com `session_id` vazio, pedido cancelado ou pagamento pendente. | ✅ **Feito (pacote 1, ADR-094):** os 6 estados conferidos; o pendente se atualiza sozinho. |
 | **P1-6** | **Backups do banco.** Não consegui verificar. | Exige o painel do Supabase: plano, backup diário/PITR e um teste de restauração. | **Você** confere; eu escrevo o roteiro de restauração (P). |
 | **P1-7** | **Monitor externo (uptime).** | Nada vigia o toque `/r/<código>` nem o webhook do Stripe (webhook falhando = pedido pago sem produção). | **P.** Serviço grátis de monitoramento + alerta por e-mail. |
-| **P1-8** | **Dependências.** | `npm audit`: 11 (7 altos, 0 críticos). Altos em ferramentas de build (Prisma CLI, PostCSS do Next) e em pacotes transitivos (`@grpc/grpc-js`, `brace-expansion`, `fast-uri`). `npm audit fix` resolve 3 sem quebrar; o resto exige salto de versão grande (o conserto sugerido para Prisma é um **downgrade**, então ignorar). Há patches: Next 15.5.27, Clerk 7.9.11, Upstash, Stripe etc. | **P–M.** Atualizar patches + testar. |
+| **P1-8** | **Dependências.** | `npm audit`: 11 (7 altos, 0 críticos). Altos em ferramentas de build (Prisma CLI, PostCSS do Next) e em pacotes transitivos (`@grpc/grpc-js`, `brace-expansion`, `fast-uri`). `npm audit fix` resolve 3 sem quebrar; o resto exige salto de versão grande (o conserto sugerido para Prisma é um **downgrade**, então ignorar). Há patches: Next 15.5.27, Clerk 7.9.11, Upstash, Stripe etc. | ✅ **Feito (pacote 1, ADR-094):** 11 → 8 avisos, 0 críticos; Next 15.5.27, Clerk 7.9.11 e outros. Os 8 restantes só têm conserto por salto de versão (avaliados no ADR). |
 
 ---
 

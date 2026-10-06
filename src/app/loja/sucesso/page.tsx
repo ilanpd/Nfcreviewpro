@@ -1,12 +1,14 @@
 import Link from "next/link";
-import { CheckCircle2, Circle } from "lucide-react";
+import { CheckCircle2, Circle, CircleAlert, Clock3 } from "lucide-react";
 import { SiteHeader } from "@/components/marketing/site-header";
 import { SiteFooter } from "@/components/marketing/site-footer";
 import { prisma } from "@/lib/prisma";
 import { cn } from "@/lib/utils";
 import { buildOrderChecklist, currentStageLabel } from "@/domain/store-order/checklist";
+import { successView } from "@/domain/store-order/success-view";
 import { UpgradePitchCard } from "@/components/upgrade-pitch";
 import { EditLinkList } from "./edit-link-list";
+import { AutoRefresh } from "./auto-refresh";
 
 /**
  * Acompanhamento de pedido (Fase 15) — a mesma URL de retorno do Stripe
@@ -27,7 +29,7 @@ export default async function StoreSuccessPage({
     ? await prisma.storeOrder.findUnique({ where: { stripeCheckoutSessionId: session_id } })
     : null;
 
-  const isCanceled = order?.status === "CANCELED";
+  const view = successView(order);
   const checklist = order ? buildOrderChecklist(order) : [];
 
   // A cópia abaixo do lado do cliente precisa saber se ele ganhou um
@@ -54,19 +56,30 @@ export default async function StoreSuccessPage({
       <main className="flex flex-1 items-center justify-center px-6 py-20">
         <div className="mx-auto w-full max-w-xl">
           <div className="text-center">
-            <CheckCircle2 className="mx-auto size-14 text-brand-ink" />
-            <h1 className="mt-6 text-3xl font-semibold tracking-tight">Pedido confirmado!</h1>
-            {order ? (
+            {view.kind === "CONFIRMED" ? (
+              <CheckCircle2 className="mx-auto size-14 text-brand-ink" />
+            ) : view.kind === "AWAITING_PAYMENT" ? (
+              <Clock3 className="mx-auto size-14 text-brand-ink" />
+            ) : (
+              <CircleAlert className="mx-auto size-14 text-muted-foreground" />
+            )}
+            <h1 className="mt-6 text-3xl font-semibold tracking-tight">{view.title}</h1>
+            {view.description ? <p className="mt-4 text-muted-foreground">{view.description}</p> : null}
+            {order && (view.kind === "CONFIRMED" || view.kind === "AWAITING_PAYMENT") ? (
               <p className="mt-4 text-muted-foreground">
                 Pedido de {order.quantity} cartão(ões), configurados para redirecionar para{" "}
                 <span className="break-all font-medium text-foreground">{order.destinationUrl}</span>.
               </p>
-            ) : (
-              <p className="mt-4 text-muted-foreground">Recebemos seu pedido.</p>
-            )}
+            ) : null}
+            {view.autoRefresh ? <AutoRefresh /> : null}
+            {view.kind === "NOT_FOUND" ? (
+              <Link href="/loja" className="mt-6 inline-block text-sm font-medium text-brand-ink underline underline-offset-4">
+                Ir para a loja
+              </Link>
+            ) : null}
           </div>
 
-          {order && !isCanceled ? (
+          {order && view.kind === "CONFIRMED" ? (
             <div className="mt-12 rounded-2xl border bg-card p-8 shadow-subtle">
               <p className="text-center text-sm font-medium text-foreground">{currentStageLabel(order)}</p>
 

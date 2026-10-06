@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { ForbiddenError } from "@/lib/auth";
 import { attemptWebhookDelivery } from "@/lib/webhooks/delivery";
 import { PUBLIC_WEBHOOK_EVENT_TYPES } from "@/domain/api-v1/webhook-events";
+import { checkWebhookUrl } from "@/domain/api-v1/webhook-url";
 
 /**
  * Webhooks Enterprise (Fase 9) — CRUD de `WebhookEndpoint`, usado tanto pela
@@ -14,6 +15,16 @@ import { PUBLIC_WEBHOOK_EVENT_TYPES } from "@/domain/api-v1/webhook-events";
 function assertValidEvents(events: string[]) {
   const invalid = events.filter((e) => !PUBLIC_WEBHOOK_EVENT_TYPES.includes(e));
   if (invalid.length > 0) throw new ForbiddenError(`Evento(s) inválido(s): ${invalid.join(", ")}`);
+}
+
+/**
+ * Um webhook só pode apontar para um endereço https público (SSRF). A mesma regra
+ * vale para o painel e para a API pública, por isso mora aqui, no serviço; o envio
+ * (`lib/webhooks/safe-post.ts`) confere de novo na hora de conectar.
+ */
+function assertWebhookUrlAllowed(url: string) {
+  const check = checkWebhookUrl(url);
+  if (!check.ok) throw new ForbiddenError(check.reason);
 }
 
 export function listWebhookEndpoints(companyId: string) {
@@ -30,6 +41,7 @@ export async function createWebhookEndpoint(
   companyId: string,
   input: { url: string; description?: string | null; events: string[] }
 ) {
+  assertWebhookUrlAllowed(input.url);
   assertValidEvents(input.events);
   if (input.events.length === 0) throw new ForbiddenError("Selecione ao menos um evento para o webhook");
 
@@ -45,6 +57,7 @@ export async function updateWebhookEndpoint(
   input: { url?: string; description?: string | null; events?: string[]; active?: boolean }
 ) {
   await getWebhookEndpoint(companyId, id);
+  if (input.url !== undefined) assertWebhookUrlAllowed(input.url);
   if (input.events) assertValidEvents(input.events);
 
   return prisma.webhookEndpoint.update({

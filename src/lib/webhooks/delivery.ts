@@ -3,6 +3,7 @@ import { createHmac } from "node:crypto";
 import { prisma } from "@/lib/prisma";
 import { getCircuitBreaker } from "@/lib/circuit-breaker";
 import { log } from "@/lib/observability/logger";
+import { postToWebhook } from "@/lib/webhooks/safe-post";
 import type { WebhookEndpoint, WebhookDelivery } from "@/generated/prisma/client";
 
 /**
@@ -33,9 +34,11 @@ export async function attemptWebhookDelivery(
         "X-NFC-OS-Signature": await signPayload(endpoint.secret, body),
         "X-NFC-OS-Event": delivery.eventType,
       };
-      const res = await fetch(endpoint.url, { method: "POST", headers, body, signal: AbortSignal.timeout(10_000) });
-      if (!res.ok) throw new Error(`Webhook respondeu ${res.status}`);
-      return res.status;
+      // `postToWebhook` recusa endereços internos/privados (SSRF), inclusive um domínio
+      // público que resolve para IP privado, e não segue redirecionamentos.
+      const { status } = await postToWebhook(endpoint.url, headers, body, { timeoutMs: 10_000 });
+      if (status < 200 || status > 299) throw new Error(`Webhook respondeu ${status}`);
+      return status;
     });
 
     await prisma.webhookDelivery.update({
