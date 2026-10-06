@@ -2,7 +2,7 @@
 
 Mapa completo do que falta, do que tem erro e do que pode melhorar, para você poder tocar o trabalho em partes enquanto junta o dinheiro da hospedagem, do domínio e do lote. Cada item diz **o que é**, **a evidência**, **quanto custa** (em dinheiro e em trabalho) e **quem faz**.
 
-> **Atualização — pacote 1 (segurança) feito:** P1-4 (SSRF), P1-5 (página de sucesso) e P1-8 (dependências) estão no ar. **P1-1 (RLS) continua com você:** o SQL está pronto em `SQL_PRODUCAO_RLS.sql`. O plano da CSP está no ADR-094.
+> **Atualização — pacote 1 (segurança) feito:** P1-4 (SSRF), P1-5 (página de sucesso) e P1-8 (dependências) estão no ar. **P1-1 (RLS) foi ligado por você em 05/10/2026 (39 de 39 tabelas, conferido por consulta).** **Correção:** o risco que a primeira versão deste relatório descreveu para o RLS estava **exagerado** (ver P1-1). O plano da CSP está no ADR-094.
 
 **Escala de prioridade**
 - **P0** — impede a primeira venda real. Quase tudo aqui depende de dinheiro, de conta ou de decisão sua.
@@ -18,9 +18,9 @@ Mapa completo do que falta, do que tem erro e do que pode melhorar, para você p
 
 - **A base está sólida:** 828 testes passando, `tsc` e build limpos, nenhuma das 52 páginas estáticas dá erro 500, o isolamento entre empresas está correto nos pontos que conferi, e o toque na placa já está rápido (0,34 s).
 - **O que impede vender hoje (P0):** 10 itens, e quase todos são seus: hospedagem que permita uso comercial, domínio, Clerk e Stripe em produção, e-mail de verdade, textos legais com CNPJ, definição de nota fiscal, ligar as travas de lançamento, limpar os dados de teste e fechar a arte do lote.
-- **O que posso fazer sem gastar nada agora (P1 e P2):** 8 itens de segurança e confiabilidade e 18 de qualidade (seção 5 e 6). O mais importante é **ligar o RLS do Supabase** (SQL pronto), **ter alertas de erro (Sentry)** e **escrever os testes do caminho do dinheiro**.
+- **O que posso fazer sem gastar nada agora (P1 e P2):** 8 itens de segurança e confiabilidade e 18 de qualidade (seção 5 e 6). O mais importante agora é **ter alertas de erro (Sentry)** e **escrever os testes do caminho do dinheiro** (o RLS do Supabase já foi ligado em 05/10).
 - **Quatro achados que eu não esperava:**
-  1. Em Produção, **33 das 39 tabelas estão sem RLS**, e os papéis públicos do Supabase têm permissão nelas (inclui pedidos com CPF/telefone/endereço).
+  1. Em Produção, **33 das 39 tabelas estavam sem RLS** (hoje 39 de 39). Na primeira versão deste relatório eu escrevi que os papéis públicos do Supabase podiam ler e escrever nelas; **isso estava errado**: eles só tinham `TRUNCATE`, `REFERENCES`, `TRIGGER` e `MAINTAIN`, nenhum alcançável pela API de dados. Era uma segunda trava que faltava, não uma porta aberta.
   2. **Nenhum alerta de erro está ligado**: se algo quebrar para um cliente, você não fica sabendo (e o plano Hobby guarda só 1 hora de log).
   3. A página `/loja/sucesso` diz **"Pedido confirmado!" mesmo sem pedido** ou com pagamento pendente.
   4. A página pública `/developers` **fica larga demais no celular** (tabela de 1078 px sem rolagem).
@@ -82,7 +82,7 @@ Mapa completo do que falta, do que tem erro e do que pode melhorar, para você p
 
 | # | Item | Evidência | Esforço |
 |---|---|---|---|
-| **P1-1** | **Ligar RLS nas tabelas antigas.** Sem RLS, quem tiver a chave pública do projeto Supabase pode ler e escrever essas tabelas pela API de dados, sem passar pelo app. | **Produção: 33/39 tabelas sem RLS; `anon` e `authenticated` com permissão em 39.** Staging: 38/39 sem RLS. As 5 tabelas do estoque já têm RLS e o app funciona com elas. | **P.** SQL pronto: `SQL_PRODUCAO_RLS.sql`. **Você roda**, primeiro no Staging, confere o app, depois em Produção. (Tentei validar no Staging, mas a plataforma bloqueou a alteração, e respeitei.) |
+| **P1-1 ✅** | **Ligar RLS nas tabelas antigas.** Segunda trava contra acesso pela API de dados do Supabase. | **Feito em 05/10/2026: 39 de 39 com RLS (conferido por consulta).** **Correção:** eu havia dito que `anon` podia ler e escrever; **não podia**. Medido pelo ACL real (`has_table_privilege`): só `TRUNCATE`, `REFERENCES`, `TRIGGER` e `MAINTAIN`. Meu erro foi ler `role_table_grants` (que lista qualquer privilégio) como se fosse leitura e escrita. Era defesa em camadas, não uma porta aberta. O site segue lendo os dados reais normalmente. | ✅ **Feito.** Opcional e cosmético: o `REVOKE` que está no fim de `SQL_PRODUCAO_RLS.sql`, para tirar os privilégios que sobraram. |
 | **P1-2** | **Alertas de erro.** Hoje nada avisa quando algo quebra. | `NEXT_PUBLIC_SENTRY_DSN` ausente (o código já tem Sentry pronto, desligado); logs de execução do Hobby: 1 hora. | **P** + conta grátis no Sentry (você cria, eu ligo). |
 | **P1-3** | **Testes do caminho do dinheiro e do estoque.** | `store-order.service`, o webhook do Stripe e `card.service` sem teste; 4 de 178 rotas com teste. Eu mesmo mexi hoje em `store-order.service` e só validei ao vivo. | **M–G.** Webhook Stripe (assinatura, repetição), provisionamento, avanço de etapa, atribuição de placa, e um conjunto de testes de **acesso entre empresas**. |
 | **P1-4** | **SSRF no envio de webhooks do cliente.** O dono (ou uma chave de API) escolhe a URL que o servidor chama; não há bloqueio de endereços internos. | `lib/webhooks/delivery.ts`: nenhuma guarda de IP privado, de `https` ou de redirecionamento. | ✅ **Feito (pacote 1, ADR-094):** bloqueio no cadastro e na conexão, testado ao vivo com um domínio público que aponta para `127.0.0.1`. |
