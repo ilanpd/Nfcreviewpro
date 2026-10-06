@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import * as Sentry from "@sentry/nextjs";
 import { Button } from "@/components/ui/button";
 
 /** Ver comentário de global-error.tsx / dashboard/error.tsx — mesmo padrão,
@@ -8,6 +9,8 @@ import { Button } from "@/components/ui/button";
 export default function AdminError({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
   useEffect(() => {
     console.error(error);
+    // Sem isto, um erro de tela fica só no navegador do cliente e ninguém fica sabendo (no-op sem DSN).
+    Sentry.captureException(error);
   }, [error]);
 
   return (

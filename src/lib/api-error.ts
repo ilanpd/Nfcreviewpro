@@ -7,6 +7,7 @@ import { ReturnOfferError } from "@/services/return-offer.service";
 import { FeedbackError } from "@/services/feedback.service";
 import { PlateError } from "@/services/plates.service";
 import { CardUrlNotReadyError } from "@/lib/card-url";
+import { reportServerError } from "@/lib/observability/report-error";
 
 /** Central place to turn a thrown error into a consistent JSON response for API routes. */
 export function handleApiError(error: unknown): NextResponse {
@@ -42,5 +43,7 @@ export function handleApiError(error: unknown): NextResponse {
   }
 
   console.error(error);
+  // Erro inesperado = 500: sem isto o Sentry nunca saberia (a rota captura o erro e responde normalmente).
+  reportServerError(error, { module: "api" });
   return NextResponse.json({ error: "Erro interno do servidor" }, { status: 500 });
 }

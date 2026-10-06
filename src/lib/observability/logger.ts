@@ -1,5 +1,6 @@
 import "server-only";
 import { getCorrelationId, getRequestId } from "./correlation";
+import { reportServerMessage } from "./report-error";
 
 /**
  * Observability Engine (Fase 8) — logger estruturado (JSON, uma linha por
@@ -31,7 +32,11 @@ function emit(level: LogLevel, module: string, message: string, fields?: LogFiel
   };
 
   const line = JSON.stringify(entry);
-  if (level === "error") console.error(line);
+  if (level === "error") {
+    console.error(line);
+    // Todo log.error também vai ao Sentry (no-op sem DSN; dados pessoais são filtrados lá dentro).
+    reportServerMessage(message, { module, extra: fields });
+  }
   else if (level === "warn") console.warn(line);
   else console.log(line);
 }

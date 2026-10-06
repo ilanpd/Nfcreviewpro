@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import * as Sentry from "@sentry/nextjs";
 import { Button } from "@/components/ui/button";
 
 /** Ver comentário de global-error.tsx — este nível preserva a sidebar do
@@ -9,6 +10,8 @@ import { Button } from "@/components/ui/button";
 export default function DashboardError({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
   useEffect(() => {
     console.error(error);
+    // Sem isto, um erro de tela fica só no navegador do cliente e ninguém fica sabendo (no-op sem DSN).
+    Sentry.captureException(error);
   }, [error]);
 
   return (

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import * as Sentry from "@sentry/nextjs";
 import { Button } from "@/components/ui/button";
 
 /**
@@ -16,6 +17,8 @@ import { Button } from "@/components/ui/button";
 export default function GlobalError({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
   useEffect(() => {
     console.error(error);
+    // Sem isto, um erro de tela fica só no navegador do cliente e ninguém fica sabendo (no-op sem DSN).
+    Sentry.captureException(error);
   }, [error]);
 
   return (
@@ -24,7 +27,8 @@ export default function GlobalError({ error, reset }: { error: Error & { digest?
         <main className="flex min-h-screen flex-col items-center justify-center gap-4 p-6 text-center">
           <p className="text-lg font-semibold">Algo deu errado</p>
           <p className="max-w-sm text-sm text-muted-foreground">
-            Nosso time já foi avisado. Tente novamente em instantes.
+            {/* Só promete aviso quando o Sentry está ligado: nunca afirmar o que não acontece. */}
+            {process.env.NEXT_PUBLIC_SENTRY_DSN ? "Nosso time já foi avisado. " : ""}Tente novamente em instantes.
           </p>
           <Button onClick={reset}>Tentar de novo</Button>
         </main>
