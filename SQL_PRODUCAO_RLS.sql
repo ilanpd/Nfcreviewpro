@@ -14,15 +14,25 @@
 -- afetado: ele conecta como o dono das tabelas (papel `postgres`), que ignora o
 -- RLS — é o mesmo caminho que já funciona nas 5 tabelas do estoque.
 --
--- COMO USAR (nesta ordem, você roda no SQL Editor do Supabase):
---   1) STAGING primeiro (projeto "Nfc Review Pro 2"). Rode, depois abra o app em
---      Staging e confira: login, /admin, /admin/pedidos, /dashboard, /loja, um
---      toque em /r/<código> e a criação de um cartão.
---   2) PRODUÇÃO (projeto "Nfc Review Pro") só depois do passo 1 passar.
---   3) Rode o bloco "VERIFICAÇÃO" no fim e confira que "sem_rls" deu 0.
+-- PODE RODAR DIRETO EM PRODUÇÃO (projeto "Nfc Review Pro"). Conferido em 05/10/2026,
+-- só leitura de catálogo, na conexão que o app usa:
+--   * o app conecta como o papel `postgres`, que tem BYPASSRLS e é DONO das 39 tabelas;
+--   * nenhuma tabela usa FORCE RLS (que prenderia até o dono);
+--   * não existe nenhuma política hoje, e o código não usa o cliente do Supabase
+--     (nada depende de acesso `anon`/`authenticated`);
+--   * as 5 tabelas do estoque já rodam com RLS ligado em Produção e o app grava nelas.
+-- Ou seja: ligar o RLS não muda nada para o app; só fecha a porta lateral da API
+-- do Supabase. Rodar antes no Staging é uma precaução opcional, não uma exigência.
 --
--- É REVERSÍVEL: para desfazer uma tabela, `ALTER TABLE public."Tabela" DISABLE ROW
--- LEVEL SECURITY;`. É transacional: se algo falhar, nada é alterado.
+-- COMO USAR (SQL Editor do Supabase):
+--   1) Cole este arquivo inteiro e rode. Leva menos de 1 segundo (cada tabela é
+--      travada só enquanto a transação roda).
+--   2) Confira o resultado do bloco "VERIFICAÇÃO": sem_rls = 0 e
+--      pedidos_visiveis_para_anon = 0.
+--   3) Me avise: eu confiro o site por fora (páginas, toque na placa).
+--
+-- É REVERSÍVEL: veja o bloco "PLANO DE VOLTA" no fim. É transacional: se algo
+-- falhar, nada é alterado.
 -- ============================================================================
 
 BEGIN;
@@ -68,6 +78,26 @@ BEGIN;
 SET LOCAL ROLE anon;
 SELECT count(*) AS pedidos_visiveis_para_anon FROM public."StoreOrder";
 ROLLBACK;
+
+-- ----------------------------------------------------------------------------
+-- PLANO DE VOLTA (só se algo inesperado acontecer; NÃO rode junto com o acima).
+-- Desliga o RLS em todas as tabelas, EXCETO as 5 do estoque, que já estavam com
+-- RLS ligado antes deste arquivo (ADR-092) e devem continuar assim.
+--
+--   BEGIN;
+--   DO $$
+--   DECLARE t record;
+--   BEGIN
+--     FOR t IN
+--       SELECT c.relname FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
+--       WHERE n.nspname = 'public' AND c.relkind = 'r' AND c.relrowsecurity
+--         AND c.relname NOT IN ('Plate', 'PlateBatch', 'PlateEvent', 'PlateModel', 'PlateModelVersion')
+--     LOOP
+--       EXECUTE format('ALTER TABLE public.%I DISABLE ROW LEVEL SECURITY', t.relname);
+--     END LOOP;
+--   END $$;
+--   COMMIT;
+-- ----------------------------------------------------------------------------
 
 -- ----------------------------------------------------------------------------
 -- OPCIONAL, depois que o app estiver confirmado funcionando por alguns dias:
