@@ -1,5 +1,6 @@
 import "server-only";
 import { BRAND } from "@/lib/brand";
+import { escapeHtml, safeHref } from "@/lib/email-templates/escape";
 
 /**
  * Layout compartilhado de e-mail transacional (C9/F6). Até aqui, cada
@@ -38,12 +39,12 @@ export function emailLayout(params: { eyebrow: string; bodyHtml: string; footerH
 /** Linha de tabela "rótulo à esquerda, valor em negrito à direita" — usada em todo resumo dentro de um e-mail. */
 export function emailSummaryRow(label: string, value: string): string {
   return `<tr>
-    <td style="padding:6px 0;color:#5C5D66;font-size:13px;">${label}</td>
-    <td style="padding:6px 0;color:${BRAND.colors.ink};font-size:13px;font-weight:600;text-align:right;">${value}</td>
+    <td style="padding:6px 0;color:#5C5D66;font-size:13px;">${escapeHtml(label)}</td>
+    <td style="padding:6px 0;color:${BRAND.colors.ink};font-size:13px;font-weight:600;text-align:right;">${escapeHtml(value)}</td>
   </tr>`;
 }
 
 /** Botão de ação principal — mesmo tom escuro da marca, para o único link que importa num e-mail transacional. */
 export function emailButton(label: string, href: string): string {
-  return `<a href="${href}" style="display:inline-block;margin-top:4px;padding:11px 20px;background:${BRAND.colors.ink};color:#FFFFFF;border-radius:8px;font-size:14px;font-weight:600;text-decoration:none;">${label}</a>`;
+  return `<a href="${safeHref(href)}" style="display:inline-block;margin-top:4px;padding:11px 20px;background:${BRAND.colors.ink};color:#FFFFFF;border-radius:8px;font-size:14px;font-weight:600;text-decoration:none;">${escapeHtml(label)}</a>`;
 }

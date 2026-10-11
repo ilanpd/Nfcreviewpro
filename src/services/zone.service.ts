@@ -14,7 +14,13 @@ export function listZones(companyId: string) {
   return zoneRepo.findZones(companyId);
 }
 
-export function createZone(companyId: string, name: string, branchId?: string | null) {
+export async function createZone(companyId: string, name: string, branchId?: string | null) {
+  // Um branchId de OUTRA empresa nunca é aceito: a zona nova ficaria apontando para a unidade alheia e a
+  // listagem (que traz o nome da unidade) devolveria esse nome a quem não tem direito a ele.
+  if (branchId) {
+    const branch = await prisma.branch.findFirst({ where: { id: branchId, companyId }, select: { id: true } });
+    if (!branch) throw new ForbiddenError("Unidade não encontrada nesta empresa");
+  }
   return zoneRepo.createZone(companyId, name, branchId);
 }
 

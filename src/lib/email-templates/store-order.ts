@@ -1,6 +1,7 @@
 import "server-only";
 import { formatCentsToBRL } from "@/lib/store-products";
 import { emailLayout, emailSummaryRow } from "@/lib/email-templates/layout";
+import { escapeHtml } from "@/lib/email-templates/escape";
 
 /**
  * E-mails transacionais do pedido da loja física (Auditoria do Fluxo de
@@ -23,9 +24,9 @@ export function confirmationEmailHtml(order: OrderEmailBase): string {
     eyebrow: "Pedido de cartões NFC",
     footerHtml: FOOTER,
     bodyHtml: `
-    <h1 style="margin:0 0 6px;font-size:20px;color:#16191C;">Recebemos seu pedido, ${order.customerName.split(" ")[0]}!</h1>
+    <h1 style="margin:0 0 6px;font-size:20px;color:#16191C;">Recebemos seu pedido, ${escapeHtml(order.customerName.split(" ")[0])}!</h1>
     <p style="margin:0 0 20px;color:#4A4F55;font-size:14px;line-height:1.6;">
-      O pagamento foi confirmado e seu pedido <strong>#${order.orderShort}</strong> já entrou em produção.
+      O pagamento foi confirmado e seu pedido <strong>#${escapeHtml(order.orderShort)}</strong> já entrou em produção.
       Assim que for enviado, você recebe outro e-mail com o código de rastreio.
     </p>
     <table style="width:100%;border-collapse:collapse;background:#F3F4F5;border-radius:8px;padding:4px 14px;">
@@ -49,7 +50,7 @@ export function shippedEmailHtml(order: OrderEmailBase & { trackingCode?: string
     bodyHtml: `
     <h1 style="margin:0 0 6px;font-size:20px;color:#16191C;">Seu pedido está a caminho! 📦</h1>
     <p style="margin:0 0 4px;color:#4A4F55;font-size:14px;line-height:1.6;">
-      O pedido <strong>#${order.orderShort}</strong> (${order.quantity} cartão(ões)) foi enviado.
+      O pedido <strong>#${escapeHtml(order.orderShort)}</strong> (${order.quantity} cartão(ões)) foi enviado.
     </p>
     ${trackingBlock}`,
   });
@@ -62,7 +63,7 @@ export function deliveredEmailHtml(order: OrderEmailBase): string {
     bodyHtml: `
     <h1 style="margin:0 0 6px;font-size:20px;color:#16191C;">Pedido entregue ✅</h1>
     <p style="margin:0 0 20px;color:#4A4F55;font-size:14px;line-height:1.6;">
-      O pedido <strong>#${order.orderShort}</strong> chegou até você. Esperamos que seus novos cartões NFC ajudem a
+      O pedido <strong>#${escapeHtml(order.orderShort)}</strong> chegou até você. Esperamos que seus novos cartões NFC ajudem a
       colher ainda mais avaliações — qualquer dúvida na hora de colocar em uso, é só responder este e-mail.
     </p>`,
   });

@@ -1,5 +1,6 @@
 import "server-only";
 import { emailLayout, emailButton } from "@/lib/email-templates/layout";
+import { escapeHtml } from "@/lib/email-templates/escape";
 import { GRACE_DAYS, READ_ONLY_DAYS } from "@/domain/billing/effective-tier";
 
 /**
@@ -16,9 +17,9 @@ export function subscriptionWelcomeEmailHtml(params: { companyName: string; plan
     eyebrow: "Assinatura confirmada",
     footerHtml: "Alguma dúvida sobre o plano? Responda este e-mail.",
     bodyHtml: `
-    <h1 style="margin:0 0 6px;font-size:20px;color:#16191C;">Bem-vindo(a), ${companyName}! 🎉</h1>
+    <h1 style="margin:0 0 6px;font-size:20px;color:#16191C;">Bem-vindo(a), ${escapeHtml(companyName)}! 🎉</h1>
     <p style="margin:0 0 20px;color:#4A4F55;font-size:14px;line-height:1.6;">
-      Sua assinatura do plano <strong>${planLabel}</strong> está ativa. O painel já libera tudo que o plano inclui —
+      Sua assinatura do plano <strong>${escapeHtml(planLabel)}</strong> está ativa. O painel já libera tudo que o plano inclui —
       é só entrar e configurar o brinde de Retorno, se ainda não tiver feito isso.
     </p>
     ${emailButton("Abrir o painel", dashboardUrl)}`,
@@ -33,7 +34,7 @@ export function billingPastDueEmailHtml(params: { companyName: string; settingsU
     bodyHtml: `
     <h1 style="margin:0 0 6px;font-size:20px;color:#16191C;">Não conseguimos confirmar sua última cobrança</h1>
     <p style="margin:0 0 16px;color:#4A4F55;font-size:14px;line-height:1.6;">
-      A assinatura da <strong>${companyName}</strong> continua funcionando normalmente por mais
+      A assinatura da <strong>${escapeHtml(companyName)}</strong> continua funcionando normalmente por mais
       <strong>${GRACE_DAYS} dias</strong> — dá tempo de atualizar o cartão sem que ninguém perceba nada no painel.
       Depois disso, o acesso passa a ser só de leitura por até ${READ_ONLY_DAYS} dias, sem poder emitir brinde novo.
     </p>
@@ -48,7 +49,7 @@ export function subscriptionCanceledEmailHtml(params: { companyName: string; das
     eyebrow: "Assinatura cancelada",
     footerHtml: "Mudou de ideia? Responda este e-mail ou reative direto pelo painel, a qualquer momento.",
     bodyHtml: `
-    <h1 style="margin:0 0 6px;font-size:20px;color:#16191C;">A assinatura da ${companyName} foi cancelada</h1>
+    <h1 style="margin:0 0 6px;font-size:20px;color:#16191C;">A assinatura da ${escapeHtml(companyName)} foi cancelada</h1>
     <p style="margin:0 0 16px;color:#4A4F55;font-size:14px;line-height:1.6;">
       O painel continua acessível só para consulta (sem editar nada nem emitir brinde novo) por até
       <strong>${READ_ONLY_DAYS} dias</strong>. Depois desse prazo, reative a assinatura para voltar a usar o produto.

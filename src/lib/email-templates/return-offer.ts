@@ -1,5 +1,6 @@
 import "server-only";
 import { emailLayout, emailButton } from "@/lib/email-templates/layout";
+import { escapeHtml } from "@/lib/email-templates/escape";
 
 /**
  * E-mail de "brinde ativado pela primeira vez" (C9/F6, ADR-084, J7 do plano).
@@ -15,8 +16,8 @@ export function returnActivatedEmailHtml(params: { companyName: string; offerTit
     bodyHtml: `
     <h1 style="margin:0 0 6px;font-size:20px;color:#16191C;">Seu brinde de Retorno está no ar! 🎁</h1>
     <p style="margin:0 0 16px;color:#4A4F55;font-size:14px;line-height:1.6;">
-      A partir de agora, todo cliente que tocar num cartão da <strong>${companyName}</strong> vê
-      "Toque e ganhe: ${offerTitle}" e sai com um brinde reservado pra próxima visita.
+      A partir de agora, todo cliente que tocar num cartão da <strong>${escapeHtml(companyName)}</strong> vê
+      "Toque e ganhe: ${escapeHtml(offerTitle)}" e sai com um brinde reservado pra próxima visita.
     </p>
     <p style="margin:0 0 4px;color:#4A4F55;font-size:14px;line-height:1.6;">
       Duas coisas pra deixar prontas na loja:
