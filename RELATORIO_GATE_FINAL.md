@@ -83,9 +83,9 @@ Todas as 4 linhas testadas com contas Clerk reais, convidadas e aceitas pelo flu
 
 | Papel | E-mail | Senha | Empresa |
 |---|---|---|---|
-| Proprietário | `clara.wechsler+clerk_test_empresab@gmail.com` | `GateFinal2026!Teste` | Empresa Teste Gate Final B (criada do zero via signup real) |
-| Gerente (convidado, RBAC) | `clara.wechsler+clerk_test_rbacmanager@gmail.com` | `GateFinal2026!Teste` | Empresa Teste Gate Final B (mesma) |
-| Proprietário (acesso de QA) | `clara.wechsler+clerk_test_bvaccess@gmail.com` | `GateFinal2026!Teste` | **Bella Vista** (empresa de seed, com 90 dias de histórico real) |
+| Proprietário | `<conta de teste do Clerk>` | `<senha removida>` | Empresa Teste Gate Final B (criada do zero via signup real) |
+| Gerente (convidado, RBAC) | `<conta de teste do Clerk>` | `<senha removida>` | Empresa Teste Gate Final B (mesma) |
+| Proprietário (acesso de QA) | `<conta de teste do Clerk>` | `<senha removida>` | **Bella Vista** (empresa de seed, com 90 dias de histórico real) |
 
 Todas usam o padrão de teste da Clerk (`+clerk_test`) — o código de verificação de e-mail é sempre `424242`, nunca chega um e-mail de verdade. A terceira conta foi criada especificamente para poder testar Playbooks/Heatmap/Analytics contra dados históricos reais, já que uma empresa nova não tem volume suficiente para gerar recomendações — foi vinculada à Bella Vista via um registro `User` pendente criado diretamente no banco (não pelo fluxo de convite normal, que exigiria já estar logado como o dono original, que não existe como conta Clerk real).
 
