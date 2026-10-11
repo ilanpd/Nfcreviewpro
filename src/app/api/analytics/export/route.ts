@@ -3,6 +3,7 @@ import { requireAuthContext } from "@/lib/auth";
 import { getCompanyById } from "@/services/company.service";
 import { buildAnalyticsReport, renderReportCsv, renderReportXlsx, renderReportPdf } from "@/services/export-engine.service";
 import { handleApiError } from "@/lib/api-error";
+import { withConcurrencyLimit } from "@/lib/rate-limit";
 
 const VALID_FORMATS = new Set(["csv", "xlsx", "pdf"]);
 
@@ -16,30 +17,35 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Formato de exportação inválido" }, { status: 400 });
     }
 
-    const company = await getCompanyById(ctx.companyId);
-    const report = await buildAnalyticsReport(ctx.companyId, company.name, days);
-    const filenameBase = `relatorio-analytics-${Date.now()}`;
+    // No máximo 2 relatórios simultâneos por usuário (xlsx e pdf são caros em CPU).
+    const slot = await withConcurrencyLimit("export", ctx.userId, 2, async () => {
+      const company = await getCompanyById(ctx.companyId);
+      const report = await buildAnalyticsReport(ctx.companyId, company.name, days);
+      const filenameBase = `relatorio-analytics-${Date.now()}`;
 
-    if (format === "csv") {
-      return new NextResponse(renderReportCsv(report), {
-        headers: { "Content-Type": "text/csv; charset=utf-8", "Content-Disposition": `attachment; filename="${filenameBase}.csv"` },
-      });
-    }
+      if (format === "csv") {
+        return new NextResponse(renderReportCsv(report), {
+          headers: { "Content-Type": "text/csv; charset=utf-8", "Content-Disposition": `attachment; filename="${filenameBase}.csv"` },
+        });
+      }
 
-    if (format === "xlsx") {
-      const buffer = await renderReportXlsx(report);
+      if (format === "xlsx") {
+        const buffer = await renderReportXlsx(report);
+        return new NextResponse(new Uint8Array(buffer), {
+          headers: {
+            "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            "Content-Disposition": `attachment; filename="${filenameBase}.xlsx"`,
+          },
+        });
+      }
+
+      const buffer = await renderReportPdf(report);
       return new NextResponse(new Uint8Array(buffer), {
-        headers: {
-          "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-          "Content-Disposition": `attachment; filename="${filenameBase}.xlsx"`,
-        },
-      });
-    }
-
-    const buffer = await renderReportPdf(report);
-    return new NextResponse(new Uint8Array(buffer), {
-      headers: { "Content-Type": "application/pdf", "Content-Disposition": `attachment; filename="${filenameBase}.pdf"` },
+        headers: { "Content-Type": "application/pdf", "Content-Disposition": `attachment; filename="${filenameBase}.pdf"` },
     });
+    });
+    if (!slot.ok) return NextResponse.json({ error: "Você já tem exportações em andamento. Aguarde terminarem e tente de novo." }, { status: 429, headers: { "Retry-After": "10" } });
+    return slot.value;
   } catch (error) {
     return handleApiError(error);
   }

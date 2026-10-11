@@ -1,24 +1,16 @@
 import { NextResponse } from "next/server";
 import { clerkMiddleware } from "@clerk/nextjs/server";
 import { isDevRuntimeEnabled } from "@/lib/dev-runtime/config";
-import { rateLimit } from "@/lib/rate-limit";
+import { runApiGuards } from "@/lib/api-guards";
 
-// Segurança (Auditoria Nível Bilionário, 11/09/2026) — antes disto, uma rota
-// de mutação autenticada do dashboard (criar cartão, campanha, unidade...)
-// não tinha nenhum limite de taxa; só as rotas públicas tinham. Aplicado
-// aqui, uma vez, para todo `/api/*` que muta dado — nunca depende de cada
-// rota lembrar de chamar isto sozinha. Fora: `/api/stripe/webhook`
-// (servidor-a-servidor, autenticado por assinatura HMAC, nunca por sessão —
-// descartar uma entrega legítima de pagamento seria pior que não limitar) e
-// `/api/v1/*` (API pública, já tem seu próprio limite por ApiKey, mais
-// preciso que um limite genérico por IP aqui).
-const MUTATING_METHODS = new Set(["POST", "PATCH", "PUT", "DELETE"]);
-function isRateLimitedApiPath(pathname: string): boolean {
-  if (!pathname.startsWith("/api/")) return false;
-  if (pathname.startsWith("/api/stripe/webhook")) return false;
-  if (pathname.startsWith("/api/v1/")) return false;
-  return true;
-}
+// Segurança (Auditoria Nível Bilionário, 11/09/2026; ampliada na Auditoria de Cibersegurança de
+// 11/10/2026, ADR-096) — as guardas gerais de `/api/*` vivem aqui, UMA vez, e nunca dependem de cada
+// rota lembrar de chamá-las: teto de tamanho do corpo (413), requisição que altera dado vinda de
+// OUTRO site (403, CSRF) e limite de taxa pela classe da rota, para mutações E leituras (429, com
+// `Retry-After`). As regras são funções puras em `lib/request-guards.ts` (testadas); o IP vem de
+// `lib/client-ip.ts`, que não confia em cabeçalho que o cliente consiga forjar. Fora das guardas:
+// o webhook do Stripe (assinatura HMAC), a API pública v1 (limite por chave) e os agendamentos
+// (CRON_SECRET) — ver `isGuardedApiPath`.
 
 // The real security boundary is resource-based: every dashboard page/layout
 // and API route calls requireAuthContext()/getAuthContext() itself (see
@@ -41,17 +33,9 @@ const withClerk = clerkMiddleware(
       await auth.protect();
     }
 
-    if (MUTATING_METHODS.has(req.method) && isRateLimitedApiPath(pathname)) {
-      const { userId } = await auth();
-      // IP lido direto do header do request — nunca `lib/ip.ts` aqui (usa
-      // `node:crypto`, que não roda no runtime Edge deste middleware; ver o
-      // comentário do White Label logo abaixo sobre a mesma restrição).
-      const identifier = userId ?? req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "anonymous";
-      const { success } = await rateLimit("authMutation", identifier);
-      if (!success) {
-        return NextResponse.json({ error: "Muitas requisições, tente novamente em instantes." }, { status: 429 });
-      }
-    }
+    // Guardas gerais de /api/* (tamanho do corpo, CSRF, limite de taxa): ver lib/api-guards.ts.
+    const blocked = await runApiGuards(req, async () => (await auth()).userId);
+    if (blocked) return blocked;
   },
   {
     // Segurança (Fase 10 — White Label, endurecida na Auditoria Nível

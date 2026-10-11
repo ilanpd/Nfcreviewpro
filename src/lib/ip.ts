@@ -1,5 +1,6 @@
 import { createHash } from "crypto";
 import { headers } from "next/headers";
+import { getClientIp } from "@/lib/client-ip";
 
 // We never persist raw IPs (PrivacyByDesign) — only a salted hash, which is
 // enough to de-duplicate/rate-limit without being able to re-identify a
@@ -9,9 +10,11 @@ export function hashIp(ip: string): string {
   return createHash("sha256").update(`${salt}:${ip}`).digest("hex");
 }
 
+/**
+ * IP do visitante para limites de taxa e para o hash de privacidade. A regra de CONFIANÇA nos cabeçalhos
+ * mora em lib/client-ip.ts (na Vercel, a borda sobrescreve os cabeçalhos; fora dela, nada é confiável
+ * sem TRUSTED_PROXY_HOPS). Nunca lemos x-forwarded-for direto: o cliente escreve o que quiser nele.
+ */
 export async function getRequestIp(): Promise<string> {
-  const h = await headers();
-  const forwarded = h.get("x-forwarded-for");
-  if (forwarded) return forwarded.split(",")[0].trim();
-  return h.get("x-real-ip") ?? "0.0.0.0";
+  return getClientIp(await headers());
 }
