@@ -8,6 +8,7 @@ import { planHasFeature, type PlanFeature } from "@/lib/plans";
 import { resolveAccess, type AccessDecision } from "@/domain/billing/effective-tier";
 import { isDevRuntimeEnabled } from "@/lib/dev-runtime/config";
 import { getDevRuntimeAuthContext } from "@/lib/dev-runtime/auth";
+import { verifiedPrimaryEmail } from "@/lib/verified-email";
 import type { Role, PlanType } from "@/generated/prisma/client";
 
 export class UnauthorizedError extends Error {
@@ -124,7 +125,9 @@ export async function getAuthContext(): Promise<AuthContext | null> {
   // every later request hits the findUnique above directly).
   if (!user) {
     const clerkUser = await currentUser();
-    const email = clerkUser?.primaryEmailAddress?.emailAddress;
+    // Convite pendente de equipe herdado pelo e-mail: só com e-mail VERIFICADO (senão qualquer
+    // pessoa herdaria o papel de quem foi convidado só digitando o e-mail dele no cadastro).
+    const email = verifiedPrimaryEmail(clerkUser);
     if (email) {
       const claimed = await resolveOrClaimUser(clerkId, email);
       if (claimed) {

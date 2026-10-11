@@ -5,6 +5,7 @@ import { isDevRuntimeEnabled } from "@/lib/dev-runtime/config";
 import { onboardingSchema } from "@/lib/validations/company";
 import { createCompanyForNewUser, claimGuestCompany } from "@/services/company.service";
 import { handleApiError } from "@/lib/api-error";
+import { displayPrimaryEmail, verifiedPrimaryEmail } from "@/lib/verified-email";
 
 export async function POST(req: NextRequest) {
   try {
@@ -26,8 +27,11 @@ export async function POST(req: NextRequest) {
     if (!clerkId) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
 
     const clerkUser = await currentUser();
-    const email = clerkUser?.primaryEmailAddress?.emailAddress;
-    if (!email) return NextResponse.json({ error: "E-mail não encontrado na conta" }, { status: 400 });
+    if (!displayPrimaryEmail(clerkUser)) return NextResponse.json({ error: "E-mail não encontrado na conta" }, { status: 400 });
+    // O e-mail aqui vira vínculo com uma empresa convidada (cartões e histórico de um comprador):
+    // só vale VERIFICADO, senão quem soubesse o e-mail de um comprador reivindicaria os cartões dele.
+    const email = verifiedPrimaryEmail(clerkUser);
+    if (!email) return NextResponse.json({ error: "Confirme o seu e-mail (o código que enviamos) antes de continuar." }, { status: 403 });
 
     const input = onboardingSchema.parse(await req.json());
     // Motor de Ativação (Fase 18) — se este e-mail já comprou um cartão

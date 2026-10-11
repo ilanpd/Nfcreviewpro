@@ -1,6 +1,7 @@
 import "server-only";
 import { currentUser } from "@clerk/nextjs/server";
 import { isDevRuntimeEnabled } from "@/lib/dev-runtime/config";
+import { verifiedPrimaryEmail } from "@/lib/verified-email";
 
 /**
  * Painel Admin (Fase 16) — identidade do super-admin (dono da marca, nunca
@@ -38,7 +39,9 @@ export async function isSuperAdmin(): Promise<boolean> {
   if (allowlist.length === 0) return false;
 
   const user = await currentUser();
-  const email = user?.primaryEmailAddress?.emailAddress?.toLowerCase();
+  // Só um e-mail VERIFICADO vale como identidade: sem isto, quem se cadastrasse com o
+  // e-mail de um admin (se o Clerk aceitasse e-mail não verificado) viraria super-admin.
+  const email = verifiedPrimaryEmail(user)?.toLowerCase();
   if (!email) return false;
 
   return allowlist.includes(email);
