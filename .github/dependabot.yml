@@ -1,0 +1,18 @@
+# Atualizações automáticas de dependências (Auditoria de Cibersegurança, 11/10/2026, ADR-096).
+# Abre um pull request por semana com as atualizações de patch/minor e os avisos de segurança do
+# npm e das GitHub Actions. O CI (tsc, lint, testes e `npm audit`) valida cada um antes de entrar.
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
+    groups:
+      patch-e-minor:
+        update-types: ["patch", "minor"]
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
