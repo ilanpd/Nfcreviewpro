@@ -40,7 +40,7 @@ export const directSaleSchema = z.object({
   productId: z.string(),
   destinationUrl: httpUrlSchema(),
   customerName: z.string().trim().min(2, "Nome muito curto").max(120),
-  customerEmail: z.string().trim().email("E-mail inválido"),
+  customerEmail: z.string().trim().email("E-mail inválido").max(254),
   customerDocument: customerDocumentSchema,
   customerPhone: customerPhoneSchema,
   /** Estoque de placas (ADR-092): de onde sai a placa física. Ausente = produzir sob demanda, como sempre foi. */

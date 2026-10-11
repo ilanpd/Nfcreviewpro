@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { checkCronAuth } from "@/lib/cron-auth";
 import { prisma } from "@/lib/prisma";
 import { evaluatePlaybooksForCompany } from "@/services/playbook-engine.service";
 
@@ -22,12 +23,11 @@ export const maxDuration = 60;
  * (ver Franchise First Review em RELATORIO_FASE_11.md).
  */
 export async function GET(req: NextRequest) {
-  const secret = process.env.CRON_SECRET;
-  if (!secret) {
+  const auth = checkCronAuth(req.headers.get("authorization"));
+  if (auth === "disabled") {
     return NextResponse.json({ error: "CRON_SECRET não configurado — rota desabilitada" }, { status: 503 });
   }
-  const authHeader = req.headers.get("authorization");
-  if (authHeader !== `Bearer ${secret}`) {
+  if (auth !== "ok") {
     return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
   }
 

@@ -50,6 +50,13 @@ const nextConfig: NextConfig = {
           { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
         ],
       },
+      // Respostas da API (dados do usuário logado, dados de painel) nunca podem ficar guardadas em cache
+      // compartilhado (CDN, proxy). Sem isto o Next devolvia "public, max-age=0, must-revalidate". O QR é a única
+      // rota pública feita para ser cacheada e define o próprio Cache-Control (o do handler prevalece).
+      {
+        source: "/api/:path((?!qr/).*)",
+        headers: [{ key: "Cache-Control", value: "private, no-store" }],
+      },
     ];
   },
 };

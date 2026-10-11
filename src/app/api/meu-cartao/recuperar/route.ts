@@ -5,7 +5,7 @@ import { rateLimit } from "@/lib/rate-limit";
 import { getRequestIp } from "@/lib/ip";
 import { handleApiError } from "@/lib/api-error";
 
-const bodySchema = z.object({ email: z.string().trim().email() });
+const bodySchema = z.object({ email: z.string().trim().email().max(254) });
 
 /**
  * "Perdi o link pessoal" (ADR-080, J7 do plano). Responde SEMPRE com a mesma

@@ -11,25 +11,13 @@
  *   node scripts/test-security-db.mjs
  * Apaga as duas empresas ao terminar.
  */
-import { existsSync, readFileSync } from "node:fs";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
+import { assertStagingDatabase, DB_TESTS_ENABLED, newRunId } from "./staging-db";
 
 vi.mock("server-only", () => ({}));
 
-const ENABLED = process.env.RUN_DB_SECURITY_TESTS === "1";
-const STAGING_REF = "xcrniyhjiscldevjzgpt";
-
-function loadEnvFile(file: string) {
-  if (!existsSync(file)) return;
-  for (const line of readFileSync(file, "utf8").split(/\r?\n/)) {
-    const m = /^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)\s*$/.exec(line);
-    if (m && process.env[m[1]] === undefined) process.env[m[1]] = m[2].replace(/^["']|["']$/g, "");
-  }
-}
-
 async function load() {
-  loadEnvFile(".env"); // Staging (o .env.local aponta para Produção e NÃO é lido aqui)
-  if (!(process.env.DATABASE_URL ?? "").includes(STAGING_REF)) throw new Error("Abortado: DATABASE_URL não é o banco de STAGING.");
+  assertStagingDatabase(); // recusa qualquer banco que não seja o de Staging
   const [{ prisma }, card, campaign, zone, branch, team, apiKey, webhook, feedback] = await Promise.all([
     import("@/lib/prisma"),
     import("@/services/card.service"),
@@ -61,7 +49,7 @@ interface Tenant {
   feedbackId: string;
 }
 
-const RUN = `sec${Date.now().toString(36)}`;
+const RUN = newRunId();
 
 async function seed(m: Mods, label: "A" | "B"): Promise<Tenant> {
   const company = await m.prisma.company.create({
@@ -107,7 +95,7 @@ async function seed(m: Mods, label: "A" | "B"): Promise<Tenant> {
   };
 }
 
-describe.skipIf(!ENABLED)("isolamento entre empresas (banco de Staging)", () => {
+describe.skipIf(!DB_TESTS_ENABLED)("isolamento entre empresas (banco de Staging)", () => {
   let m: Mods;
   let A: Tenant;
   let B: Tenant;

@@ -6,7 +6,7 @@ import { z } from "zod";
 const assignableRole = z.enum(["ADMIN", "MARKETING", "MANAGER", "OPERATOR", "READ_ONLY"]);
 
 export const inviteMemberSchema = z.object({
-  email: z.string().trim().email("E-mail inválido"),
+  email: z.string().trim().email("E-mail inválido").max(254),
   name: z.string().trim().max(80).optional(),
   role: assignableRole,
 });

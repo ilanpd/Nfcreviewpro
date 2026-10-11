@@ -14,10 +14,10 @@ import { rateLimit } from "@/lib/rate-limit";
 import { getRequestIp } from "@/lib/ip";
 
 const storeCheckoutSchema = z.object({
-  productId: z.string(),
+  productId: z.string().max(64),
   destinationUrl: httpUrlSchema(),
   customerName: z.string().trim().min(2, "Nome muito curto").max(120),
-  customerEmail: z.string().email("E-mail inválido"),
+  customerEmail: z.string().trim().email("E-mail inválido").max(254),
   customerDocument: customerDocumentSchema,
   customerPhone: customerPhoneSchema,
 });

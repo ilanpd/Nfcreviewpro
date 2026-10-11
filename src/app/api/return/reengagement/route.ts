@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { checkCronAuth } from "@/lib/cron-auth";
 import { runReturnReengagementSweep } from "@/services/return-offer.service";
 
 export const runtime = "nodejs";
@@ -13,12 +14,11 @@ export const maxDuration = 60;
  * relógio.
  */
 export async function GET(req: NextRequest) {
-  const secret = process.env.CRON_SECRET;
-  if (!secret) {
+  const auth = checkCronAuth(req.headers.get("authorization"));
+  if (auth === "disabled") {
     return NextResponse.json({ error: "CRON_SECRET não configurado — rota desabilitada" }, { status: 503 });
   }
-  const authHeader = req.headers.get("authorization");
-  if (authHeader !== `Bearer ${secret}`) {
+  if (auth !== "ok") {
     return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
   }
 
