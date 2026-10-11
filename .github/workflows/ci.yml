@@ -22,7 +22,7 @@ jobs:
       # testa só lógica pura de domain/lib.
       DIRECT_URL: "postgresql://user:pass@localhost:5432/db"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-node@v4
         with:
           node-version: 22
